@@ -5,6 +5,7 @@
 #include <Eigen/SVD>
 
 #include "drake/solvers/fastQP.h"
+#include "drake/solvers/boxQP.h"
 #include "drake/solvers/gurobiQP.h"
 
 #define MAX_CONSTRS 1000
@@ -345,6 +346,97 @@ bin)
     return rCnt;
 }
 */
+
+int boxQP(const MatrixXd& Q, const VectorXd& f,
+        const VectorXd& lb, const VectorXd& ub,
+        VectorXd& x, MatrixXd& Lfree, MatrixXd& Pfree) {
+    
+    /* min 1/2 * x'QblkDiag'x + f'x s.t x >= lb, x <= ub
+     * using projected Newton method.
+     *
+     * @retval  if feasible then iterCnt, else -1 for infeasible, -2 for input
+     *error
+     */
+    
+    // Algorithm parameters
+    int maxIter = 100;
+    double minGrad = 1e-8;
+    double minRelImprove = 1e-8;
+    double stepDec = 0.6;
+    double minStep = 1e-16;
+    double armijo = 0.1;
+    
+    // Algorithm setup
+    int n = Q.rows(); //problem dimension
+    VectorXi clamp = VectorXi::Zero(n); //clamped indicies
+    
+    // Evaluate objective
+    double val = 0.5*x.transpose()*Q*x + f.transpose()*x;
+    
+    for(int iter = 0; iter < maxIter; ++iter) {
+        
+        double g = Q*x + f;
+        
+        // Check for clamped dimensions
+        int changed = 0;
+        for(int k = 0; k < n; ++k) {
+            if(x(k) == lb & g(k) > 0 || x(k) == ub & g(k) < 0) {
+                if(clamp(k) == 0) {
+                    changed = 1;
+                    clamp(k) = 1;
+                }
+            }
+            else {
+                if(clamp(k) == 1) {
+                    changed = 1;
+                    clamp(k) = 0;
+                }
+            }
+        }
+        
+        // Refactor if clamped dimensions have changed
+        if(changed || iter == 0) {
+            
+            // Build projection matrices
+            Pfree = MatrixXd::Zeros(n-clamp.sum(), n);
+            int prow = 0;
+            for(int k = 0; k < n; ++k) {
+                if(clamp(k) == 0) {
+                    Pfree(prow, k) = 1;
+                    ++prow;
+                }
+            }
+            
+            // Compute Cholesky factorization of Q in free subspace
+            LLT<MatrixXd> cholQfree(Pfree.transpose()*Q*Pfree);
+            Lfree = cholQfree.matrixL();
+        }
+        
+        
+        // Check gradient norm
+        double gnorm = (Pfree*g).norm();
+        if(gnorm < minGrad) {
+            break;
+        }
+        
+        // Calculate descent direction in free subspace
+        g_free = Pfree.transpose()*Pfree*f + Pfree.transpose()*Q*
+        
+        
+        // Check descent direction
+        
+        
+        // Armijo line search
+        
+        
+        // Check improvement
+        
+        
+    }
+    
+    
+}
+
 
 template <typename DerivedA, typename DerivedB>
 int myGRBaddconstrs(GRBmodel* model, MatrixBase<DerivedA> const& A,
