@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   auto visualizer = CreateKukaIiwaVisualizer(iiwa_system, lcm);
 
   auto controlled_robot =
-      std::allocate_shared<GravityCompensatedSystem<RigidBodySystem>>(
+      std::allocate_shared<GravityCompensatedSystem<RigidBodySystem>>( //Wraps an existing RigidBodySystem with a controller with pure gravity compensation control
           Eigen::aligned_allocator<GravityCompensatedSystem<RigidBodySystem>>(),
           iiwa_system);
 

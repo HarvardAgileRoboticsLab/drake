@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(drake-superbuild)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -g -ggdb")
+
 include(CTest)
 
 include(cmake/config.cmake)
@@ -8,6 +10,8 @@ include(cmake/externals.cmake)
 include(cmake/examples.cmake)
 include(cmake/options.cmake)
 include(cmake/git/hooks.cmake)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -g -ggdb")
 
 drake_setup_superbuild()
 drake_setup_platform()

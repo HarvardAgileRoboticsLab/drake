@@ -41,12 +41,12 @@ class GravityCompensatedSystem {
     sys_tree_ = sys->getRigidBodyTree();
   }
 
-  template <typename ScalarType>
+  template <typename ScalarType> 
   StateVector<ScalarType> dynamics(const ScalarType& t,
                                    const StateVector<ScalarType>& x,
                                    const InputVector<ScalarType>& u) const {
-    InputVector<ScalarType> system_u = GravityCompensatingInput(x, u);
-    return sys_->dynamics(t, x, system_u);
+    InputVector<ScalarType> system_u = GravityCompensatingInput(x, u); //inverse dynamics
+    return sys_->dynamics(t, x, system_u);//dynamics Formulates the forward dynamics of the rigid body system as an optimization find vdot
   }
 
   template <typename ScalarType>

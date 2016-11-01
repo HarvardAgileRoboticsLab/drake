@@ -57,7 +57,9 @@ int main(int argc, char* argv[]) {
   // the initial output y0 which is then of the same dimension as the DoF
   // in the IIWA System. For more details please see :
   // http://drake.mit.edu/doxygen_cxx/classdrake_1_1_affine_system.html
-  VectorXd set_point_vector = x0.head(kNumDof);
+  Eigen::VectorXd offset(kNumDof);
+    offset.setOnes();
+  VectorXd set_point_vector = x0.head(kNumDof)+2*offset;
   auto set_point = std::make_shared<
       AffineSystem<NullVector, NullVector, RigidBodySystem::StateVector>>(
       MatrixXd::Zero(0, 0), MatrixXd::Zero(0, 0), VectorXd::Zero(0),
