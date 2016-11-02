@@ -1,4 +1,4 @@
-#include <gflags/gflags.h>
+#include <iostream>
 
 #include <lcm/lcm-cpp.hpp>
 
@@ -8,16 +8,7 @@
 #include "drake/common/drake_assert.h"
 #include "drake/common/drake_path.h"
 #include "drake/common/polynomial.h"
-#include "drake/common/text_logging_gflags.h"
-//#include "drake/examples/kuka_iiwa_arm/iiwa_simulation.h"
 #include "drake/examples/kuka_iiwa_arm/iiwa_status.h"
-#include "drake/systems/LCMSystem.h"
-#include "drake/systems/LinearSystem.h"
-#include "drake/systems/Simulation.h"
-#include "drake/systems/cascade_system.h"
-#include "drake/systems/gravity_compensated_system.h"
-#include "drake/systems/plants/BotVisualizer.h"
-
 #include "drake/systems/plants/IKoptions.h"
 #include "drake/systems/plants/RigidBodyIK.h"
 #include "drake/systems/plants/RigidBodyTree.h"
@@ -26,37 +17,47 @@
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
 #include "drake/systems/vector.h"
 
-using drake::AffineSystem;
-using drake::BotVisualizer;
-using drake::GravityCompensatedSystem;
-using drake::RigidBodySystem;
-using drake::SimulationOptions;
-using Eigen::VectorXd;
-using Eigen::MatrixXd;
+// Added for inverted dynamics
+#include <gflags/gflags.h>
+#include "drake/common/text_logging_gflags.h"
+#include "drake/systems/System.h"
+#include "drake/systems/plants/KinematicsCache.h"
+#include "drake/systems/plants/RigidBodySystem.h"
+#include "drake/systems/gravity_compensated_system.h"
 
 namespace drake {
 namespace examples {
 namespace kuka_iiwa_arm {
 namespace {
 
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+using Eigen::VectorXi;
+using Eigen::Vector2d;
+using Eigen::Vector3d;
+
+using drake::Vector1d;
+
 const char* kLcmCommandChannel = "IIWA_COMMAND";
 
-DEFINE_double(duration, 0.75, "Simulation duration");
-DEFINE_double(magnitude, 1.75, "Joint 5 Input torque magnitude");
-
-class TrajectoryRunner {
+/// This is a really simple demo class to run a trajectory which is
+/// the output of an IK plan.  It lacks a lot of useful things, like a
+/// controller which does a remotely good job of mapping the
+/// trajectory onto the robot.  The paramaters @p nT and @p t are
+/// identical to their usage for inverseKinPointwise (@p nT is number
+/// of time samples and @p t is an array of times in seconds).
+class InverseDynamics {
  public:
-  TrajectoryRunner(std::shared_ptr<lcm::LCM> lcm, int nT, const double* t,
+
+  InverseDynamics(std::shared_ptr<lcm::LCM> lcm, int nT, const double* t,
                    const Eigen::MatrixXd& traj)
       : lcm_(lcm), nT_(nT), t_(t), traj_(traj) {
     lcm_->subscribe(IiwaStatus<double>::channel(),
-                    &TrajectoryRunner::HandleStatus, this);
+                    &InverseDynamics::HandleStatus, this);
     DRAKE_ASSERT(traj_.cols() == nT);
   }
 
   void Run() {
-
-    // -------->To be updated for a new motion planner<-------------
     typedef PiecewisePolynomial<double> PPType;
     typedef PPType::PolynomialType PPPoly;
     typedef PPType::PolynomialMatrix PPMatrix;
@@ -127,7 +128,74 @@ class TrajectoryRunner {
 
       iiwa_command.timestamp = iiwa_status_.timestamp;
 
-      // -------->Set up iiwa command<-------------
+
+      // Inverse Dynamics
+      typedef std::shared_ptr<RigidBodySystem> RigidBodySystemPtr;
+      typedef std::shared_ptr<RigidBodyTree> RigidBodyTreePtr;
+
+      RigidBodySystemPtr sys_;
+      RigidBodyTreePtr sys_tree_;
+
+      //const int num_DoF = sys_->get_num_positions();
+      //std::cout << num_DoF << std::endl;
+
+      //------------------------
+      //double kDuration = 0.75;
+      //double kInputTorqueMagnitude = 1.75;
+
+      /*
+      gflags::ParseCommandLineFlags(&argc, &argv, true);
+      logging::HandleSpdlogGflags();
+      kDuration = FLAGS_duration;
+      kInputTorqueMagnitude = FLAGS_magnitude;
+      */
+
+      const int kNumDof = 7; 
+
+      // Applies a small input torque on 5th joint.
+      //VectorXd input_torque_vector = VectorXd::Zero(kNumDof);
+      //input_torque_vector(6) = kInputTorqueMagnitude;
+
+      // Need to be updated to other values --Ye
+      Eigen::VectorXd jointState(2*kNumDof); // 7DOF jonit position + 7DOF joint velocity
+      jointState.setZero();
+      Eigen::VectorXd torque_ref(kNumDof);
+      torque_ref.setZero();
+
+      // ------> An alternative way to compute the gravity torque, but not working due to the template return type issue -- Ye
+      //GravityCompensatedSystem<RigidBodySystem> model(sys_);
+      //Eigen::VectorXd system_u = model.getTorqueInput(x, u);
+      
+      /*
+      auto input_torque = std::make_shared<
+      AffineSystem<NullVector, NullVector, RigidBodySystem::StateVector>>(
+      MatrixXd::Zero(0, 0), MatrixXd::Zero(0, 0), VectorXd::Zero(0),
+      MatrixXd::Zero(kNumDof, 0), MatrixXd::Zero(kNumDof, 0),
+      input_torque_vector);
+
+      auto lcm = std::make_shared<lcm::LCM>();
+      auto visualizer = CreateKukaIiwaVisualizer(iiwa_system, lcm);
+
+      auto controlled_robot =
+      std::allocate_shared<GravityCompensatedSystem<RigidBodySystem>>( //Wraps an existing RigidBodySystem with a controller with pure gravity compensation control
+          Eigen::aligned_allocator<GravityCompensatedSystem<RigidBodySystem>>(),
+          iiwa_system);
+      */
+
+      KinematicsCache<double> cache = sys_tree_->doKinematics(
+        jointState.head(kNumDof), jointState.tail(kNumDof));
+      const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
+      Eigen::VectorXd vd(kNumDof);
+      vd.setZero();
+
+      // The generalized gravity effort is computed by calling inverse dynamics
+      // with 0 external forces, 0 velocities and 0 accelerations.
+      // TODO(naveenoid): Update to use simpler API once issue #3114 is
+      // resolved.
+      Eigen::VectorXd G_comp = sys_tree_->inverseDynamics(cache, no_external_wrenches,
+                                                   vd, false);
+      Eigen::VectorXd torque_command = torque_ref + G_comp;
+
       // This is totally arbitrary.  There's no good reason to
       // implement this as a maximum delta to submit per tick.  What
       // we actually need is something like a proper
@@ -135,14 +203,16 @@ class TrajectoryRunner {
       // entire duration from current_t to next_t, and commands the
       // next position taking into account the velocity of the joints
       // and the distance remaining.
-      const double max_joint_delta = 0.1;
+
+      // -------->Set up iiwa torque command<-------------
+      const double max_joint_torque_delta = 1; // ---> [to be optimized]
       for (int joint = 0; joint < kNumJoints; joint++) {
-        double joint_delta =
-            desired_next(joint) - iiwa_status_.joint_position_measured[joint];
-        joint_delta = std::max(-max_joint_delta,
-                               std::min(max_joint_delta, joint_delta));
-        iiwa_command.joint_position[joint] =
-            iiwa_status_.joint_position_measured[joint] + joint_delta;
+        double joint_torque_delta =
+            torque_command(joint) - iiwa_status_.joint_torque_measured[joint];
+        joint_torque_delta = std::max(-max_joint_torque_delta,
+                               std::min(max_joint_torque_delta, joint_torque_delta));
+        iiwa_command.joint_torque[joint] =
+            iiwa_status_.joint_torque_measured[joint] + joint_torque_delta;
       }
 
       lcm_->publish(kLcmCommandChannel, &iiwa_command);
@@ -163,62 +233,84 @@ class TrajectoryRunner {
   lcmt_iiwa_status iiwa_status_;
 };
 
+int main(int argc, const char* argv[]) {
+  std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
 
-// TODO(naveenoid) : Combine common code with
-// run_kuka_iiwa_gravity_compensated_position_control into a class
-// with a common method.
+  RigidBodyTree tree(
+      drake::GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14.urdf",
+      drake::systems::plants::joints::kFixed);
 
-int main(int argc, char* argv[]) {
-  std::shared_ptr<RigidBodySystem> iiwa_system = CreateKukaIiwaSystem();
+  // Create a basic pointwise IK trajectory for moving the iiwa arm.
+  // We start in the zero configuration (straight up).
 
-  double kDuration = 0.75;
-  double kInputTorqueMagnitude = 1.75;
 
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  logging::HandleSpdlogGflags();
-  kDuration = FLAGS_duration;
-  kInputTorqueMagnitude = FLAGS_magnitude;
+  // ---------> Now the planner still uses the same motion as kuka_ik_demo  -- Ye
 
-  const int kNumDof = 7;
+  // TODO(sam.creasey) We should start planning with the robot's
+  // current position rather than assuming vertical. 
+  VectorXd zero_conf = tree.getZeroConfiguration();
+  VectorXd joint_lb = zero_conf - VectorXd::Constant(7, 0.01);
+  VectorXd joint_ub = zero_conf + VectorXd::Constant(7, 0.01);
 
-  // Applies a small input torque on 5th joint.
-  VectorXd input_torque_vector = VectorXd::Zero(kNumDof);
-  input_torque_vector(4) = kInputTorqueMagnitude;
+  PostureConstraint pc1(&tree, Vector2d(0, 0.5));
+  VectorXi joint_idx(7);
+  joint_idx << 0, 1, 2, 3, 4, 5, 6;
+  pc1.setJointLimits(joint_idx, joint_lb, joint_ub);
 
-  // The input torque is generated from a constant output AffineSystem.
-  // The individual matrices of the AffineSystem are all set to zero barring
-  // the initial output y0 which is then set to the dimension of the inputs
-  // to the IIWA System. For more details please see :
-  // http://drake.mit.edu/doxygen_cxx/classdrake_1_1_affine_system.html
-  auto input_torque = std::make_shared<
-      AffineSystem<NullVector, NullVector, RigidBodySystem::StateVector>>(
-      MatrixXd::Zero(0, 0), MatrixXd::Zero(0, 0), VectorXd::Zero(0),
-      MatrixXd::Zero(kNumDof, 0), MatrixXd::Zero(kNumDof, 0),
-      input_torque_vector);
+  // Define an end effector constraint and make it active for the
+  // timespan from 1 to 3 seconds.
+  Vector3d pos_end;
+  pos_end << 0.6, 0, 0.325;
+  Vector3d pos_lb = pos_end - Vector3d::Constant(0.005);
+  Vector3d pos_ub = pos_end + Vector3d::Constant(0.005);
+  WorldPositionConstraint wpc(&tree, tree.FindBodyIndex("iiwa_link_ee"),
+                              Vector3d::Zero(), pos_lb, pos_ub, Vector2d(1, 3));
 
-  auto lcm = std::make_shared<lcm::LCM>();
-  auto visualizer = CreateKukaIiwaVisualizer(iiwa_system, lcm);
+  // After the end effector constraint is released, apply the straight
+  // up configuration again.
+  PostureConstraint pc2(&tree, Vector2d(4, 5.9));
+  pc2.setJointLimits(joint_idx, joint_lb, joint_ub);
 
-  auto controlled_robot =
-      std::allocate_shared<GravityCompensatedSystem<RigidBodySystem>>(
-          Eigen::aligned_allocator<GravityCompensatedSystem<RigidBodySystem>>(),
-          iiwa_system);
+  // Bring back the end effector constraint through second 9 of the
+  // demo.
+  WorldPositionConstraint wpc2(&tree, tree.FindBodyIndex("iiwa_link_ee"),
+                               Vector3d::Zero(), pos_lb, pos_ub,
+                               Vector2d(6, 9));
 
-  //auto sys = cascade(cascade(input_torque, controlled_robot), visualizer);
+  // For part of the remaining time, constrain the second joint while
+  // preserving the end effector constraint.
+  //
+  // Variable `joint_position_start_idx` below is a collection of offsets into
+  // the state vector referring to the positions of the joints to be
+  // constrained.
+  Eigen::VectorXi joint_position_start_idx(1);
+  joint_position_start_idx(0) = tree.FindChildBodyOfJoint("iiwa_joint_2")->
+      get_position_start_index();
+  PostureConstraint pc3(&tree, Vector2d(6, 8));
+  pc3.setJointLimits(joint_position_start_idx, Vector1d(0.7), Vector1d(0.8));
 
-  // Obtains an initial state of the simulation.
-  //VectorXd x0 = GenerateArbitraryIiwaInitialState();
-  // Specifies the start time of the simulation.
-  //const double kStartTime = 0;
 
-  //SimulationOptions options = SetupSimulation();
-  //simulate(*sys.get(), kStartTime, kDuration, x0, options);
+  const int kNumTimesteps = 5;
+  double t[kNumTimesteps] = { 0.0, 2.0, 5.0, 7.0, 9.0 };
+  MatrixXd q0(tree.get_num_positions(), kNumTimesteps);
+  for (int i = 0; i < kNumTimesteps; i++) {
+    q0.col(i) = zero_conf;
+  }
 
-  // -------->Inverse Dynamics To be Implement<-------------
+  std::vector<RigidBodyConstraint*> constraint_array;
+  constraint_array.push_back(&pc1);
+  constraint_array.push_back(&wpc);
+  constraint_array.push_back(&pc2);
+  constraint_array.push_back(&pc3);
+  constraint_array.push_back(&wpc2);
+  IKoptions ikoptions(&tree);
+  int info[kNumTimesteps];
+  MatrixXd q_sol(tree.get_num_positions(), kNumTimesteps);
+  std::vector<std::string> infeasible_constraint;
+
   inverseKinPointwise(&tree, kNumTimesteps, t, q0, q0, constraint_array.size(),
                       constraint_array.data(), ikoptions, &q_sol, info,
                       &infeasible_constraint);
-
   bool info_good = true;
   for (int i = 0; i < kNumTimesteps; ++i) {
     printf("INFO[%d] = %d ", i, info[i]);
@@ -234,7 +326,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Now run through the plan.
-  TrajectoryRunner runner(lcm, kNumTimesteps, t, q_sol);
+  InverseDynamics runner(lcm, kNumTimesteps, t, q_sol);
   runner.Run();
   return 0;
 }
@@ -244,6 +336,7 @@ int main(int argc, char* argv[]) {
 }  // namespace examples
 }  // namespace drake
 
-int main(int argc, char* argv[]) {
+
+int main(int argc, const char* argv[]) {
   return drake::examples::kuka_iiwa_arm::main(argc, argv);
 }

@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
 
   // Applies a small input torque on 5th joint.
   VectorXd input_torque_vector = VectorXd::Zero(kNumDof);
-  input_torque_vector(4) = kInputTorqueMagnitude;
+  input_torque_vector(6) = kInputTorqueMagnitude;
 
   // The input torque is generated from a constant output AffineSystem.
   // The individual matrices of the AffineSystem are all set to zero barring

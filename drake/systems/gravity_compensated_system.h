@@ -57,6 +57,13 @@ class GravityCompensatedSystem {
     return sys_->output(t, x, system_u);
   }
 
+  //Added by Ye
+  template <typename ScalarType> 
+  Eigen::VectorXd getTorqueInput(Eigen::VectorXd& x,
+      Eigen::VectorXd& u){
+    return TorqueComputation(x,u);
+  }
+
   bool isTimeVarying() const { return sys_->isTimeVarying(); }
   bool isDirectFeedthrough() const { return sys_->isDirectFeedthrough(); }
   size_t getNumStates() const { return drake::getNumStates(*sys_); }
@@ -92,6 +99,27 @@ class GravityCompensatedSystem {
     Eigen::VectorXd G = sys_tree_->inverseDynamics(cache, no_external_wrenches,
                                                    vd, false);
     InputVector<ScalarType> system_u = toEigen(u) + G;
+    return system_u;
+  }
+
+  //Added by Ye
+  Eigen::VectorXd TorqueComputation(
+      Eigen::VectorXd& x,
+      Eigen::VectorXd& u) const {
+    int num_DoF = sys_->get_num_positions();
+    KinematicsCache<double> cache = sys_tree_->doKinematics(
+        x.head(num_DoF), x.tail(num_DoF));
+    const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
+    Eigen::VectorXd vd(num_DoF);
+    vd.setZero();
+
+    // The generalized gravity effort is computed by calling inverse dynamics
+    // with 0 external forces, 0 velocities and 0 accelerations.
+    // TODO(naveenoid): Update to use simpler API once issue #3114 is
+    // resolved.
+    Eigen::VectorXd G = sys_tree_->inverseDynamics(cache, no_external_wrenches,
+                                                   vd, false);
+    Eigen::VectorXd system_u = u + G;
     return system_u;
   }
 };

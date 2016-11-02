@@ -60,8 +60,15 @@ if(lcm_FOUND)
       drakeRBM
       drakeLCMSystem)
 
-add_executable(kuka_ik_demo_md kuka_ik_demo_md.cc)
+  add_executable(kuka_ik_demo_md kuka_ik_demo_md.cc)
   target_link_libraries(kuka_ik_demo_md drakeIK
+      drakeTrajectories
+      drakeRBM
+      drakeLCMSystem)
+
+  add_executable(run_kuka_iiwa_inverse_dynamics_torque_control
+      run_kuka_iiwa_inverse_dynamics_torque_control.cc)
+  target_link_libraries(run_kuka_iiwa_inverse_dynamics_torque_control drakeIK
       drakeTrajectories
       drakeRBM
       drakeLCMSystem)
