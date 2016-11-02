@@ -24,6 +24,7 @@
 #include "drake/systems/plants/KinematicsCache.h"
 #include "drake/systems/plants/RigidBodySystem.h"
 #include "drake/systems/gravity_compensated_system.h"
+#include "drake/systems/vector.h"
 
 namespace drake {
 namespace examples {
@@ -97,6 +98,7 @@ class InverseDynamics {
     bool time_initialized = false;
     int64_t start_time_ms = -1;
     int64_t cur_time_ms = -1;
+    int64_t pre_time_ms = -1;
     const int64_t end_time_offset_ms = (t_[nT_ - 1] * 1e3);
     DRAKE_ASSERT(end_time_offset_ms > 0);
 
@@ -118,6 +120,7 @@ class InverseDynamics {
 
       if (!time_initialized) {
         start_time_ms = iiwa_status_.timestamp;
+        pre_time_ms = iiwa_status_.timestamp;
         time_initialized = true;
       }
       cur_time_ms = iiwa_status_.timestamp;
@@ -127,7 +130,10 @@ class InverseDynamics {
       const auto desired_next = pp_traj.value(cur_traj_time_s);
 
       iiwa_command.timestamp = iiwa_status_.timestamp;
-
+      //Newly added by Ye
+      const double cur_time_inc_s =
+          static_cast<double>(cur_time_ms - pre_time_ms) / 1e3;
+      pre_time_ms = cur_time_ms;
 
       // Inverse Dynamics
       typedef std::shared_ptr<RigidBodySystem> RigidBodySystemPtr;
@@ -157,8 +163,12 @@ class InverseDynamics {
       //input_torque_vector(6) = kInputTorqueMagnitude;
 
       // Need to be updated to other values --Ye
-      Eigen::VectorXd jointState(2*kNumDof); // 7DOF jonit position + 7DOF joint velocity
-      jointState.setZero();
+      //Eigen::VectorXd jointState(2*kNumDof); // 7DOF jonit position + 7DOF joint velocity
+      //jointState.setZero();
+      Eigen::VectorXd jointPosState(kNumDof); // 7DOF jonit position + 7DOF joint velocity
+      jointPosState.setZero();
+      Eigen::VectorXd jointVelState(kNumDof); // 7DOF jonit position + 7DOF joint velocity
+      jointVelState.setZero();
       Eigen::VectorXd torque_ref(kNumDof);
       torque_ref.setZero();
 
@@ -183,7 +193,7 @@ class InverseDynamics {
       */
 
       KinematicsCache<double> cache = sys_tree_->doKinematics(
-        jointState.head(kNumDof), jointState.tail(kNumDof));
+        jointPosState, jointVelState);
       const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
       Eigen::VectorXd vd(kNumDof);
       vd.setZero();
@@ -204,8 +214,19 @@ class InverseDynamics {
       // next position taking into account the velocity of the joints
       // and the distance remaining.
 
+      // -------->(For Safety) Set up iiwa position command<-------------
+      // Use the joint velocity estimation
+      const double max_joint_velocity_estimated_term = 0.1; // ---> [value to be optimized]
+      for (int joint = 0; joint < kNumJoints; joint++) {
+        double joint_velocity_estimated_term = iiwa_status_.joint_velocity_estimated[joint]*cur_time_inc_s;
+        joint_velocity_estimated_term = std::max(-max_joint_velocity_estimated_term,
+                               std::min(max_joint_velocity_estimated_term, joint_velocity_estimated_term));
+        iiwa_command.joint_position[joint] =
+            iiwa_status_.joint_position_measured[joint] + joint_velocity_estimated_term;
+      }
+
       // -------->Set up iiwa torque command<-------------
-      const double max_joint_torque_delta = 1; // ---> [to be optimized]
+      const double max_joint_torque_delta = 1; // ---> [value to be optimized]
       for (int joint = 0; joint < kNumJoints; joint++) {
         double joint_torque_delta =
             torque_command(joint) - iiwa_status_.joint_torque_measured[joint];
