@@ -21,6 +21,7 @@ lcm_wrap_types(
   lcmt_idm_with_trajectory_agent_state_t.lcm
   lcmt_iiwa_command.lcm
   lcmt_iiwa_status.lcm
+  lcmt_iiwa_param.lcm
   lcmt_joint_pd_override.lcm
   lcmt_piecewise_polynomial.lcm
   lcmt_polynomial.lcm

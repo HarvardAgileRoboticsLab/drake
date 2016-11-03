@@ -1,0 +1,11 @@
+package drake;
+
+struct lcmt_iiwa_param {
+  // The timestamp in milliseconds.
+  int64_t timestamp;
+
+  int32_t num_joints;
+
+  double data_visualization1[num_joints];
+  double data_visualization2[num_joints];
+}

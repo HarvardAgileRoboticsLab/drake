@@ -4,6 +4,7 @@
 
 #include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
+#include "drake/lcmt_polynomial.hpp" // temporarily abuse one lcm channel
 
 #include "drake/common/drake_assert.h"
 #include "drake/common/drake_path.h"
@@ -40,6 +41,7 @@ using Eigen::Vector3d;
 using drake::Vector1d;
 
 const char* kLcmCommandChannel = "IIWA_COMMAND";
+const char* kLcmParamChannel = "IIWA_PARAM";
 
 /// This is a really simple demo class to run a trajectory which is
 /// the output of an IK plan.  It lacks a lot of useful things, like a
@@ -50,9 +52,9 @@ const char* kLcmCommandChannel = "IIWA_COMMAND";
 class InverseDynamics {
  public:
 
-  InverseDynamics(std::shared_ptr<lcm::LCM> lcm, int nT, const double* t,
+  InverseDynamics(RigidBodyTree* tree, std::shared_ptr<lcm::LCM> lcm, int nT, const double* t,
                    const Eigen::MatrixXd& traj)
-      : lcm_(lcm), nT_(nT), t_(t), traj_(traj) {
+      : tree_(tree), lcm_(lcm), nT_(nT), t_(t), traj_(traj) {
     lcm_->subscribe(IiwaStatus<double>::channel(),
                     &InverseDynamics::HandleStatus, this);
     DRAKE_ASSERT(traj_.cols() == nT);
@@ -98,7 +100,7 @@ class InverseDynamics {
     bool time_initialized = false;
     int64_t start_time_ms = -1;
     int64_t cur_time_ms = -1;
-    int64_t pre_time_ms = -1;
+    //int64_t pre_time_ms = -1;
     const int64_t end_time_offset_ms = (t_[nT_ - 1] * 1e3);
     DRAKE_ASSERT(end_time_offset_ms > 0);
 
@@ -107,6 +109,10 @@ class InverseDynamics {
     iiwa_command.joint_position.resize(kNumJoints, 0.);
     iiwa_command.num_torques = 0;
     iiwa_command.joint_torque.resize(kNumJoints, 0.);
+
+    lcmt_polynomial iiwa_param;
+    iiwa_param.num_coefficients = kNumJoints;
+    iiwa_param.coefficients.resize(kNumJoints, 0.);
 
     while (!time_initialized ||
            cur_time_ms < (start_time_ms + end_time_offset_ms)) {
@@ -120,7 +126,7 @@ class InverseDynamics {
 
       if (!time_initialized) {
         start_time_ms = iiwa_status_.timestamp;
-        pre_time_ms = iiwa_status_.timestamp;
+        //pre_time_ms = iiwa_status_.timestamp;
         time_initialized = true;
       }
       cur_time_ms = iiwa_status_.timestamp;
@@ -130,17 +136,20 @@ class InverseDynamics {
       const auto desired_next = pp_traj.value(cur_traj_time_s);
 
       iiwa_command.timestamp = iiwa_status_.timestamp;
-      //Newly added by Ye
-      const double cur_time_inc_s =
+      iiwa_param.timestamp = iiwa_status_.timestamp;
+
+      //Added by Ye
+      /*const double cur_time_inc_s =
           static_cast<double>(cur_time_ms - pre_time_ms) / 1e3;
       pre_time_ms = cur_time_ms;
-
+      std::cout << cur_time_inc_s << std::endl;*/
+      
       // Inverse Dynamics
-      typedef std::shared_ptr<RigidBodySystem> RigidBodySystemPtr;
-      typedef std::shared_ptr<RigidBodyTree> RigidBodyTreePtr;
+      //typedef std::shared_ptr<RigidBodySystem> RigidBodySystemPtr;
+      //typedef std::shared_ptr<RigidBodyTree> RigidBodyTreePtr;
 
-      RigidBodySystemPtr sys_;
-      RigidBodyTreePtr sys_tree_;
+      //RigidBodySystemPtr sys_;
+      //RigidBodyTreePtr sys_tree_;
 
       //const int num_DoF = sys_->get_num_positions();
       //std::cout << num_DoF << std::endl;
@@ -172,6 +181,12 @@ class InverseDynamics {
       Eigen::VectorXd torque_ref(kNumDof);
       torque_ref.setZero();
 
+      for (int joint = 0; joint < kNumJoints; joint++) {
+        jointPosState(joint) = iiwa_status_.joint_position_measured[joint];
+        jointVelState(joint) = iiwa_status_.joint_velocity_estimated[joint];
+      }
+      std::cout << "jointPosState(5)" << jointPosState(2) << std::endl;
+
       // ------> An alternative way to compute the gravity torque, but not working due to the template return type issue -- Ye
       //GravityCompensatedSystem<RigidBodySystem> model(sys_);
       //Eigen::VectorXd system_u = model.getTorqueInput(x, u);
@@ -192,8 +207,7 @@ class InverseDynamics {
           iiwa_system);
       */
 
-      KinematicsCache<double> cache = sys_tree_->doKinematics(
-        jointPosState, jointVelState);
+      KinematicsCache<double> cache = tree_->doKinematics(jointPosState, jointVelState);
       const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
       Eigen::VectorXd vd(kNumDof);
       vd.setZero();
@@ -202,9 +216,11 @@ class InverseDynamics {
       // with 0 external forces, 0 velocities and 0 accelerations.
       // TODO(naveenoid): Update to use simpler API once issue #3114 is
       // resolved.
-      Eigen::VectorXd G_comp = sys_tree_->inverseDynamics(cache, no_external_wrenches,
+      Eigen::VectorXd G_comp = tree_->inverseDynamics(cache, no_external_wrenches,
                                                    vd, false);
       Eigen::VectorXd torque_command = torque_ref + G_comp;
+
+      std::cout << "torque_command(5)" << torque_command(2) << std::endl;
 
       // This is totally arbitrary.  There's no good reason to
       // implement this as a maximum delta to submit per tick.  What
@@ -214,6 +230,7 @@ class InverseDynamics {
       // next position taking into account the velocity of the joints
       // and the distance remaining.
 
+      /*
       // -------->(For Safety) Set up iiwa position command<-------------
       // Use the joint velocity estimation
       const double max_joint_velocity_estimated_term = 0.1; // ---> [value to be optimized]
@@ -235,8 +252,21 @@ class InverseDynamics {
         iiwa_command.joint_torque[joint] =
             iiwa_status_.joint_torque_measured[joint] + joint_torque_delta;
       }
+      */
+
+      const double max_joint_delta = 0.1;
+      for (int joint = 0; joint < kNumJoints; joint++) {
+        double joint_delta =
+            desired_next(joint) - iiwa_status_.joint_position_measured[joint];
+        joint_delta = std::max(-max_joint_delta,
+                               std::min(max_joint_delta, joint_delta));
+        iiwa_command.joint_position[joint] =
+            iiwa_status_.joint_position_measured[joint];// + joint_delta;
+        iiwa_param.coefficients[joint] = torque_command(joint);
+      }
 
       lcm_->publish(kLcmCommandChannel, &iiwa_command);
+      lcm_->publish(kLcmParamChannel, &iiwa_param);
     }
   }
 
@@ -247,12 +277,14 @@ class InverseDynamics {
   }
 
   static const int kNumJoints = 7;
+  RigidBodyTree* tree_;
   std::shared_ptr<lcm::LCM> lcm_;
   const int nT_;
   const double* t_;
   const Eigen::MatrixXd& traj_;
   lcmt_iiwa_status iiwa_status_;
 };
+
 
 int main(int argc, const char* argv[]) {
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
@@ -347,7 +379,7 @@ int main(int argc, const char* argv[]) {
   }
 
   // Now run through the plan.
-  InverseDynamics runner(lcm, kNumTimesteps, t, q_sol);
+  InverseDynamics runner(&tree, lcm, kNumTimesteps, t, q_sol);
   runner.Run();
   return 0;
 }
