@@ -40,7 +40,7 @@ using Eigen::Vector3d;
 
 using drake::Vector1d;
 
-const char* kLcmCommandChannel = "IIWA_COMMAND";
+//const char* kLcmCommandChannel = "IIWA_COMMAND";
 const char* kLcmParamChannel = "IIWA_PARAM";
 
 /// This is a really simple demo class to run a trajectory which is
@@ -114,8 +114,7 @@ class InverseDynamics {
     iiwa_param.num_coefficients = kNumJoints;
     iiwa_param.coefficients.resize(kNumJoints, 0.);
 
-    while (!time_initialized ||
-           cur_time_ms < (start_time_ms + end_time_offset_ms)) {
+    while (true) {
       // The argument to handleTimeout is in msec, and should be
       // safely bigger than e.g. a 200Hz input rate.
       int handled  = lcm_->handleTimeout(10);
@@ -185,7 +184,7 @@ class InverseDynamics {
         jointPosState(joint) = iiwa_status_.joint_position_measured[joint];
         jointVelState(joint) = iiwa_status_.joint_velocity_estimated[joint];
       }
-      std::cout << "jointPosState(5)" << jointPosState(2) << std::endl;
+      //std::cout << "jointPosState(5)" << jointPosState(5) << std::endl;
 
       // ------> An alternative way to compute the gravity torque, but not working due to the template return type issue -- Ye
       //GravityCompensatedSystem<RigidBodySystem> model(sys_);
@@ -218,9 +217,9 @@ class InverseDynamics {
       // resolved.
       Eigen::VectorXd G_comp = tree_->inverseDynamics(cache, no_external_wrenches,
                                                    vd, false);
-      Eigen::VectorXd torque_command = torque_ref + G_comp;
+      Eigen::VectorXd torque_command = torque_ref - G_comp; // u = B\G;  Hqdd + C + G = Bu
 
-      std::cout << "torque_command(5)" << torque_command(2) << std::endl;
+      //std::cout << "torque_command(5)" << torque_command(5) << std::endl;
 
       // This is totally arbitrary.  There's no good reason to
       // implement this as a maximum delta to submit per tick.  What
@@ -230,8 +229,8 @@ class InverseDynamics {
       // next position taking into account the velocity of the joints
       // and the distance remaining.
 
-      /*
-      // -------->(For Safety) Set up iiwa position command<-------------
+      
+/*      // -------->(For Safety) Set up iiwa position command<-------------
       // Use the joint velocity estimation
       const double max_joint_velocity_estimated_term = 0.1; // ---> [value to be optimized]
       for (int joint = 0; joint < kNumJoints; joint++) {
@@ -249,10 +248,10 @@ class InverseDynamics {
             torque_command(joint) - iiwa_status_.joint_torque_measured[joint];
         joint_torque_delta = std::max(-max_joint_torque_delta,
                                std::min(max_joint_torque_delta, joint_torque_delta));
-        iiwa_command.joint_torque[joint] =
-            iiwa_status_.joint_torque_measured[joint] + joint_torque_delta;
-      }
-      */
+        iiwa_command.joint_torque[joint] = 0;
+            //iiwa_status_.joint_torque_measured[joint] + joint_torque_delta;
+      }*/
+      
 
       const double max_joint_delta = 0.1;
       for (int joint = 0; joint < kNumJoints; joint++) {
@@ -265,7 +264,7 @@ class InverseDynamics {
         iiwa_param.coefficients[joint] = torque_command(joint);
       }
 
-      lcm_->publish(kLcmCommandChannel, &iiwa_command);
+      //lcm_->publish(kLcmCommandChannel, &iiwa_command);
       lcm_->publish(kLcmParamChannel, &iiwa_param);
     }
   }
