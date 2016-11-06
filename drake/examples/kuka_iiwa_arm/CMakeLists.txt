@@ -74,6 +74,12 @@ if(lcm_FOUND)
 
   add_executable(kuka_id_gravity_comp kuka_id_gravity_comp.cc)
   target_link_libraries(kuka_id_gravity_comp
+      drakeRBM
+      drakeLCMSystem)
+
+  add_executable(kuka_ik_torque_control kuka_ik_torque_control.cc)
+  target_link_libraries(kuka_ik_torque_control
+      drakeIK
       drakeTrajectories
       drakeRBM
       drakeLCMSystem)
@@ -93,6 +99,7 @@ if(lcm_FOUND)
       drakeRBSystem
       drakeLCMSystem
       gflags)
+
 endif()
 
 add_subdirectory(controlled_kuka)
