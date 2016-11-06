@@ -1,4 +1,8 @@
 #include <cmath>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "drake/common/eigen_types.h"
 #include "drake/common/test/measure_execution.h"
@@ -42,7 +46,9 @@ void printMatrix(
 }
 
 template <typename Scalar>
-void scenario1(const RigidBodyTree& model, KinematicsCache<Scalar>& cache,
+void scenario1(const RigidBodyTree<double>& model,
+               // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+               KinematicsCache<Scalar>& cache,
                const vector<Matrix<Scalar, Dynamic, 1>>& qs,
                const map<int, Matrix3Xd>& body_fixed_points) {
   default_random_engine generator;
@@ -66,13 +72,15 @@ void scenario1(const RigidBodyTree& model, KinematicsCache<Scalar>& cache,
 
 template <typename Scalar>
 void scenario2(
-    const RigidBodyTree& model, KinematicsCache<Scalar>& cache,
+    const RigidBodyTree<double>& model,
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+    KinematicsCache<Scalar>& cache,
     const vector<pair<Matrix<Scalar, Dynamic, 1>, Matrix<Scalar, Dynamic, 1>>>&
         states) {
   default_random_engine generator;
   uniform_real_distribution<> uniform(0, 1);
 
-  const RigidBodyTree::BodyToWrenchMap<Scalar> no_external_wrenches;
+  const typename RigidBodyTree<Scalar>::BodyToWrenchMap no_external_wrenches;
   for (const auto& state : states) {
     cache.initialize(state.first, state.second);
     model.doKinematics(cache, true);
@@ -90,7 +98,7 @@ void scenario2(
   }
 }
 
-void testScenario1(const RigidBodyTree& model) {
+void testScenario1(const RigidBodyTree<double>& model) {
   int ntests = 1000;
 
   vector<VectorXd> qs_double;
@@ -157,7 +165,7 @@ void testScenario1(const RigidBodyTree& model) {
   cout << endl;
 }
 
-void testScenario2(const RigidBodyTree& model) {
+void testScenario2(const RigidBodyTree<double>& model) {
   int ntests = 1000;
 
   vector<pair<VectorXd, VectorXd>> states_double;
@@ -220,7 +228,7 @@ void testScenario2(const RigidBodyTree& model) {
 }
 
 int main() {
-  RigidBodyTree model("examples/Atlas/urdf/atlas_minimal_contact.urdf");
+  RigidBodyTree<double> model("examples/Atlas/urdf/atlas_minimal_contact.urdf");
   testScenario1(model);
   testScenario2(model);
 

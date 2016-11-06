@@ -10,7 +10,7 @@ typedef Matrix<double, 6, 1> Vector6d;
 namespace drake {
 namespace examples {
 namespace qp_inverse_dynamics {
-// TODO(siyuan.feng@tri): These should go in RigidBodyTree eventually.
+// TODO(siyuan.feng): These should go in RigidBodyTree eventually.
 
 /**
  * This function computes the task space velocity of a frame attached
@@ -23,7 +23,7 @@ namespace qp_inverse_dynamics {
  * @return task space velocity
  */
 Eigen::Vector6d GetTaskSpaceVel(
-    const RigidBodyTree& r, const KinematicsCache<double>& cache,
+    const RigidBodyTree<double>& r, const KinematicsCache<double>& cache,
     const RigidBody& body,
     const Eigen::Vector3d& local_offset = Eigen::Vector3d::Zero());
 
@@ -39,7 +39,7 @@ Eigen::Vector6d GetTaskSpaceVel(
  * generalized velocity.
  */
 Eigen::MatrixXd GetTaskSpaceJacobian(
-    const RigidBodyTree& r, const KinematicsCache<double>& cache,
+    const RigidBodyTree<double>& r, const KinematicsCache<double>& cache,
     const RigidBody& body,
     const Eigen::Vector3d& local_offset = Eigen::Vector3d::Zero());
 
@@ -56,7 +56,7 @@ Eigen::MatrixXd GetTaskSpaceJacobian(
  * task space acceleration, v_dot is generalized acceleration.
  */
 Eigen::Vector6d GetTaskSpaceJacobianDotTimesV(
-    const RigidBodyTree& r, const KinematicsCache<double>& cache,
+    const RigidBodyTree<double>& r, const KinematicsCache<double>& cache,
     const RigidBody& body,
     const Eigen::Vector3d& local_offset = Eigen::Vector3d::Zero());
 

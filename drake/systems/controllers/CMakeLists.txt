@@ -10,8 +10,6 @@ pods_install_pkg_config_file(drake-control-util
   REQUIRES
   VERSION 0.0.1)
 
-drake_find_package(gurobi PKG_CONFIG)
-drake_find_package(yaml-cpp CONFIG)
 if(gurobi_FOUND AND lcm_FOUND AND yaml-cpp_FOUND)
   add_library_with_exports(LIB_NAME drakeQPCommon SOURCE_FILES InstantaneousQPController.cpp)
   target_link_libraries(drakeQPCommon drakeControlUtil drakeQP drakeTrajectories drakeLCMUtil drakeSide drakeYAMLUtil lcm)
@@ -65,21 +63,3 @@ pods_install_pkg_config_file(drake-system2-controllers
     REQUIRES
     VERSION 0.0.1)
 add_subdirectory(test)
-
-# ==== Below this line is MATLAB-specific code ====
-
-if(Matlab_FOUND)
-  if(gurobi_FOUND AND lcm_FOUND AND yaml-cpp_FOUND)
-    drake_add_mex(instantaneousQPControllermex instantaneousQPControllermex.cpp)
-    target_link_libraries(instantaneousQPControllermex drakeQP drakeControlUtil drakeQPCommon drakeMexUtil drakeSide drakeYAMLUtil)
-
-    drake_add_mex(constructQPDataPointerMex constructQPDataPointerMex.cpp)
-    target_link_libraries(constructQPDataPointerMex drakeQP drakeControlUtil drakeQPCommon drakeMexUtil drakeYAMLUtil drakeAtlasUtil)
-  endif()
-
-  drake_add_mex(supportDetectmex supportDetectmex.cpp)
-  target_link_libraries(supportDetectmex drakeRBM drakeControlUtil)
-
-endif()
-
-# ==== Below this line is C++ and MATLAB shared code ====

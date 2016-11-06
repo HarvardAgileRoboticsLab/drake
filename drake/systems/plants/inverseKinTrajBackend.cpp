@@ -1,7 +1,7 @@
-
-#include "inverseKinBackend.h"
+#include "drake/systems/plants/inverseKinBackend.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <Eigen/Core>
@@ -13,12 +13,11 @@
 #include <drake/solvers/constraint.h>
 #include <drake/solvers/mathematical_program.h>
 #include <drake/systems/plants/constraint/RigidBodyConstraint.h>
-#include <drake/systems/plants/ConstraintWrappers.h>
+#include <drake/systems/plants/constraint_wrappers.h>
 #include <drake/systems/plants/IKoptions.h>
 #include <drake/systems/plants/RigidBodyTree.h>
-#include <drake/systems/vector.h>
 
-#include "ik_trajectory_helper.h"
+#include "drake/systems/plants/ik_trajectory_helper.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -80,7 +79,7 @@ class IKInbetweenConstraint : public drake::solvers::Constraint {
  public:
   /// All pointers/references are aliased, and must remain valid for
   /// the life of this class.
-  IKInbetweenConstraint(const RigidBodyTree* model,
+  IKInbetweenConstraint(const RigidBodyTree<double>* model,
                         const IKTrajectoryHelper& helper,
                         int num_constraints,
                         const RigidBodyConstraint* const* constraint_array)
@@ -334,18 +333,18 @@ class IKInbetweenConstraint : public drake::solvers::Constraint {
     set_bounds(new_lb, new_ub);
   }
 
-  const RigidBodyTree* model_;
+  const RigidBodyTree<double>* model_;
   const IKTrajectoryHelper& helper_;
   const int num_constraints_;
   const RigidBodyConstraint* const* constraint_array_;
 };
 
-}
+}  // anonymous namespace
 
 template <typename DerivedA, typename DerivedB, typename DerivedC,
           typename DerivedD, typename DerivedE>
 void inverseKinTrajBackend(
-    RigidBodyTree *model, const int nT,
+    RigidBodyTree<double> *model, const int nT,
     const double *t,
     const Eigen::MatrixBase<DerivedA>& q_seed,
     const Eigen::MatrixBase<DerivedB>& q_nom,
@@ -558,7 +557,7 @@ void inverseKinTrajBackend(
 }
 
 template void inverseKinTrajBackend(
-    RigidBodyTree* model, const int nT, const double* t,
+    RigidBodyTree<double>* model, const int nT, const double* t,
     const Eigen::MatrixBase<Eigen::Map<MatrixXd>>& q_seed,
     const Eigen::MatrixBase<Eigen::Map<MatrixXd>>& q_nom,
     const int num_constraints,
@@ -569,7 +568,7 @@ template void inverseKinTrajBackend(
     Eigen::MatrixBase<Eigen::Map<MatrixXd>>* qddot_sol, int* info,
     std::vector<std::string>* infeasible_constraint);
 template void inverseKinTrajBackend(
-    RigidBodyTree* model, const int nT, const double* t,
+    RigidBodyTree<double>* model, const int nT, const double* t,
     const Eigen::MatrixBase<MatrixXd>& q_seed,
     const Eigen::MatrixBase<MatrixXd>& q_nom,
     const int num_constraints,
@@ -582,4 +581,4 @@ template void inverseKinTrajBackend(
 
 }  // namespace plants
 }  // namespace systems
-}  // namespace Drake
+}  // namespace drake

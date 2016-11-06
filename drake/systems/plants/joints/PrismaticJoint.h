@@ -1,9 +1,13 @@
 #pragma once
 
+#include <string>
+
 #include "drake/common/drake_assert.h"
 #include "drake/common/eigen_types.h"
-#include "FixedAxisOneDoFJoint.h"
+#include "drake/systems/plants/joints/FixedAxisOneDoFJoint.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 /**
  * A prismatic joint moves linearly along one axis.
  */
@@ -57,3 +61,4 @@ class DRAKE_EXPORT PrismaticJoint
  private:
   Eigen::Vector3d translation_axis_;
 };
+#pragma GCC diagnostic pop  // pop -Wno-overloaded-virtual

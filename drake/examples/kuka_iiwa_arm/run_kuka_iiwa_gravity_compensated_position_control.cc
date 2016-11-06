@@ -3,10 +3,10 @@
 #include "drake/common/drake_path.h"
 #include "drake/common/text_logging_gflags.h"
 #include "drake/examples/kuka_iiwa_arm/iiwa_simulation.h"
-#include "drake/systems/LCMSystem.h"
-#include "drake/systems/LinearSystem.h"
-#include "drake/systems/cascade_system.h"
-#include "drake/systems/gravity_compensated_pd_position_control_system.h"
+#include "drake/system1/LCMSystem.h"
+#include "drake/system1/LinearSystem.h"
+#include "drake/system1/cascade_system.h"
+#include "drake/system1/gravity_compensated_pd_position_control_system.h"
 #include "drake/systems/plants/BotVisualizer.h"
 
 using drake::AffineSystem;
@@ -41,8 +41,8 @@ int main(int argc, char* argv[]) {
 
   // Smaller gains intentionally used for demo. Gravity compensation enables
   // the usage of small feedback gains and this example demonstrates that.
-  const double Kp_common = 10.0;  // Units : Nm/rad
-  const double Kd_common = 0.30;  // Units : Nm/rad/sec
+  const double Kp_common = 10.0;  // Units : Nm / rad
+  const double Kd_common = 0.30;  // Units : Nm / (rad / sec)
   VectorXd Kpdiag = VectorXd::Constant(kNumDof, Kp_common);
   VectorXd Kddiag = VectorXd::Constant(kNumDof, Kd_common);
 

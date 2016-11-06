@@ -1,12 +1,15 @@
 #pragma once
 
-#include "KinematicsCache.h"
+#include <string>
+#include <vector>
+
 #include "drake/common/drake_export.h"
 #include "drake/solvers/mathematical_program.h"
-#include "drake/systems/System.h"
+#include "drake/system1/System.h"
+#include "drake/systems/plants/KinematicsCache.h"
+#include "drake/systems/plants/RigidBodyTree.h"
 #include "drake/systems/plants/joints/floating_base_types.h"
 #include "drake/systems/plants/parser_model_instance_id_table.h"
-#include "drake/systems/plants/RigidBodyTree.h"
 
 using drake::systems::plants::joints::FloatingBaseType;
 using drake::systems::plants::joints::kQuaternion;
@@ -151,7 +154,8 @@ class DRAKE_EXPORT RigidBodySystem {
   template <typename ScalarType>
   using OutputVector = Eigen::Matrix<ScalarType, Eigen::Dynamic, 1>;
 
-  explicit RigidBodySystem(std::shared_ptr<RigidBodyTree> rigid_body_tree)
+  explicit RigidBodySystem(
+      std::shared_ptr<RigidBodyTree<double>> rigid_body_tree)
       : use_multi_contact(false),
         penetration_stiffness(150.0),
         penetration_damping(penetration_stiffness / 10.0),
@@ -165,7 +169,7 @@ class DRAKE_EXPORT RigidBodySystem {
         penetration_damping(penetration_stiffness / 10.0),
         friction_coefficient(1.0),
         direct_feedthrough(false) {
-    tree = std::shared_ptr<RigidBodyTree>(new RigidBodyTree());
+    tree = std::shared_ptr<RigidBodyTree<double>>(new RigidBodyTree<double>());
   }
 
   virtual ~RigidBodySystem() {}
@@ -358,7 +362,7 @@ class DRAKE_EXPORT RigidBodySystem {
 
   void addSensor(std::shared_ptr<RigidBodySensor> s);
 
-  const std::shared_ptr<RigidBodyTree>& getRigidBodyTree(void) const {
+  const std::shared_ptr<RigidBodyTree<double>>& getRigidBodyTree(void) const {
     return tree;
   }
 
@@ -451,7 +455,7 @@ class DRAKE_EXPORT RigidBodySystem {
   double friction_coefficient;   // mu
 
  private:
-  std::shared_ptr<RigidBodyTree> tree;
+  std::shared_ptr<RigidBodyTree<double>> tree;
   std::vector<std::shared_ptr<RigidBodyForceElement>> force_elements;
   std::vector<std::shared_ptr<RigidBodySensor>> sensors;
   bool direct_feedthrough;
@@ -469,6 +473,7 @@ class DRAKE_EXPORT RigidBodySystem {
  */
 class DRAKE_EXPORT RigidBodyForceElement {
  public:
+  // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
   RigidBodyForceElement(RigidBodySystem& sys_in, const std::string& name_in,
       int model_instance_id) :
           sys(sys_in),
@@ -493,7 +498,8 @@ class DRAKE_EXPORT RigidBodyForceElement {
  * RigidBodyTree?
  */
 Eigen::VectorXd spatialForceInFrameToJointTorque(
-    const RigidBodyTree* tree, const KinematicsCache<double>& rigid_body_state,
+    const RigidBodyTree<double>* tree,
+    const KinematicsCache<double>& rigid_body_state,
     const RigidBodyFrame* frame, const Eigen::Matrix<double, 6, 1>& force);
 
 // todo: insert a RigidBodyForceImpl with CRTP here once I go back and template
@@ -504,6 +510,7 @@ Eigen::VectorXd spatialForceInFrameToJointTorque(
  */
 class DRAKE_EXPORT RigidBodyPropellor : public RigidBodyForceElement {
  public:
+  // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
   RigidBodyPropellor(RigidBodySystem& sys, tinyxml2::XMLElement* node,
                      const std::string& name, int model_instance_id);
   ~RigidBodyPropellor() override {}
@@ -547,6 +554,7 @@ class DRAKE_EXPORT RigidBodyPropellor : public RigidBodyForceElement {
 class DRAKE_EXPORT RigidBodySpringDamper
     : public RigidBodyForceElement {
  public:
+  // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
   RigidBodySpringDamper(RigidBodySystem& sys, tinyxml2::XMLElement* node,
                         const std::string& name, int model_instance_id);
   ~RigidBodySpringDamper() override {}

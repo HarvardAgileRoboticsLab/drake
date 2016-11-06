@@ -1,7 +1,7 @@
 
 #include "drake/examples/kuka_iiwa_arm/iiwa_simulation.h"
 #include "drake/examples/kuka_iiwa_arm/iiwa_status.h"
-#include "drake/systems/LCMSystem.h"
+#include "drake/system1/LCMSystem.h"
 #include "drake/systems/plants/BotVisualizer.h"
 #include "drake/systems/plants/RigidBodyTree.h"
 
@@ -46,7 +46,7 @@ class SinkSystem {
 int main(int argc, const char* argv[]) {
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
 
-  const std::shared_ptr<RigidBodyTree> tree =
+  const std::shared_ptr<RigidBodyTree<double>> tree =
       CreateKukaIiwaSystem()->getRigidBodyTree();
 
   auto visualizer =

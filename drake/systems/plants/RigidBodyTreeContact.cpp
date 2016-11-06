@@ -1,6 +1,9 @@
 #include "drake/systems/plants/RigidBodyTree.h"
 
+#include <algorithm>
 #include <iostream>
+#include <set>
+#include <vector>
 
 using Eigen::Dynamic;
 using Eigen::Map;
@@ -19,6 +22,7 @@ using std::vector;
 // NOTE:
 //  k = BASIS_VECTOR_HALF_COUNT is defined as a preprocessor directive so that
 //      Eigen templates can be optimized at compile time
+// TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
 void surfaceTangentsSingle(Vector3d const &normal, Matrix3kd &d) {
   Vector3d t1, t2;
   double theta;
@@ -48,8 +52,10 @@ void surfaceTangentsSingle(Vector3d const &normal, Matrix3kd &d) {
 // OUTPUTS:
 //   bodyIndsSorted a set of unique, sorted(ascending) body indexes
 //   participating in contact pairs
-void getUniqueBodiesSorted(VectorXi const &idxA, VectorXi const &idxB,
-                           std::vector<int> &bodyIndsSorted) {
+void getUniqueBodiesSorted(
+    VectorXi const &idxA, VectorXi const &idxB,
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+    std::vector<int> &bodyIndsSorted) {
   size_t m = idxA.size();
   std::set<int> bodyInds;
 
@@ -78,6 +84,7 @@ void getUniqueBodiesSorted(VectorXi const &idxA, VectorXi const &idxB,
 // OUTPUTS:
 //   contactIdx: the list of n indexes into idxList where bodyIdx occurred
 void findContactIndexes(VectorXi const &idxList, const size_t bodyIdx,
+                        // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
                         std::vector<size_t> &contactIdx) {
   size_t m = idxList.size();
   contactIdx.clear();
@@ -107,7 +114,9 @@ void findContactIndexes(VectorXi const &idxList, const size_t bodyIdx,
 // (x, y, z, 1)'
 void getBodyPoints(std::vector<size_t> const &cindA,
                    std::vector<size_t> const &cindB, Matrix3Xd const &xA,
-                   Matrix3Xd const &xB, Matrix3Xd &bodyPoints) {
+                   Matrix3Xd const &xB,
+                   // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+                   Matrix3Xd &bodyPoints) {
   size_t i = 0;
   size_t numPtsA = cindA.size();
   size_t numPtsB = cindB.size();
@@ -146,11 +155,13 @@ void getBodyPoints(std::vector<size_t> const &cindA,
 //  corresponding to bodyInd will be completed
 //  This function must be called with all bodyInds to finish the total
 //  accumulation of the contact Jacobian
+template <typename T>
 template <typename Scalar>
-void RigidBodyTree::accumulateContactJacobian(
+void RigidBodyTree<T>::accumulateContactJacobian(
     const KinematicsCache<Scalar> &cache, const int bodyInd,
     Matrix3Xd const &bodyPoints, std::vector<size_t> const &cindA,
     std::vector<size_t> const &cindB,
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
     Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> &J) const {
   const auto nq = J.cols();
   const size_t numCA = cindA.size();
@@ -192,12 +203,14 @@ void RigidBodyTree::accumulateContactJacobian(
 //  (optional outputs if compute_second_derivatives is true)
 //  dJ: (3m x nq^2) Second order contact Jacobian
 // TODO(tkoolen): change output to be 3m * nq x nq (or possibly 3m * nv x nq)
-
+template <typename T>
 template <typename Scalar>
-void RigidBodyTree::computeContactJacobians(
+void RigidBodyTree<T>::computeContactJacobians(
     const KinematicsCache<Scalar> &cache, Ref<const VectorXi> const &idxA,
     Ref<const VectorXi> const &idxB, Ref<const Matrix3Xd> const &xA,
-    Ref<const Matrix3Xd> const &xB, Matrix<Scalar, Dynamic, Dynamic> &J) const {
+    Ref<const Matrix3Xd> const &xB,
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+    Matrix<Scalar, Dynamic, Dynamic> &J) const {
   std::vector<int> bodyInds;
   const size_t nq = num_positions_;
   const size_t numContactPairs = xA.cols();
@@ -232,8 +245,10 @@ void RigidBodyTree::computeContactJacobians(
 // NOTE:
 //  k = BASIS_VECTOR_HALF_COUNT is defined as a preprocessor directive so that
 //      Eigen templates can be optimized at compile time
-void RigidBodyTree::surfaceTangents(
+template <typename T>
+void RigidBodyTree<T>::surfaceTangents(
     Map<Matrix3Xd> const &normals,
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
     std::vector<Map<Matrix3Xd> > &tangents) const {
   const size_t numContactPairs = normals.cols();
   for (size_t curNormal = 0; curNormal < numContactPairs; curNormal++) {
@@ -245,7 +260,7 @@ void RigidBodyTree::surfaceTangents(
   }
 }
 
-template DRAKE_EXPORT void RigidBodyTree::computeContactJacobians<
+template DRAKE_EXPORT void RigidBodyTree<double>::computeContactJacobians<
     Eigen::AutoDiffScalar<Eigen::Matrix<double, -1, 1, 0, 73, 1> > >(
     KinematicsCache<Eigen::AutoDiffScalar<
         Eigen::Matrix<double, -1, 1, 0, 73, 1> > > const &,
@@ -260,7 +275,7 @@ template DRAKE_EXPORT void RigidBodyTree::computeContactJacobians<
     Eigen::Matrix<
         Eigen::AutoDiffScalar<Eigen::Matrix<double, -1, 1, 0, 73, 1> >, -1, -1,
         0, -1, -1> &) const;
-template DRAKE_EXPORT void RigidBodyTree::computeContactJacobians<
+template DRAKE_EXPORT void RigidBodyTree<double>::computeContactJacobians<
     Eigen::AutoDiffScalar<Eigen::Matrix<double, -1, 1, 0, -1, 1> > >(
     KinematicsCache<Eigen::AutoDiffScalar<
         Eigen::Matrix<double, -1, 1, 0, -1, 1> > > const &,
@@ -275,7 +290,8 @@ template DRAKE_EXPORT void RigidBodyTree::computeContactJacobians<
     Eigen::Matrix<
         Eigen::AutoDiffScalar<Eigen::Matrix<double, -1, 1, 0, -1, 1> >, -1, -1,
         0, -1, -1> &) const;
-template DRAKE_EXPORT void RigidBodyTree::computeContactJacobians<double>(
+template DRAKE_EXPORT void
+RigidBodyTree<double>::computeContactJacobians<double>(
     KinematicsCache<double> const &,
     Eigen::Ref<Eigen::Matrix<int, -1, 1, 0, -1, 1> const, 0,
                Eigen::InnerStride<1> > const &,
@@ -286,3 +302,8 @@ template DRAKE_EXPORT void RigidBodyTree::computeContactJacobians<double>(
     Eigen::Ref<Eigen::Matrix<double, 3, -1, 0, 3, -1> const, 0,
                Eigen::OuterStride<-1> > const &,
     Eigen::Matrix<double, -1, -1, 0, -1, -1> &) const;
+
+template DRAKE_EXPORT void RigidBodyTree<double>::surfaceTangents(
+    Eigen::Map<Eigen::Matrix3Xd> const &normals,
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+    std::vector<Eigen::Map<Eigen::Matrix3Xd>> &tangents) const;

@@ -1,17 +1,19 @@
 #pragma once
 
+#include <map>
 #include <stdexcept>
+#include <string>
 
 #include <Eigen/Dense>
 
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
 
-#include "drake/systems/System.h"
+#include "drake/system1/System.h"
 #include "drake/systems/plants/KinematicsCache.h"
 #include "drake/systems/plants/RigidBodySystem.h"
 #include "drake/systems/plants/RigidBodyTree.h"
-#include "drake/systems/vector.h"
+#include "drake/system1/vector.h"
 
 using drake::NullVector;
 using drake::RigidBodySensor;
@@ -127,7 +129,8 @@ class SensorPublisherJointState {
 
         robot_struct->message.reset(new sensor_msgs::JointState());
 
-        robot_struct->message->header.frame_id = RigidBodyTree::kWorldName;
+        robot_struct->message->header.frame_id =
+            RigidBodyTree<double>::kWorldName;
 
         InitJointStateStruct(robot_name, rigid_body_system->getRigidBodyTree(),
                              robot_struct.get());
@@ -150,7 +153,7 @@ class SensorPublisherJointState {
    * @param[out] robot_struct The struct to initialize.
    */
   void InitJointStateStruct(const std::string& robot_name,
-                            const std::shared_ptr<RigidBodyTree>& tree,
+                            const std::shared_ptr<RigidBodyTree<double>>& tree,
                             RobotJointStateStruct* robot_struct) {
     if (robot_struct == nullptr) {
       throw std::runtime_error(
@@ -230,7 +233,7 @@ class SensorPublisherJointState {
 
     previous_send_time_ = current_time;
 
-    const std::shared_ptr<RigidBodyTree>& rigid_body_tree =
+    const std::shared_ptr<RigidBodyTree<double>>& rigid_body_tree =
         rigid_body_system_->getRigidBodyTree();
 
     // The input vector u contains the entire system's state. The following

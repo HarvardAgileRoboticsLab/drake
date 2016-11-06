@@ -1,5 +1,7 @@
 #include <cstdlib>
 #include <limits>
+#include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 
@@ -17,7 +19,7 @@ using Eigen::VectorXd;
 using drake::GetDrakePath;
 
 GTEST_TEST(testIKtraj, testIKtraj) {
-  RigidBodyTree model(
+  RigidBodyTree<double> model(
       GetDrakePath() + "/examples/Atlas/urdf/atlas_minimal_contact.urdf");
 
   int r_hand{};

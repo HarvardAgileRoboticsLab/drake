@@ -1,5 +1,4 @@
 set(drakeCollision_SRC_FILES DrakeCollision.cpp Element.cpp Model.cpp)
-drake_find_package(Bullet MODULE)
 
 if(Bullet_FOUND)
   set(drakeCollision_SRC_FILES ${drakeCollision_SRC_FILES} bullet_model.cc)
@@ -22,9 +21,4 @@ pods_install_pkg_config_file(drake-collision
   LIBS -ldrakeCollision
   REQUIRES
   VERSION 0.0.1)
-
-# ==== Below this line is MATLAB-specific code ====
-
-# ==== Below this line is C++ and MATLAB shared code ====
-
 add_subdirectory(test)

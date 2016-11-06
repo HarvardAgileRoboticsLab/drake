@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "drake/common/drake_export.h"
 #include "drake/systems/plants/RigidBodyFrame.h"
 #include "drake/systems/plants/RigidBodyTree.h"
@@ -51,7 +53,7 @@ int AddFloatingJoint(
     const std::vector<int>& body_indices,
     const std::shared_ptr<RigidBodyFrame> weld_to_frame,
     const PoseMap* pose_map,
-    RigidBodyTree* tree);
+    RigidBodyTree<double>* tree);
 
 }  // namespace parsers
 }  // namespace drake

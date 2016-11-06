@@ -25,9 +25,6 @@
 [submodule "externals/octomap"]
 	path = externals/octomap
 	url = https://github.com/OctoMap/octomap.git
-[submodule "externals/snopt"]
-	path = externals/snopt
-	url = git@github.com:RobotLocomotion/snopt.git
 [submodule "externals/gurobi"]
 	path = externals/gurobi
 	url = https://github.com/RobotLocomotion/gurobi.git
@@ -42,7 +39,7 @@
 	url = https://github.com/RobotLocomotion/yalmip.git
 [submodule "externals/sedumi"]
 	path = externals/sedumi
-	url = git@github.com:RobotLocomotion/sedumi.git
+	url = https://github.com/RobotLocomotion/sedumi.git
 [submodule "externals/avl"]
 	path = externals/avl
 	url = https://github.com/RobotLocomotion/avl.git
@@ -93,3 +90,9 @@
 [submodule "externals/ccd"]
 	path = externals/ccd
 	url = https://github.com/danfis/libccd.git
+[submodule "externals/robotlocomotion_lcmtypes"]
+	path = externals/robotlocomotion_lcmtypes
+	url = https://github.com/RobotLocomotion/lcmtypes.git
+[submodule "externals/snopt"]
+	path = externals/snopt
+	url = git@github.com:HarvardAgileRoboticsLab/snopt.git

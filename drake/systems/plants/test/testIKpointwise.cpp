@@ -1,4 +1,7 @@
 #include <cstdlib>
+#include <limits>
+#include <string>
+#include <vector>
 
 #include <Eigen/Dense>
 #include "gtest/gtest.h"
@@ -18,7 +21,7 @@ namespace drake {
 namespace {
 
 GTEST_TEST(testIKpointwise, simpleIKpointwise) {
-  RigidBodyTree model(
+  RigidBodyTree<double> model(
       GetDrakePath() + "/examples/Atlas/urdf/atlas_minimal_contact.urdf");
   Vector2d tspan;
   tspan << 0, 1;

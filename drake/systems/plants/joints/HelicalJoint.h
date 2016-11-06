@@ -1,9 +1,12 @@
 #pragma once
 
-#include "FixedAxisOneDoFJoint.h"
+#include <string>
 
 #include "drake/common/eigen_types.h"
+#include "drake/systems/plants/joints/FixedAxisOneDoFJoint.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 class DRAKE_EXPORT HelicalJoint
     : public FixedAxisOneDoFJoint<HelicalJoint> {
   // disable copy construction and assignment
@@ -44,3 +47,4 @@ class DRAKE_EXPORT HelicalJoint
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+#pragma GCC diagnostic pop  // pop -Wno-overloaded-virtual

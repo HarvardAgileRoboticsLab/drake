@@ -1,4 +1,6 @@
 #include <cstdlib>
+#include <string>
+#include <vector>
 
 #include <Eigen/Dense>
 #include "gtest/gtest.h"
@@ -9,7 +11,6 @@
 #include "drake/systems/plants/RigidBodyIK.h"
 #include "drake/systems/plants/RigidBodyTree.h"
 #include "drake/systems/plants/constraint/RigidBodyConstraint.h"
-#include "drake/systems/vector.h"
 
 using Eigen::Vector2d;
 using Eigen::Vector3d;
@@ -19,7 +20,7 @@ namespace drake {
 namespace {
 
 GTEST_TEST(testIK, atlasIK) {
-  RigidBodyTree model(
+  RigidBodyTree<double> model(
       GetDrakePath() + "/examples/Atlas/urdf/atlas_minimal_contact.urdf");
 
   Vector2d tspan;
@@ -55,7 +56,7 @@ GTEST_TEST(testIK, atlasIK) {
 }
 
 GTEST_TEST(testIK, iiwaIK) {
-  RigidBodyTree model(
+  RigidBodyTree<double> model(
       GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14.urdf");
 
   // Create a timespan for the constraints.  It's not particularly

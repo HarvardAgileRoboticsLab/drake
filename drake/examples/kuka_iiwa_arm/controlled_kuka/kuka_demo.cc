@@ -14,10 +14,11 @@
 #include "drake/systems/framework/diagram.h"
 #include "drake/systems/framework/diagram_builder.h"
 #include "drake/systems/framework/primitives/demultiplexer.h"
-#include "drake/systems/framework/primitives/time_varying_polynomial_source.h"
+#include "drake/systems/framework/primitives/trajectory_source.h"
 #include "drake/systems/plants/parser_urdf.h"
+#include "drake/systems/plants/rigid_body_plant/drake_visualizer.h"
 #include "drake/systems/plants/rigid_body_plant/rigid_body_plant.h"
-#include "drake/systems/plants/rigid_body_plant/rigid_body_tree_lcm_publisher.h"
+#include "drake/systems/trajectories/piecewise_polynomial_trajectory.h"
 
 // Includes for the planner.
 #include "drake/systems/plants/IKoptions.h"
@@ -40,20 +41,20 @@ using systems::Context;
 using systems::Demultiplexer;
 using systems::Diagram;
 using systems::DiagramBuilder;
+using systems::DrakeVisualizer;
 using systems::GravityCompensator;
 using systems::PidControlledSystem;
 using systems::RigidBodyPlant;
-using systems::RigidBodyTreeLcmPublisher;
 using systems::Simulator;
-using systems::TimeVaryingPolynomialSource;
+using systems::TrajectorySource;
 
 namespace examples {
 namespace kuka_iiwa_arm {
 namespace controlled_kuka {
 namespace {
 
-unique_ptr<PiecewisePolynomial<double>> MakePlan() {
-  RigidBodyTree tree(
+unique_ptr<PiecewisePolynomialTrajectory> MakePlan() {
+  RigidBodyTree<double> tree(
       drake::GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14.urdf",
       drake::systems::plants::joints::kFixed);
 
@@ -173,7 +174,8 @@ unique_ptr<PiecewisePolynomial<double>> MakePlan() {
     }
     times.push_back(t[i]);
   }
-  auto pp_traj = make_unique<PPType>(polys, times);
+  auto pp_traj = make_unique<PiecewisePolynomialTrajectory>(
+      PPType(polys, times));
   return pp_traj;
 }
 
@@ -188,7 +190,7 @@ class KukaDemo : public systems::Diagram<T> {
     this->set_name("KukaDemo");
 
     // Instantiates an Multibody Dynamics (MBD) model of the world.
-    auto rigid_body_tree = make_unique<RigidBodyTree>();
+    auto rigid_body_tree = make_unique<RigidBodyTree<T>>();
     drake::parsers::urdf::AddModelInstanceFromUrdfFile(
         drake::GetDrakePath() +
         "/examples/kuka_iiwa_arm/urdf/iiwa14_no_collision.urdf",
@@ -196,6 +198,7 @@ class KukaDemo : public systems::Diagram<T> {
         nullptr /* weld to frame */, rigid_body_tree.get());
 
     AddGround(rigid_body_tree.get());
+    VerifyIiwaTree(*rigid_body_tree);
 
     DiagramBuilder<T> builder;
 
@@ -231,11 +234,11 @@ class KukaDemo : public systems::Diagram<T> {
 
     // Creates a plan and wraps it into a source system.
     poly_trajectory_ = MakePlan();
-    desired_plan_ = builder.template AddSystem<TimeVaryingPolynomialSource<T>>(
+    desired_plan_ = builder.template AddSystem<TrajectorySource<T>>(
         *poly_trajectory_);
 
     // Creates and adds LCM publisher for visualization.
-    viz_publisher_ = builder.template AddSystem<RigidBodyTreeLcmPublisher>(
+    viz_publisher_ = builder.template AddSystem<DrakeVisualizer>(
         plant_->get_rigid_body_tree(), &lcm_);
 
     // Generates an error signal for the PID controller by subtracting the
@@ -284,9 +287,9 @@ class KukaDemo : public systems::Diagram<T> {
   PidControlledSystem<T>* controller_{nullptr};
   Demultiplexer<T>* rbp_state_demux_{nullptr};
   GravityCompensator<T>* gravity_compensator_{nullptr};
-  TimeVaryingPolynomialSource<T>* desired_plan_{nullptr};
-  std::unique_ptr<PiecewisePolynomial<T>> poly_trajectory_;
-  RigidBodyTreeLcmPublisher* viz_publisher_{nullptr};
+  TrajectorySource<T>* desired_plan_{nullptr};
+  std::unique_ptr<PiecewisePolynomialTrajectory> poly_trajectory_;
+  DrakeVisualizer* viz_publisher_{nullptr};
   drake::lcm::DrakeLcm lcm_;
 };
 

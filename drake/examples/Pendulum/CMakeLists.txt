@@ -1,21 +1,21 @@
 if(lcm_FOUND)
   drake_install_headers(Pendulum.h)
 
-  add_library_with_exports(LIB_NAME drakePendulumSystem
-    SOURCE_FILES pendulum_swing_up.cc pendulum_system.cc)
-  target_link_libraries(drakePendulumSystem drakeSystemFramework
+  add_library_with_exports(LIB_NAME drakePendulumPlant
+    SOURCE_FILES pendulum_swing_up.cc pendulum_plant.cc)
+  target_link_libraries(drakePendulumPlant drakeSystemFramework
     drakeDynamicConstraint
     drakeTrajectoryOptimization)
-  pods_install_libraries(drakePendulumSystem)
-  drake_install_headers(pendulum_system.h pendulum_swing_up.h)
+  pods_install_libraries(drakePendulumPlant)
+  drake_install_headers(pendulum_plant.h pendulum_swing_up.h)
   pods_install_pkg_config_file(drake-pendulum-system
-    LIBS -ldrakePendulumSystem
+    LIBS -ldrakePendulumPlant
     REQUIRES
     VERSION 0.0.1)
 
   add_executable(pendulum_run_dynamics pendulum_run_dynamics.cc)
   target_link_libraries(pendulum_run_dynamics
-    drakePendulumSystem
+    drakePendulumPlant
     drakeRigidBodyPlant
     drakeSystemAnalysis)
   drake_add_test(NAME pendulum_run_dynamics
@@ -23,7 +23,7 @@ if(lcm_FOUND)
 
   add_executable(pendulum_run_energy_shaping pendulum_run_energy_shaping.cc)
   target_link_libraries(pendulum_run_energy_shaping
-    drakePendulumSystem
+    drakePendulumPlant
     drakeRigidBodyPlant
     drakeSystemAnalysis)
   drake_add_test(NAME pendulum_run_energy_shaping
@@ -36,16 +36,12 @@ if(lcm_FOUND)
 
   add_executable(pendulum_run_swing_up pendulum_run_swing_up.cc)
   target_link_libraries(pendulum_run_swing_up
-    drakePendulumSystem
+    drakePendulumPlant
     drakeRigidBodyPlant
     drakeSystemControllers
     drakeSystemAnalysis)
-  # TODO(sam.creasey) There is currently no non-linear solver on Windows: see
-  # issues #2352, #2569.
-  drake_find_package(snopt_c CONFIG)
-  drake_find_package(NLopt CONFIG)
 
-  if(ipopt_FOUND OR NLopt_FOUND OR snopt_c_FOUND)
+  if(ipopt_FOUND OR NLopt_FOUND OR snopt_FOUND)
     drake_add_test(NAME pendulum_run_swing_up
       COMMAND pendulum_run_swing_up --non-realtime)
   endif()

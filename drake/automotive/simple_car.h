@@ -12,9 +12,6 @@ namespace automotive {
 /// SimpleCar -- model an idealized response to driving commands, neglecting
 /// all physics.
 ///
-/// This class uses Drake's `-inl.h` pattern.  When seeing linker errors from
-/// this class, please refer to http://drake.mit.edu/cxx_inl.html.
-///
 /// configuration:
 /// * see lcmt_SimpleCarConfig_t
 ///
@@ -39,11 +36,10 @@ namespace automotive {
 /// Instantiated templates for the following ScalarTypes are provided:
 /// - double
 /// - drake::TaylorVarXd
+/// - drake::symbolic::Expression
 ///
 /// They are already available to link against in libdrakeAutomotive.
 ///
-/// To use other unusual ScalarType substitutions,
-/// see http://drake.mit.edu/cxx_inl.html.
 /// @ingroup automotive_systems
 template <typename T>
 class SimpleCar : public systems::LeafSystem<T> {
