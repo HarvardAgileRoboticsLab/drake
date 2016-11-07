@@ -1,4 +1,5 @@
 #include <lcm/lcm-cpp.hpp>
+#include <memory>
 
 #include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
