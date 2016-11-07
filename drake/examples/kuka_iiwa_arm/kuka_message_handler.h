@@ -17,6 +17,7 @@ namespace kuka_iiwa_arm{
 class KukaMessageHandler {
   public:
     static const char* kLcmDarkCommandChannel;
+    static const char* kLcmCommandChannel;
     static const int kNumJoints;
     /** Constructor
      */
@@ -91,14 +92,14 @@ class KukaMessageHandler {
 
     /** Publishes a raw lcmt_iiwa_status_command
      */
-    void publish(lcmt_iiwa_command iiwa_command){
-      lcm_->publish(kLcmDarkCommandChannel, &iiwa_command);
+    void publish(lcmt_iiwa_command iiwa_command, const char* channel=kLcmCommandChannel){
+      lcm_->publish(channel, &iiwa_command);
     }
 
     /** Publishes positions and torques from Eigen vector objects
      * Converts Eigen::VectorXd to lcm objects and publishes them
      */
-    void publish(Eigen::VectorXd positions, Eigen::VectorXd torques){
+    void publish(Eigen::VectorXd positions, Eigen::VectorXd torques, const char* channel=kLcmCommandChannel){
       // TODO: check that the vectors are the right length and throw an exeption if they aren't
 
       lcmt_iiwa_command lcm_command = createCommand();
@@ -108,16 +109,21 @@ class KukaMessageHandler {
         lcm_command.joint_torque[i] = torques[i];
       }
 
-      publish(lcm_command);
+      publish(lcm_command, channel);
     }
 
     /** Publishes torques from an Eigen vector object
      * Converts Eigen::VectorXd to an lcm object and publishes it_interval
      * Sets positions to zero
      */
-    void publishTorques(Eigen::VectorXd torques){
+    void publishTorques(Eigen::VectorXd torques, const char* channel=kLcmCommandChannel){
       // TODO: check that the vectors are the right length and throw an exeption if they aren't
-      publish(Eigen::VectorXd::Zero(kNumJoints), torques);
+      publish(Eigen::VectorXd::Zero(kNumJoints), torques, channel);
+    }
+
+    void publishTorquesDark(Eigen::VectorXd torques){
+      // TODO: check that the vectors are the right length and throw an exeption if they aren't
+      publish(Eigen::VectorXd::Zero(kNumJoints), torques, kLcmDarkCommandChannel);
     }
 
   private:
@@ -148,6 +154,7 @@ class KukaMessageHandler {
 };
 
 const char* KukaMessageHandler::kLcmDarkCommandChannel = "IIWA_DARK_COMMAND";
+const char* KukaMessageHandler::kLcmCommandChannel = "IIWA_COMMAND";
 const int KukaMessageHandler::kNumJoints = 7;
 
 } // kuka_iiwa_arm

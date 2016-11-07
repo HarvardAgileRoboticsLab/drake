@@ -54,7 +54,7 @@ int main(int argc, const char* argv[]){
                       false); 
       
       // publish the state
-      handler.publishTorques(-1*torques);
+      handler.publishTorquesDark(-1*torques);
     }
   }
   printf("Timed out waiting for status\n");
