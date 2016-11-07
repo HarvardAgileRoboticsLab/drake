@@ -30,7 +30,7 @@ int main(int argc, const char* argv[]){
   // allocate a pointer to an LCM object and create the message handler
   KukaMessageHandler handler;
 
-  bool debug = true;
+  bool debug = false;
   if (!debug){// for debugging
     // wait for the first status to come in
     bool success = handler.waitForFirstMessage();
