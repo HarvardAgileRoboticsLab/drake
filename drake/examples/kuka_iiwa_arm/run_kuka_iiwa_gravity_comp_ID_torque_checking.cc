@@ -4,6 +4,7 @@
 
 #include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
+#include "drake/lcmt_polynomial.hpp" // temporarily abuse one lcm channel
 
 #include "drake/common/drake_assert.h"
 #include "drake/common/drake_path.h"
@@ -15,6 +16,15 @@
 #include "drake/systems/plants/constraint/RigidBodyConstraint.h"
 #include "drake/systems/plants/joints/floating_base_types.h"
 #include "drake/systems/trajectories/PiecewisePolynomial.h"
+#include "drake/systems/vector.h"
+
+// Added for inverted dynamics
+#include <gflags/gflags.h>
+#include "drake/common/text_logging_gflags.h"
+#include "drake/systems/System.h"
+#include "drake/systems/plants/KinematicsCache.h"
+#include "drake/systems/plants/RigidBodySystem.h"
+#include "drake/systems/gravity_compensated_system.h"
 #include "drake/systems/vector.h"
 
 namespace drake {
@@ -30,7 +40,7 @@ using Eigen::Vector3d;
 
 using drake::Vector1d;
 
-const char* kLcmCommandChannel = "IIWA_COMMAND";
+const char* kLcmParamChannel = "IIWA_PARAM";
 
 /// This is a really simple demo class to run a trajectory which is
 /// the output of an IK plan.  It lacks a lot of useful things, like a
@@ -38,13 +48,14 @@ const char* kLcmCommandChannel = "IIWA_COMMAND";
 /// trajectory onto the robot.  The paramaters @p nT and @p t are
 /// identical to their usage for inverseKinPointwise (@p nT is number
 /// of time samples and @p t is an array of times in seconds).
-class TrajectoryRunner {
+class InverseDynamics {
  public:
-  TrajectoryRunner(std::shared_ptr<lcm::LCM> lcm, int nT, const double* t,
+
+  InverseDynamics(RigidBodyTree* tree, std::shared_ptr<lcm::LCM> lcm, int nT, const double* t,
                    const Eigen::MatrixXd& traj)
-      : lcm_(lcm), nT_(nT), t_(t), traj_(traj) {
+      : tree_(tree), lcm_(lcm), nT_(nT), t_(t), traj_(traj) {
     lcm_->subscribe(IiwaStatus<double>::channel(),
-                    &TrajectoryRunner::HandleStatus, this);
+                    &InverseDynamics::HandleStatus, this);
     DRAKE_ASSERT(traj_.cols() == nT);
   }
 
@@ -94,14 +105,19 @@ class TrajectoryRunner {
     lcmt_iiwa_command iiwa_command;
     iiwa_command.num_joints = kNumJoints;
     iiwa_command.joint_position.resize(kNumJoints, 0.);
-    iiwa_command.num_torques = 0;
+    iiwa_command.num_torques = kNumJoints;
     iiwa_command.joint_torque.resize(kNumJoints, 0.);
 
-    while (!time_initialized ||
-           cur_time_ms < (start_time_ms + end_time_offset_ms)) {
+    lcmt_polynomial iiwa_param;
+    iiwa_param.num_coefficients = kNumJoints;
+    iiwa_param.coefficients.resize(kNumJoints, 0.);
+
+    while (true) {
       // The argument to handleTimeout is in msec, and should be
       // safely bigger than e.g. a 200Hz input rate.
       int handled  = lcm_->handleTimeout(10);
+      std::cerr << "handled: " << handled << std::endl;
+
       if (handled <= 0) {
         std::cerr << "Failed to receive LCM status." << std::endl;
         return;
@@ -118,25 +134,56 @@ class TrajectoryRunner {
       const auto desired_next = pp_traj.value(cur_traj_time_s);
 
       iiwa_command.timestamp = iiwa_status_.timestamp;
+      iiwa_param.timestamp = iiwa_status_.timestamp;
 
-      // This is totally arbitrary.  There's no good reason to
-      // implement this as a maximum delta to submit per tick.  What
-      // we actually need is something like a proper
-      // planner/interpolater which spreads the motion out over the
-      // entire duration from current_t to next_t, and commands the
-      // next position taking into account the velocity of the joints
-      // and the distance remaining.
-      const double max_joint_delta = 0.1;
+      const int kNumDof = 7; 
+
+      Eigen::VectorXd jointPosState(kNumDof); // 7DOF jonit position + 7DOF joint velocity
+      jointPosState.setZero();
+      Eigen::VectorXd jointVelState(kNumDof); // 7DOF jonit position + 7DOF joint velocity
+      jointVelState.setZero();
+      Eigen::VectorXd torque_ref(kNumDof);
+      torque_ref.setZero();
+
       for (int joint = 0; joint < kNumJoints; joint++) {
-        double joint_delta =
-            desired_next(joint) - iiwa_status_.joint_position_measured[joint];
-        joint_delta = std::max(-max_joint_delta,
-                               std::min(max_joint_delta, joint_delta));
-        iiwa_command.joint_position[joint] =
-            iiwa_status_.joint_position_measured[joint] + joint_delta;
+        jointPosState(joint) = iiwa_status_.joint_position_measured[joint];
+        jointVelState(joint) = iiwa_status_.joint_velocity_estimated[joint];
+      }
+      
+      KinematicsCache<double> cache = tree_->doKinematics(jointPosState, jointVelState);
+      const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
+      Eigen::VectorXd vd(kNumDof);
+      vd.setZero();
+
+      // The generalized gravity effort is computed by calling inverse dynamics
+      // with 0 external forces, 0 velocities and 0 accelerations.
+      // TODO(naveenoid): Update to use simpler API once issue #3114 is
+      // resolved.
+      Eigen::VectorXd G_comp = tree_->inverseDynamics(cache, no_external_wrenches, vd, false);
+      Eigen::VectorXd torque_command = torque_ref - G_comp; // u = B\G;  Hqdd + C + G = Bu
+
+      // -------->(For Safety) Set up iiwa position command<-------------
+      // Use the joint velocity estimation
+      for (int joint = 0; joint < kNumJoints; joint++) {
+        iiwa_command.joint_position[joint] = iiwa_status_.joint_position_measured[joint];// 
       }
 
-      lcm_->publish(kLcmCommandChannel, &iiwa_command);
+      // -------->Set up iiwa torque command<-------------
+      const double max_joint_torque_delta = 2; // ---> [value to be optimized]
+      Eigen::VectorXd max_joint_torque(7);
+      max_joint_torque << 2, 2, 4, 20, 6, 50, 10;  
+      for (int joint = 0; joint < kNumJoints; joint++) {
+        double joint_torque_delta =
+            torque_command(joint) - iiwa_status_.joint_torque_measured[joint];
+        joint_torque_delta = std::max(-max_joint_torque_delta,
+                               std::min(max_joint_torque_delta, joint_torque_delta));
+        iiwa_command.joint_torque[joint] = iiwa_status_.joint_torque_measured[joint] + joint_torque_delta;
+        iiwa_command.joint_torque[joint] = std::max(-max_joint_torque(joint),
+                               std::min(max_joint_torque(joint), iiwa_command.joint_torque[joint]));        
+        iiwa_param.coefficients[joint] = torque_command(joint);
+      }
+            
+      lcm_->publish(kLcmParamChannel, &iiwa_param);
     }
   }
 
@@ -147,12 +194,14 @@ class TrajectoryRunner {
   }
 
   static const int kNumJoints = 7;
+  RigidBodyTree* tree_;
   std::shared_ptr<lcm::LCM> lcm_;
   const int nT_;
   const double* t_;
   const Eigen::MatrixXd& traj_;
   lcmt_iiwa_status iiwa_status_;
 };
+
 
 int main(int argc, const char* argv[]) {
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
@@ -164,8 +213,11 @@ int main(int argc, const char* argv[]) {
   // Create a basic pointwise IK trajectory for moving the iiwa arm.
   // We start in the zero configuration (straight up).
 
+
+  // ---------> Now the planner still uses the same motion as kuka_ik_demo  -- Ye
+
   // TODO(sam.creasey) We should start planning with the robot's
-  // current position rather than assuming vertical.
+  // current position rather than assuming vertical. 
   VectorXd zero_conf = tree.getZeroConfiguration();
   VectorXd joint_lb = zero_conf - VectorXd::Constant(7, 0.01);
   VectorXd joint_ub = zero_conf + VectorXd::Constant(7, 0.01);
@@ -178,22 +230,22 @@ int main(int argc, const char* argv[]) {
   // Define an end effector constraint and make it active for the
   // timespan from 1 to 3 seconds.
   Vector3d pos_end;
-  pos_end << 0.65, 0.0, 0.425;
+  pos_end << 0.6, 0, 0.325;
   Vector3d pos_lb = pos_end - Vector3d::Constant(0.005);
   Vector3d pos_ub = pos_end + Vector3d::Constant(0.005);
   WorldPositionConstraint wpc(&tree, tree.FindBodyIndex("iiwa_link_ee"),
-                              Vector3d::Zero(), pos_lb, pos_ub, Vector2d(1, 5));//(1, 3)
+                              Vector3d::Zero(), pos_lb, pos_ub, Vector2d(1, 3));
 
   // After the end effector constraint is released, apply the straight
   // up configuration again.
-  PostureConstraint pc2(&tree, Vector2d(6, 10));//(4, 5.9)
+  PostureConstraint pc2(&tree, Vector2d(4, 5.9));
   pc2.setJointLimits(joint_idx, joint_lb, joint_ub);
 
   // Bring back the end effector constraint through second 9 of the
   // demo.
   WorldPositionConstraint wpc2(&tree, tree.FindBodyIndex("iiwa_link_ee"),
                                Vector3d::Zero(), pos_lb, pos_ub,
-                               Vector2d(12, 16));//(6, 9)
+                               Vector2d(6, 9));
 
   // For part of the remaining time, constrain the second joint while
   // preserving the end effector constraint.
@@ -204,12 +256,12 @@ int main(int argc, const char* argv[]) {
   Eigen::VectorXi joint_position_start_idx(1);
   joint_position_start_idx(0) = tree.FindChildBodyOfJoint("iiwa_joint_2")->
       get_position_start_index();
-  PostureConstraint pc3(&tree, Vector2d(12, 15)); //(6, 8)
+  PostureConstraint pc3(&tree, Vector2d(6, 8));
   pc3.setJointLimits(joint_position_start_idx, Vector1d(0.7), Vector1d(0.8));
 
 
   const int kNumTimesteps = 5;
-  double t[kNumTimesteps] = { 0.0, 3.0, 8.0, 14.0, 16.0 }; // changed
+  double t[kNumTimesteps] = { 0.0, 2.0, 5.0, 7.0, 9.0 };
   MatrixXd q0(tree.get_num_positions(), kNumTimesteps);
   for (int i = 0; i < kNumTimesteps; i++) {
     q0.col(i) = zero_conf;
@@ -244,7 +296,7 @@ int main(int argc, const char* argv[]) {
   }
 
   // Now run through the plan.
-  TrajectoryRunner runner(lcm, kNumTimesteps, t, q_sol);
+  InverseDynamics runner(&tree, lcm, kNumTimesteps, t, q_sol);
   runner.Run();
   return 0;
 }
