@@ -90,11 +90,15 @@ if(lcm_FOUND)
   target_link_libraries(kuka_ik_sine_demo drakeIK
       drakeTrajectories
       drakeRBM
+      drakeRBSystem
       drakeLCMSystem)
 
   add_executable(kuka_id_gravity_comp kuka_id_gravity_comp.cc)
   target_link_libraries(kuka_id_gravity_comp
+      drakeIK
+      drakeTrajectories
       drakeRBM
+      #drakeRBSystem
       drakeLCMSystem)
 
   add_executable(kuka_ik_torque_control kuka_ik_torque_control.cc)
@@ -102,7 +106,8 @@ if(lcm_FOUND)
       drakeIK
       drakeTrajectories
       drakeRBM
-      drakeLCMSystem)
+      drakeLCMSystem
+      drakeRBSystem)
 
   add_executable(run_kuka_iiwa_gravity_compensated_torque_control
       run_kuka_iiwa_gravity_compensated_torque_control.cc)
