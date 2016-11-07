@@ -55,12 +55,31 @@ int main(int argc, const char* argv[]){
   }
   Eigen::VectorXd accelerations = Eigen::VectorXd::Constant(kNumDOF,1,0.0);
   // initialize inverse dynamcis output
-  Eigen::VectorXd torques;
+  
   // setup kinematics cache 
   KinematicsCache<double> kinCache(tree.bodies);
   kinCache.initialize(position);
   tree.doKinematics(kinCache);
   RigidBodyTree<double>::BodyToWrenchMap no_external_wrenches;
+
+// setup the inverse kinematics
+  const int kNumTimesteps = 20;
+  const double dt = 0.1;
+  double t[kNumTimesteps];
+  for (int i=0; i < kNumTimesteps; i++){
+    t[i] = i*dt;
+  }
+  Eigen::MatrixXd q0(tree.get_num_positions(), kNumTimesteps);
+  Eigen::VectorXd qdot0 = Eigen::VectorXd::Zero(tree.get_num_velocities());
+  Eigen::MatrixXd q_sol(tree.get_num_positions(), kNumTimesteps);
+  Eigen::MatrixXd qdot_sol(tree.get_num_velocities(), kNumTimesteps);
+  Eigen::MatrixXd qddot_sol(tree.get_num_positions(), kNumTimesteps);
+  Eigen::MatrixXd torques(tree.get_num_positions(), kNumTimesteps);
+  for (int i = 0; i < kNumTimesteps; i++) {
+    q0.col(i) = position;
+  }
+  IKoptions ik_options(&tree);
+  ik_options.setMajorIterationsLimit(50000);
 
   // construct the constraints, starting at the current configuration
   std::vector<RigidBodyConstraint*> constraint_array;
@@ -79,76 +98,108 @@ int main(int argc, const char* argv[]){
 
   // the desired location
   Eigen::Vector3d pos_end;
-  if (argc <= 2){
+  if (argc <= 3){
     pos_end << 0.6, 0, 0.325;
   }else{
-    pos_end << atof(argv[0]), atof(argv[1]), atof(argv[2]); 
+    pos_end << atof(argv[1]), atof(argv[2]), atof(argv[3]); 
   }
+  printf("Navigating the end effector to %f, %f, %f\n",pos_end[0],pos_end[1],pos_end[2]);
   Eigen::Vector3d pos_lb = pos_end - world_eps;
   Eigen::Vector3d pos_ub = pos_end + world_eps;
   WorldPositionConstraint wpc(&tree, tree.FindBodyIndex("iiwa_link_ee"),
-                              Eigen::Vector3d::Zero(), pos_lb, pos_ub, Eigen::Vector2d(3.5, 4));
+                              Eigen::Vector3d::Zero(), pos_lb, pos_ub, Eigen::Vector2d(t[kNumTimesteps-1], t[kNumTimesteps-1]));
   constraint_array.push_back(&wpc);
 
-  // setup the inverse kinematics
-  const int kNumTimesteps = 20;
-  Eigen::VectorXd t = Eigen::VectorXd::LinSpaced(20,0,4);
-  Eigen::MatrixXd q0(tree.get_num_positions(), kNumTimesteps);
-  for (int i = 0; i < kNumTimesteps; i++) {
-    q0.col(i) = position;
-  }
-  IKoptions ik_options(&tree);
+  int info = 0;
+  std::vector<std::string> infeasible_constraint;
+  inverseKinTraj(&tree, kNumTimesteps, t, qdot0, q0, q0, constraint_array.size(),
+                constraint_array.data(), ik_options, &q_sol, &qdot_sol, &qddot_sol,
+                &info, &infeasible_constraint);
 
-  IKResults result = inverseKinTrajSimple(&tree, t, q0, q0, constraint_array, ik_options);
-  
-  bool info_good = true;
-  for (int i = 0; i < kNumTimesteps; ++i) {
-    printf("INFO[%d] = %-3d ", i, result.info[i]);
-    switch (result.info[i]) {
-      case 1:
-        printf("Solution Found\n"); break;
-      case 91:
-        printf("Invalid Input\n"); break;
-      case 13:
-        printf("Infeasible Constraint\n"); break;
-      default:// probably 100
-        printf("Unknown Error\n"); break;
-    }
-    if (result.info[i] != 1) {
-      info_good = false;
-    }
-  }
+  printf("INFO = %d ", info);
   printf("\n");
 
-
-  // Debugging
-  for (int i=0; i<result.q_sol.size(); i++){
-    std::cout << result.q_sol[i] << std::endl;
-  }
-
-  if (!info_good) {
+  if (info >= 10) {
     std::cerr << "Solution failed, not sending." << std::endl;
     return 1;
   }
 
-  // control loop
-  while(!handler.hasTimedOut()){
-    if (handler.handle()){// if a new state has come in
 
-      // get the current position
-      position = handler.getPosition();
-      // compute the inverse dynamics
-      kinCache = tree.doKinematics(position);
-      torques = tree.inverseDynamics(kinCache, 
-                      no_external_wrenches,
-                      accelerations,
-                      false); 
+  // use the inverse dynamics to compute the torques along the trajectory
+  Eigen::VectorXd pos, vel, acc;
+  for (int i=0; i<kNumTimesteps; i++){
+    pos = q_sol.col(i);
+    vel = qdot_sol.col(i);
+    acc = qddot_sol.col(i);
+
+    kinCache = tree.doKinematics(pos,vel);
+    
+    torques.col(i) = tree.inverseDynamics(kinCache,  
+                      no_external_wrenches, acc, false);
+
+    std::cout << torques.col(i).transpose() << std::endl;
+  }
+
+  // run the sequence
+  double t_init, t_now;
+  if (debug){
+    t_init = time(NULL);
+  }else{
+    t_init = handler.getTime();
+  }
+  t_now = t_init;
+  // control loop
+  Eigen::VectorXd pos_measured(tree.get_num_positions());
+  Eigen::VectorXd vel_measured(tree.get_num_positions());
+  Eigen::VectorXd input(tree.get_num_positions());
+  Eigen::VectorXd err(tree.get_num_positions());
+  Eigen::VectorXd G(tree.get_num_positions());
+  int t_idx=0;
+  while(!handler.hasTimedOut() || (debug && t_now-t_init < t[kNumTimesteps-1])){
+    if (handler.handle() || debug){// if a new state has come in 
+      if(debug){
+        t_now = time(NULL);
+      }else{
+        t_now = handler.getTime();
+      }
+      
+      t_idx = floor((t_now-t_init)/dt);
+
+      // torque from plan
+      input = torques.col(t_idx);
+
+      // implement proportional control
+      if (debug){
+        pos_measured = q_sol.col(t_idx);
+        vel_measured = qdot_sol.col(t_idx);
+      }else{
+        pos_measured = handler.getPosition();
+        vel_measured = handler.getVelocity();
+      }
+
+      err = pos_measured - q_sol.col(t_idx);
+
+      // compute the gravity compensation
+      kinCache = tree.doKinematics(pos_measured, vel_measured);
+      G = tree.inverseDynamics(kinCache, no_external_wrenches,
+                               accelerations, false);
+
+      input = input - 0.1*err + G; // TODO: make this tvlqr
       
       // publish the state
-      handler.publishTorques(-1*torques);
+      if (debug){
+        printf("publishing torque\n");
+        std::cout << input.transpose() << std::endl;
+      }else{
+        handler.publishTorques(-1*torques);
+      }
     }
   }
-  printf("Timed out waiting for status\n");
+
+  if(!handler.hasTimedOut()){
+    printf("Timed out waiting for status\n");
+    return 1;
+  }
 
   return 0;
 }

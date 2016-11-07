@@ -76,6 +76,18 @@ class KukaMessageHandler {
       return state;
     }
 
+    Eigen::VectorXd getVelocity(){
+      Eigen::VectorXd state(kNumJoints);
+      for (int i=0; i<kNumJoints; i++){
+        state[i] = iiwa_status_.joint_velocity_estimated[i];
+      }
+      return state;
+    }
+
+    double getTime(){
+      return iiwa_status_.timestamp*1e-6;
+    }
+
     /** Publishes a raw lcmt_iiwa_status_command
      */
     void publish(lcmt_iiwa_command iiwa_command){

@@ -107,7 +107,8 @@ if(lcm_FOUND)
       drakeTrajectories
       drakeRBM
       drakeLCMSystem
-      drakeRBSystem)
+      drakeRBSystem
+      drakeRigidBodyConstraint)
 
   add_executable(run_kuka_iiwa_gravity_compensated_torque_control
       run_kuka_iiwa_gravity_compensated_torque_control.cc)
