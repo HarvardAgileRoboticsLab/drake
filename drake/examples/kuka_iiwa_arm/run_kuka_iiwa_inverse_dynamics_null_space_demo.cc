@@ -168,10 +168,12 @@ class InverseDynamics {
 
       // Use PD controller as the joint acceleration
       Eigen::VectorXd vd(kNumDof);
-      const double kp = 100;//16;//
-      const double kd = 20;//8;//
+      Eigen::VectorXd Kp(kNumDof); // 7 joints
+      Kp << 169, 100, 100, 100, 169, 225, 100;
+      Eigen::VectorXd Kd(kNumDof); // 7 joints
+      Kd << 26, 20, 20, 20, 26, 30, 20; 
       for (int joint = 0; joint < kNumJoints; joint++) {
-        vd(joint) = kp*(jointPosState(joint) - iiwa_status_.joint_position_measured[joint]) + kd*(0 - iiwa_status_.joint_velocity_estimated[joint]); 
+        vd(joint) = Kp(joint)*(jointPosState(joint) - iiwa_status_.joint_position_measured[joint]) + Kd(joint)*(0 - iiwa_status_.joint_velocity_estimated[joint]); 
       }
       // note that, the gravity term in the inverse dynamics is set to zero.
       Eigen::VectorXd torque_command = torque_ref + tree_->inverseDynamics(cache, no_external_wrenches, vd, false);
@@ -190,7 +192,7 @@ class InverseDynamics {
       // -------->Set up iiwa torque command<-------------
       for (int joint = 0; joint < kNumJoints; joint++) {
         iiwa_command.joint_torque[joint] = torque_command(joint);
-        iiwa_param.coefficients[joint] = iiwa_command.joint_torque[joint];
+        iiwa_param.coefficients[joint] = desired_next(joint);//iiwa_command.joint_torque[joint];
       }
       
       lcm_->publish(kLcmCommandChannel, &iiwa_command);
@@ -212,7 +214,6 @@ class InverseDynamics {
   const Eigen::MatrixXd& traj_;
   lcmt_iiwa_status iiwa_status_;
 };
-
 
 int main(int argc, const char* argv[]) {
   std::shared_ptr<lcm::LCM> lcm = std::make_shared<lcm::LCM>();
@@ -236,7 +237,7 @@ int main(int argc, const char* argv[]) {
 
   // 2nd constraint, bend down by controlling Cartesian end-effector
   Vector3d pos_end;
-  pos_end << 0.65, -0.1, 0.225;
+  pos_end << 0.65, -0.2, 0.225;
   Vector3d pos_lb = pos_end - Vector3d::Constant(0.005);
   Vector3d pos_ub = pos_end + Vector3d::Constant(0.005);
   WorldPositionConstraint wpc(&tree, tree.FindBodyIndex("iiwa_link_ee"),
@@ -248,19 +249,19 @@ int main(int argc, const char* argv[]) {
   joint_ub(0) += 0.4;
   joint_lb(1) += 0.2;
   joint_ub(1) += 0.2;
-  joint_lb(3) -= 1.4;
-  joint_ub(3) -= 1.4;
+  joint_lb(3) -= 0.8;
+  joint_ub(3) -= 0.8;
 
   pc2.setJointLimits(joint_idx, joint_lb, joint_ub);
 
   // 4th constraint, horizontal motion by setting desired Cartesian position
   Vector3d pos_end2;
-  pos_end2 << 0.3, 0.45, 0.325;
+  pos_end2 << 0.0, 0.5, 0.425;
   Vector3d pos_lb2 = pos_end2 - Vector3d::Constant(0.005);
   Vector3d pos_ub2 = pos_end2 + Vector3d::Constant(0.005);
   WorldPositionConstraint wpc2(&tree, tree.FindBodyIndex("iiwa_link_ee"),
                                Vector3d::Zero(), pos_lb2, pos_ub2,
-                               Vector2d(12, 16));
+                               Vector2d(12, 26));
 
   // 5th constraint, constrain the second joint while
   // preserving the end effector constraint.
@@ -268,13 +269,15 @@ int main(int argc, const char* argv[]) {
   // Variable `joint_position_start_idx` below is a collection of offsets into
   // the state vector referring to the positions of the joints to be
   // constrained.
-  Eigen::VectorXi joint_position_start_idx(1);
+/*  Eigen::VectorXi joint_position_start_idx(1);
   joint_position_start_idx(0) = tree.FindChildBodyOfJoint("iiwa_joint_2")->
       get_position_start_index();
-  PostureConstraint pc3(&tree, Vector2d(12, 15));//
-  pc3.setJointLimits(joint_position_start_idx, Vector1d(0.7), Vector1d(0.8));
-
-  // 6th constraint, a horizontal rotation by setting desired (i.e., ref) joint position 
+  PostureConstraint pc3(&tree, Vector2d(10, 25));
+  //std::cout << "joint_position_start_idx: " <<  joint_position_start_idx << std::endl;
+  //printf("joint_position_start_idx.size: %d\n", joint_position_start_idx.size());
+  pc3.setJointLimits(joint_position_start_idx, Vector1d(0.4), Vector1d(0.5));
+*/
+/*  // 6th constraint, a horizontal rotation by setting desired (i.e., ref) joint position 
   Eigen::VectorXd new_conf = tree.getZeroConfiguration();
   new_conf << 1.43, 0.82, 0.39, -1.77, 0, 0.37, 0;
   Eigen::VectorXd joint_lb2 = new_conf - VectorXd::Constant(7, 0.01);
@@ -299,9 +302,9 @@ int main(int argc, const char* argv[]) {
   // 9th constraint, reset to zero configuration
   PostureConstraint pc6(&tree, Vector2d(39, 42));
   pc6.setJointLimits(joint_idx, joint_lb, joint_ub);
-
-  const int kNumTimesteps = 9;
-  double t[kNumTimesteps] = { 0.0, 3.0, 8.0, 14.0, 16.0, 23.0, 30.0, 36.0, 40.5}; 
+*/
+  const int kNumTimesteps = 5;
+  double t[kNumTimesteps] = { 0.0, 3.0, 8.0, 14.0, 26.0}; //{ 0.0, 3.0, 8.0, 14.0, 16.0, 23.0, 30.0, 36.0, 40.0}; 
   MatrixXd q0(tree.get_num_positions(), kNumTimesteps);
   for (int i = 0; i < kNumTimesteps; i++) {
     q0.col(i) = zero_conf;
@@ -311,12 +314,12 @@ int main(int argc, const char* argv[]) {
   constraint_array.push_back(&pc1);
   constraint_array.push_back(&wpc);
   constraint_array.push_back(&pc2);
-  constraint_array.push_back(&pc3);
+  //constraint_array.push_back(&pc3);
   constraint_array.push_back(&wpc2);
-  constraint_array.push_back(&pc4);
+  /*constraint_array.push_back(&pc4);
   constraint_array.push_back(&pc5);
   constraint_array.push_back(&wpc3);
-  constraint_array.push_back(&pc6);
+  constraint_array.push_back(&pc6);*/
   IKoptions ikoptions(&tree);
   int info[kNumTimesteps];
   MatrixXd q_sol(tree.get_num_positions(), kNumTimesteps);

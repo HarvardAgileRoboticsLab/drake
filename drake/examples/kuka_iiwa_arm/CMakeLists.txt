@@ -73,6 +73,13 @@ if(lcm_FOUND)
       drakeRBM
       drakeLCMSystem)
 
+  add_executable(run_kuka_iiwa_inverse_dynamics_null_space_demo
+      run_kuka_iiwa_inverse_dynamics_null_space_demo.cc)
+  target_link_libraries(run_kuka_iiwa_inverse_dynamics_null_space_demo drakeIK
+      drakeTrajectories
+      drakeRBM
+      drakeLCMSystem)
+
   add_executable(run_kuka_iiwa_gravity_comp_ID_torque_checking
       run_kuka_iiwa_gravity_comp_ID_torque_checking.cc)
   target_link_libraries(run_kuka_iiwa_gravity_comp_ID_torque_checking drakeIK
