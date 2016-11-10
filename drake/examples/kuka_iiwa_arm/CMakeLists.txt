@@ -87,6 +87,12 @@ if(lcm_FOUND)
       drakeRBM
       drakeLCMSystem)
 
+  add_executable(run_kuka_iiwa_torque_control_external_dist
+          run_kuka_iiwa_torque_control_external_dist.cc)
+  target_link_libraries(run_kuka_iiwa_torque_control_external_dist drakeIK
+          drakeTrajectories
+          drakeRBM
+          drakeLCMSystem)
 
   add_executable(run_kuka_iiwa_gravity_compensated_torque_control
       run_kuka_iiwa_gravity_compensated_torque_control.cc)
