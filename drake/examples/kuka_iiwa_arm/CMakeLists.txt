@@ -73,9 +73,9 @@ if(lcm_FOUND)
       drakeRBM
       drakeLCMSystem)
 
-  add_executable(run_kuka_iiwa_inverse_dynamics_null_space_demo
-      run_kuka_iiwa_inverse_dynamics_null_space_demo.cc)
-  target_link_libraries(run_kuka_iiwa_inverse_dynamics_null_space_demo drakeIK
+  add_executable(run_kuka_iiwa_ID_plus_PDposctrl_pick_and_place_demo
+      run_kuka_iiwa_ID_plus_PDposctrl_pick_and_place_demo.cc)
+  target_link_libraries(run_kuka_iiwa_ID_plus_PDposctrl_pick_and_place_demo drakeIK
       drakeTrajectories
       drakeRBM
       drakeLCMSystem)

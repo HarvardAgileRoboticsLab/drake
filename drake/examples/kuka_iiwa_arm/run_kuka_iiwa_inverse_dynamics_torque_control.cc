@@ -115,9 +115,8 @@ class InverseDynamics {
     iiwa_param.num_coefficients = kNumJoints;
     iiwa_param.coefficients.resize(kNumJoints, 0.);
 
-    while(true){
-    /*while (!time_initialized ||
-        cur_time_ms < (start_time_ms + end_time_offset_ms)) {*/
+    while (!time_initialized ||
+        cur_time_ms < (start_time_ms + end_time_offset_ms)) {
       // The argument to handleTimeout is in msec, and should be
       // safely bigger than e.g. a 200Hz input rate.
       int handled  = lcm_->handleTimeout(10);
@@ -127,11 +126,13 @@ class InverseDynamics {
         return;
       }
 
-      const int kNumDof = 7; 
+      const int kNumDof = 7;
+      Eigen::VectorXd jointPosState_Pre(kNumDof); // 7DOF previous joint position
 
       if (!time_initialized) {
         start_time_ms = iiwa_status_.timestamp;
         pre_time_ms = iiwa_status_.timestamp;
+        jointPosState_Pre.setZero();
         time_initialized = true;
       }
       cur_time_ms = iiwa_status_.timestamp;
@@ -154,7 +155,7 @@ class InverseDynamics {
       pre_time_ms = cur_time_ms;
       
       // Inverse Dynamics
-      Eigen::VectorXd jointPosState(kNumDof); // 7DOF jonit position
+      Eigen::VectorXd jointPosState(kNumDof); // 7DOF joint position
       jointPosState.setZero();
       Eigen::VectorXd jointVelState(kNumDof); // 7DOF joint velocity
       jointVelState.setZero();
@@ -166,16 +167,20 @@ class InverseDynamics {
       KinematicsCache<double> cache = tree_->doKinematics(jointPosState, jointVelState);
       const RigidBodyTree::BodyToWrenchMap<double> no_external_wrenches;
 
+      for (int joint = 0; joint < kNumJoints; joint++){
+        jointVelState(joint) = (desired_next(joint) - jointPosState_Pre(joint))/0.005;
+      }
+      jointPosState_Pre = desired_next;
+
       // Use PD controller as the joint acceleration
       Eigen::VectorXd vd(kNumDof);
-      const double kp = 100;//16;//
-      const double kd = 20;//8;//
+      const double kp = 100;
+      const double kd = 20;
       for (int joint = 0; joint < kNumJoints; joint++) {
-        vd(joint) = kp*(jointPosState(joint) - iiwa_status_.joint_position_measured[joint]) + kd*(0 - iiwa_status_.joint_velocity_estimated[joint]); 
+        vd(joint) = kp*(jointPosState(joint) - iiwa_status_.joint_position_measured[joint]) + kd*(0 - iiwa_status_.joint_velocity_estimated[joint]);
       }
       // note that, the gravity term in the inverse dynamics is set to zero.
       Eigen::VectorXd torque_command = torque_ref + tree_->inverseDynamics(cache, no_external_wrenches, vd, false);
-      torque_command = torque_command;
 
       // -------->(For Safety) Set up iiwa position command<-------------
       // Use the joint velocity estimation
@@ -300,8 +305,8 @@ int main(int argc, const char* argv[]) {
   PostureConstraint pc6(&tree, Vector2d(39, 42));
   pc6.setJointLimits(joint_idx, joint_lb, joint_ub);
 
-  const int kNumTimesteps = 9;
-  double t[kNumTimesteps] = { 0.0, 3.0, 8.0, 14.0, 16.0, 23.0, 30.0, 36.0, 40.5}; 
+  const int kNumTimesteps = 10;
+  double t[kNumTimesteps] = { 0.0, 3.0, 8.0, 14.0, 16.0, 23.0, 30.0, 36.0, 42, 45};
   MatrixXd q0(tree.get_num_positions(), kNumTimesteps);
   for (int i = 0; i < kNumTimesteps; i++) {
     q0.col(i) = zero_conf;
