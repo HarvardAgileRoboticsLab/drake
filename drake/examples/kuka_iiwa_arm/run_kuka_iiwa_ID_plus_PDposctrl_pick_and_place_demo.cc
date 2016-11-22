@@ -5,6 +5,7 @@
 #include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
 #include "drake/lcmt_polynomial.hpp" // temporarily abuse one lcm channel
+#include "drake/lcmt_whole_body_data.hpp"
 
 #include "drake/common/drake_assert.h"
 #include "drake/common/drake_path.h"
@@ -42,6 +43,7 @@ using drake::Vector1d;
 
 const char* kLcmCommandChannel = "IIWA_COMMAND";
 const char* kLcmParamChannel = "IIWA_PARAM";
+const char*  kLcmParam2Channel = "IIWA_PARAM2";
 
 /// This is a simple demo class to run a torque controller following a trajectory which is
 /// the output of an IK plan.  The paramaters @p nT and @p t are
@@ -73,19 +75,32 @@ class InverseDynamics {
       PPMatrix poly_matrix(traj_.rows(), 1);
       const auto traj_now = traj_.col(i);
 
+      Eigen::VectorXd vel_init(7);
+      Eigen::VectorXd vel_final(7);
+
       // Produce interpolating polynomials for each joint coordinate.
       if (i != nT_ - 1) {
         for (int row = 0; row < traj_.rows(); row++) {
-          Eigen::Vector2d coeffs(0, 0);
-          coeffs[0] = traj_now(row);
+          Eigen::Vector4d coeffs(0, 0, 0, 0);
+          double t_inc_ = t_[i + 1] - t_[i]; // time duration of each trajectory segment
 
-          // Sets the coefficients for a linear polynomial within the interval
-          // of time t_[i] < t < t_[i+1] so that the entire piecewise polynomial
-          // is continuous at the time instances t_[i].
-          // PiecewisePolynomial<T>::value(T t) clamps t to be between t_[0] and
-          // t_[nT-1] so that for t > t_[nT-1] the piecewise polynomial always
-          // evaluates to the last trajectory instance, traj_.col(nT_-1).
-          coeffs[1] = (traj_(row, i + 1) - coeffs[0]) / (t_[i + 1] - t_[i]);
+          // coarse estimation of desired velocities at the via points
+          if (i == 1){
+             vel_init(row) = 0;
+             vel_final(row) = (traj_(row, i + 2) - traj_(row, i))/(t_[i + 2] - t_[i]);
+          }else if (i == nT_ - 3){
+              vel_init(row) = (traj_(row, i + 1) - traj_(row, i - 1))/(t_[i + 1] - t_[i - 1]);
+              vel_final(row) = vel_init(row);
+          }else{
+             vel_init(row) = (traj_(row, i + 1) - traj_(row, i - 1))/(t_[i + 1] - t_[i - 1]);
+             vel_final(row) = (traj_(row, i + 2) - traj_(row, i))/(t_[i + 2] - t_[i]);
+          }
+          // coefficients of cubic splines
+          coeffs[0] = traj_now(row);
+          coeffs[1] = vel_init(row); // coefficient of the first-order term
+          coeffs[2] = 3.0*(traj_(row, i + 1) - coeffs[0])/pow(t_inc_, 2) - 2.0*vel_init(row)/t_inc_ - vel_final(row)/t_inc_; // coefficient of the second-order term
+          coeffs[3] = -2.0*(traj_(row, i + 1) - coeffs[0])/pow(t_inc_, 3) + (vel_init(row) + vel_final(row))/pow(t_inc_, 2); // coefficient of the third-order term
+
           poly_matrix(row) = PPPoly(coeffs);
         }
         polys.push_back(poly_matrix);
@@ -113,12 +128,18 @@ class InverseDynamics {
     iiwa_param.num_coefficients = kNumJoints;
     iiwa_param.coefficients.resize(kNumJoints, 0.);
 
+    lcmt_whole_body_data iiwa_param2;
+    iiwa_param2.num_positions = kNumJoints;
+    iiwa_param2.q_des.resize(kNumJoints, 0.);
+    iiwa_param2.num_constrained_dofs = 0;
+    iiwa_param2.constrained_dofs.resize(0, 0);
+
     const int kNumDof = 7;
     Eigen::VectorXd joint_position_desired_previous(kNumDof); // 7DOF joint position at previous time sample
     Eigen::VectorXd joint_velocity_desired_previous(kNumDof); // 7DOF joint position at previous time sample
 
     while (!time_initialized ||
-        cur_time_ms < (start_time_ms + end_time_offset_ms)) {
+      cur_time_ms < (start_time_ms + end_time_offset_ms)) {
       // The argument to handleTimeout is in msec, and should be
       // safely bigger than e.g. a 200Hz input rate.
       int handled  = lcm_->handleTimeout(10);
@@ -149,6 +170,7 @@ class InverseDynamics {
 
       iiwa_command.timestamp = iiwa_status_.timestamp;
       iiwa_param.timestamp = iiwa_status_.timestamp;
+      iiwa_param2.timestamp = iiwa_status_.timestamp;
 
       const double cur_time_inc_s =
           static_cast<double>(cur_time_ms - pre_time_ms) / 1e3;
@@ -175,23 +197,26 @@ class InverseDynamics {
           joint_accel_desired(joint) = (joint_velocity_desired(joint) - joint_velocity_desired_previous(joint))/0.005;
       }
         joint_position_desired_previous = desired_next;
-        std::cout << "desired_next: " << desired_next(0) << std::endl;
         joint_velocity_desired_previous = joint_velocity_desired;
 
       // Use PD controller as the joint acceleration
       Eigen::VectorXd vd(kNumDof);
       for (int joint = 0; joint < kNumJoints; joint++) {
-        vd(joint) = joint_accel_desired(joint);
+        vd(joint) = joint_accel_desired(joint);// velocity derivative
       }
       // note that, the gravity term in the inverse dynamics is set to zero.
       Eigen::VectorXd torque_command = torque_ref + tree_->inverseDynamics(cache, no_external_wrenches, vd, false);
 
+      for (int joint = 0; joint < kNumJoints; joint++) {
+          iiwa_param.coefficients[joint] = torque_command(joint);
+      }
+
       // pure PD position control
       Eigen::VectorXd position_ctrl_torque_command(kNumDof);
       Eigen::VectorXd Kp_pos_ctrl(kNumDof); // 7 joints
-      Kp_pos_ctrl << 81, 81, 81, 81, 81, 81, 81;
+      Kp_pos_ctrl << 225, 289, 144, 49, 324, 49, 49;
       Eigen::VectorXd Kd_pos_ctrl(kNumDof); // 7 joints
-      Kd_pos_ctrl << 18, 18, 18, 18, 18, 18, 18;
+      Kd_pos_ctrl << 30, 34, 24, 14, 36, 14, 14;
       // (TODOs) Add integral control (anti-windup)
       for (int joint = 0; joint < kNumJoints; joint++) {
         position_ctrl_torque_command(joint) = Kp_pos_ctrl(joint)*(joint_position_desired(joint)
@@ -216,11 +241,12 @@ class InverseDynamics {
         iiwa_command.joint_torque[joint] = torque_command(joint);
         iiwa_command.joint_torque[joint] = std::max(-150.0,
                                                    std::min(150.0, iiwa_command.joint_torque[joint]));
-        iiwa_param.coefficients[joint] = joint_position_desired(joint);
+        iiwa_param2.q_des[joint] = position_ctrl_torque_command(joint);
       }
       
       lcm_->publish(kLcmCommandChannel, &iiwa_command);
       lcm_->publish(kLcmParamChannel, &iiwa_param);
+      lcm_->publish(kLcmParam2Channel, &iiwa_param2);
     }
   }
 
