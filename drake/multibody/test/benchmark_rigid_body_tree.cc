@@ -10,6 +10,7 @@
 #include "drake/math/autodiff_gradient.h"
 #include "drake/math/gradient_util.h"
 #include "drake/multibody/rigid_body_tree.h"
+#include "drake/util/drakeGradientUtil.h"
 
 using Eigen::AutoDiffScalar;
 using Eigen::Dynamic;
