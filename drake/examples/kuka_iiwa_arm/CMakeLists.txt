@@ -36,6 +36,18 @@ if(lcm_FOUND)
         drake-shapes
         eigen3)
 
+#  add_library_with_exports(LIB_NAME drakeKukaIiwaLCMHandler SOURCE_FILES
+#      kuka_message_handler.cc)
+#  target_link_libraries(drakeKukaIiwaLCMHandler
+#      drakeLCMSystem
+#      drakeLCMTypes)
+#  pods_install_libraries(drakeKukaIiwaLCMHandler)
+  drake_install_headers(kuka_message_handler.h)
+#  pods_install_pkg_config_file(drake-kuka-iiwa-LCM-Handler
+#      LIBS -ldrakeKukaIiwaLCMHandler
+#      REQUIRES
+#      VERSION 0.0.1)
+
   add_executable(run_kuka_iiwa_arm_dynamics run_kuka_iiwa_arm_dynamics.cc)
   target_link_libraries(run_kuka_iiwa_arm_dynamics
       drakeKukaIiwaArmCommon
@@ -79,6 +91,18 @@ if(lcm_FOUND)
     drakeLCMSystem2)
   drake_add_test(
       NAME kuka_simulation COMMAND kuka_simulation -simulation_sec 0.1)
+
+  add_executable(kuka_ik_sine_demo kuka_ik_sine_demo.cc)
+  target_link_libraries(kuka_ik_sine_demo drakeIK
+      drakeTrajectories
+      drakeRBM
+      drakeLCMSystem)
+
+  add_executable(kuka_id_gravity_comp kuka_id_gravity_comp.cc)
+  target_link_libraries(kuka_id_gravity_comp
+      drakeTrajectories
+      drakeRBM
+      drakeLCMSystem)
 
   add_executable(run_kuka_iiwa_gravity_compensated_torque_control
       run_kuka_iiwa_gravity_compensated_torque_control.cc)
