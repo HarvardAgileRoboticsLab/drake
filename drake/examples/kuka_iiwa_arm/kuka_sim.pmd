@@ -10,8 +10,8 @@ group "0.sim" {
     host = "localhost";
   }
 
-  cmd "2.kuka_inverse_dynamics_runner" {
-    exec = "build/drake/examples/kuka_iiwa_arm/kuka_inverse_dynamics_runner";
+  cmd "2.kuka_control_runner" {
+    exec = "build/drake/examples/kuka_iiwa_arm/kuka_control_runner";
     host = "localhost";
   }
 

@@ -20,7 +20,7 @@
 #include "drake/multibody/rigid_body_tree.h"
 
 #include "drake/lcmt_iiwa_status.hpp"
-#include "drake/lcmt_iiwa_inverse_dynamics_input.hpp"
+#include "drake/lcmt_robot_controller_reference.hpp"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -35,8 +35,7 @@ namespace kuka_iiwa_arm {
 namespace {
 
 const char* const kLcmStatusChannel = "IIWA_STATUS";
-//const char* const kLcmCommandChannel = "IIWA_COMMAND";
-const char* const kLcmIDInputChannel = "IIWA_INVERSEDYNAMICS_INPUT";
+const char* const kLcmControlRefChannel = "CONTROLLER_REFERENCE";
 const char* const kLcmPlanChannel = "COMMITTED_ROBOT_PLAN";
 const int kNumJoints = 7;
 
@@ -64,11 +63,12 @@ class RobotPlanRunner {
     // Initialize the timestamp to an invalid number so we can detect the first message.
     iiwa_status_.utime = cur_time_us;
 
-    lcmt_iiwa_inverse_dynamics_input iiwa_inverse_dynamics_input;
-    iiwa_inverse_dynamics_input.num_joints = kNumJoints;
-    iiwa_inverse_dynamics_input.joint_position_desired.resize(kNumJoints, 0.);
-    iiwa_inverse_dynamics_input.joint_velocity_desired.resize(kNumJoints, 0.);
-    iiwa_inverse_dynamics_input.joint_accel_desired.resize(kNumJoints, 0.);
+    lcmt_robot_controller_reference robot_controller_reference;
+    robot_controller_reference.num_joints = kNumJoints;
+    robot_controller_reference.joint_position_desired.resize(kNumJoints, 0.);
+    robot_controller_reference.joint_velocity_desired.resize(kNumJoints, 0.);
+    robot_controller_reference.joint_accel_desired.resize(kNumJoints, 0.);
+    robot_controller_reference.u_nominal.resize(kNumJoints, 0.);
 
     while (true) {
       // Call lcm handle until at least one message is processed
@@ -89,15 +89,15 @@ class RobotPlanRunner {
         const auto qd_ref = qdtraj_->value(cur_traj_time_s);
         const auto qdd_ref = qddtraj_->value(cur_traj_time_s);
 
-        iiwa_inverse_dynamics_input.utime = iiwa_status_.utime;
+        robot_controller_reference.utime = iiwa_status_.utime;
 
         for(int joint = 0; joint < kNumJoints; joint++){
-          iiwa_inverse_dynamics_input.joint_position_desired[joint] = q_ref(joint);
-          iiwa_inverse_dynamics_input.joint_velocity_desired[joint] = qd_ref(joint);
-          iiwa_inverse_dynamics_input.joint_accel_desired[joint] = qdd_ref(joint);
+          robot_controller_reference.joint_position_desired[joint] = q_ref(joint);
+          robot_controller_reference.joint_velocity_desired[joint] = qd_ref(joint);
+          robot_controller_reference.joint_accel_desired[joint] = qdd_ref(joint);
         }
 
-        lcm_.publish(kLcmIDInputChannel, &iiwa_inverse_dynamics_input);
+        lcm_.publish(kLcmControlRefChannel, &robot_controller_reference);
       }
     }
   }
@@ -155,6 +155,7 @@ int do_main(int argc, const char* argv[]) {
 
   RobotPlanRunner runner(tree);
   runner.Run();
+
   return 0;
 }
 
@@ -162,7 +163,6 @@ int do_main(int argc, const char* argv[]) {
 }  // namespace kuka_iiwa_arm
 }  // namespace examples
 }  // namespace drake
-
 
 int main(int argc, const char* argv[]) {
   return drake::examples::kuka_iiwa_arm::do_main(argc, argv);
