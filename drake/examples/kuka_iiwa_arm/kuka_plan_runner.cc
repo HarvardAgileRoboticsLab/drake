@@ -17,11 +17,10 @@
 #include "drake/common/trajectories/piecewise_polynomial.h"
 #include "drake/common/trajectories/piecewise_polynomial_trajectory.h"
 #include "drake/examples/kuka_iiwa_arm/iiwa_common.h"
-#include "drake/examples/kuka_iiwa_arm/kuka_inverse_dynamics_controller.h"
 #include "drake/multibody/rigid_body_tree.h"
 
-#include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
+#include "drake/lcmt_robot_controller_reference.hpp"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -36,7 +35,7 @@ namespace kuka_iiwa_arm {
 namespace {
 
 const char* const kLcmStatusChannel = "IIWA_STATUS";
-const char* const kLcmCommandChannel = "IIWA_COMMAND";
+const char* const kLcmControlRefChannel = "CONTROLLER_REFERENCE";
 const char* const kLcmPlanChannel = "COMMITTED_ROBOT_PLAN";
 const int kNumJoints = 7;
 
@@ -64,11 +63,12 @@ class RobotPlanRunner {
     // Initialize the timestamp to an invalid number so we can detect the first message.
     iiwa_status_.utime = cur_time_us;
 
-    lcmt_iiwa_command iiwa_command;
-    iiwa_command.num_joints = kNumJoints;
-    iiwa_command.joint_position.resize(kNumJoints, 0.);
-    iiwa_command.num_torques = kNumJoints;
-    iiwa_command.joint_torque.resize(kNumJoints, 0.);
+    lcmt_robot_controller_reference robot_controller_reference;
+    robot_controller_reference.num_joints = kNumJoints;
+    robot_controller_reference.joint_position_desired.resize(kNumJoints, 0.);
+    robot_controller_reference.joint_velocity_desired.resize(kNumJoints, 0.);
+    robot_controller_reference.joint_accel_desired.resize(kNumJoints, 0.);
+    robot_controller_reference.u_nominal.resize(kNumJoints, 0.);
 
     while (true) {
       // Call lcm handle until at least one message is processed
@@ -83,46 +83,21 @@ class RobotPlanRunner {
           start_time_us = cur_time_us;
           cur_plan_number = plan_number_;
         }
-
-        const int kNumDof = 7;
         const double cur_traj_time_s = static_cast<double>(cur_time_us - start_time_us) / 1e6;
 
         const auto q_ref = qtraj_->value(cur_traj_time_s);
         const auto qd_ref = qdtraj_->value(cur_traj_time_s);
         const auto qdd_ref = qddtraj_->value(cur_traj_time_s);
 
-        iiwa_command.utime = iiwa_status_.utime;
+        robot_controller_reference.utime = iiwa_status_.utime;
 
-        // Inverse Dynamics
-        // Set desired joint position and velocity
-        Eigen::VectorXd joint_position_desired(kNumDof); 
-        joint_position_desired << q_ref;
-        Eigen::VectorXd joint_velocity_desired(kNumDof); 
-        joint_velocity_desired << qd_ref;
-        Eigen::VectorXd joint_accel_desired(kNumDof); 
-        joint_accel_desired << qdd_ref;
-        
-        double *qptr = &iiwa_status_.joint_position_measured[0];
-        Eigen::Map<Eigen::VectorXd> q(qptr, kNumDof);
-        double *qdptr = &iiwa_status_.joint_velocity_estimated[0];
-        Eigen::Map<Eigen::VectorXd> qd(qdptr, kNumDof);
-
-        // Computing inverse dynamics torque command
-        InverseDynamicsController* torqueCtrl_;
-        Eigen::VectorXd torque_command = torqueCtrl_->computeTorqueCmd(joint_position_desired, joint_velocity_desired, joint_accel_desired, q, qd, kNumDof, tree_);
-
-        // -------->(For Safety) Set up iiwa position command<----------
-        for (int joint = 0; joint < kNumJoints; joint++) {
-          iiwa_command.joint_position[joint] = q_ref(joint);
+        for(int joint = 0; joint < kNumJoints; joint++){
+          robot_controller_reference.joint_position_desired[joint] = q_ref(joint);
+          robot_controller_reference.joint_velocity_desired[joint] = qd_ref(joint);
+          robot_controller_reference.joint_accel_desired[joint] = qdd_ref(joint);
         }
 
-        // -------->Set up iiwa torque command<-------------
-        for (int joint = 0; joint < kNumJoints; joint++) {
-          iiwa_command.joint_torque[joint] = torque_command(joint);
-          iiwa_command.joint_torque[joint] = std::max(-150.0, std::min(150.0, iiwa_command.joint_torque[joint]));
-        }
-
-        lcm_.publish(kLcmCommandChannel, &iiwa_command);
+        lcm_.publish(kLcmControlRefChannel, &robot_controller_reference);
       }
     }
   }
@@ -180,6 +155,7 @@ int do_main(int argc, const char* argv[]) {
 
   RobotPlanRunner runner(tree);
   runner.Run();
+
   return 0;
 }
 

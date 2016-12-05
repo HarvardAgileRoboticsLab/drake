@@ -84,6 +84,15 @@ if(lcm_FOUND)
     robotlocomotion-lcmtypes-cpp
     lcm)
 
+  add_executable(kuka_control_runner kuka_control_runner.cc)
+  target_link_libraries(kuka_control_runner
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
   add_executable(kuka_simulation kuka_simulation.cc)
   target_link_libraries(kuka_simulation
     drakeKukaIiwaArmCommon

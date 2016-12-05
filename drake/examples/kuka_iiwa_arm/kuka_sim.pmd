@@ -10,7 +10,12 @@ group "0.sim" {
     host = "localhost";
   }
 
-  cmd "2.state_lcm_translator" {
+  cmd "2.kuka_control_runner" {
+    exec = "build/drake/examples/kuka_iiwa_arm/kuka_control_runner";
+    host = "localhost";
+  }
+
+  cmd "3.state_lcm_translator" {
     exec = "DRC_BASE=/none build/install/bin/directorPython drake/examples/kuka_iiwa_arm/kuka_iiwa_state_translator.py --director_config drake/examples/kuka_iiwa_arm/director_config.json";
     host = "localhost";
   }
