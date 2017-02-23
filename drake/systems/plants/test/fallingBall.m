@@ -1,19 +1,31 @@
 function fallingBall
 
-options.twoD = 'true';
-options.floating = 'true';
+%options.twoD = 'true';
+options.enable_fastqp = false;
+options.floating = true;
 %options.floating = 'quat';
 options.terrain = RigidBodyFlatTerrain();
 
 s = 'Ball.urdf';
-%p = TimeSteppingRigidBodyManipulator(s,.05,options);
-p = VariationalTimeSteppingRigidBodyManipulator(s,.2,options);
-x0 = [0;1;0;0;0;5];
-%x0 = [0;1;2;rpy2quat(randn(3,1));randn(6,1)];
-x0 = p.resolveConstraints(x0);
-v = p.constructVisualizer();
-v.drawWrapper(0,x0);
-xtraj = p.simulate([0 3],x0);
-v.playback(xtraj);
+
+%x0 = [0;1;0;0;0;10];
+x0 = [0;0;1;0;0;0;0;0;0;0;10;0];
+
+p1 = TimeSteppingRigidBodyManipulator(s,.1,options);
+x01 = p1.resolveConstraints(x0);
+v1 = p1.constructVisualizer();
+v1.drawWrapper(0,x0);
+tic
+xtraj1 = p1.simulate([0 3],x01);
+toc
+v1.playback(xtraj1);
+
+p2 = VariationalTimeSteppingRigidBodyManipulator(s,.1,options);
+x02 = p2.resolveConstraints(x0);
+tic
+xtraj2 = p2.simulate([0 3],x02);
+toc
+v2 = p2.constructVisualizer();
+v2.playback(xtraj2);
 
 end

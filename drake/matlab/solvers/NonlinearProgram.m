@@ -18,7 +18,7 @@ classdef NonlinearProgram
     Aeq_name % A cell of strings. Aeq_name{i} is the name of the i'th equality constraint
     cin_lb % A num_cin x 1 double vector. The lower bound of the nonlinear inequality constraint
     cin_ub % A num_cin x 1 double vector. The upper bound of the nonlinear inequality constraint
-    cin_name % A cell of num_cin x 1 strings. cin_name{i} is the name of the i'th nonlinear inequality constraint
+    cin_name % A cellobj.cache.x.data((Nq+1):end)obj.cache.x.data((Nq+1):end) of num_cin x 1 strings. cin_name{i} is the name of the i'th nonlinear inequality constraint
     ceq_name % A cell of num_ceq x 1 strings. ceq_name{i} is the name of the i'th nonlinear equality constraint
     x_lb % A num_vars x 1 double vector. The lower bound of the decision variables
     x_ub % A num_vars x 1 double vector. The upper bound of the decision variables

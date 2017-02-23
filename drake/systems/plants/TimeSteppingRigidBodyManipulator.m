@@ -14,7 +14,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     twoD=false
     position_control=false;
     LCP_cache;
-    enable_fastqp; % whether we use the active set LCP
+    enable_fastqp = 0; % whether we use the active set LCP
     lcmgl_contact_forces_scale = 0;  % <=0 implies no lcmgl
     z_inactive_guess_tol = .01;
     multiple_contacts = false;
@@ -58,16 +58,16 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         obj.multiple_contacts = options.multiple_contacts;
       end
 
-      if ~isfield(options,'enable_fastqp')
-        obj.enable_fastqp = checkDependency('fastqp');
-      else
-        typecheck(options.enable_fastqp,'logical');
-        obj.enable_fastqp = options.enable_fastqp;
-        if obj.enable_fastqp && ~checkDependency('fastqp')
-          warning('Drake:TimeSteppingRigidBodyManipulator:MissingDependency','You seem to be missing fastQP. Disabling active-set LCP update.')
-          obj.enable_fastqp = false;
-        end
-      end
+%       if ~isfield(options,'enable_fastqp')
+%         obj.enable_fastqp = checkDependency('fastqp');
+%       else
+%         typecheck(options.enable_fastqp,'logical');
+%         obj.enable_fastqp = options.enable_fastqp;
+%         if obj.enable_fastqp && ~checkDependency('fastqp')
+%           warning('Drake:TimeSteppingRigidBodyManipulator:MissingDependency','You seem to be missing fastQP. Disabling active-set LCP update.')
+%           obj.enable_fastqp = false;
+%         end
+%       end
 
       if isfield(options,'z_inactive_guess_tol')
         % you might consider setting this if the system consistently
@@ -285,10 +285,10 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     end
 
     function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u)
-      if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
-        [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
-        return;
-      end
+%       if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
+%         [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
+%         return;
+%       end
       
 %       global active_set_fail_count
       % do LCP time-stepping
@@ -419,7 +419,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
           end
           if ~isempty(phiC)
               if isempty(possible_contact_indices)
-                possible_contact_indices = (phiC+h*n*qd) < obj.z_inactive_guess_tol;
+                possible_contact_indices = ones(size(phiC)); %(phiC+h*n*qd) < obj.z_inactive_guess_tol;
               end
 
               nC = sum(possible_contact_indices);

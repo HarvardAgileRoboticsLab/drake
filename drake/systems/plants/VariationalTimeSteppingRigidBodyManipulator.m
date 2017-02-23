@@ -24,7 +24,7 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     integrator
     twoD=false
     multiple_contacts = false;
-    Nd = 2;
+    Nd = 4;
   end
   
   properties (Constant)
@@ -71,6 +71,10 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
           obj.integrator = VariationalTimeSteppingRigidBodyManipulator.SIMPSON;
       end
 
+      if obj.twoD
+          obj.Nd = 2;
+      end
+      
       obj.timestep = timestep;
       
       obj.cache_x = SharedDataHandle(0);
@@ -199,9 +203,16 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         end
         
         %Solve NLP
-        fmincon_opts = optimoptions('fmincon','Algorithm','sqp','Display','off','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'OptimalityTolerance',1e-8,'ConstraintTolerance',1e-8);
+        fmincon_opts = optimoptions('fmincon','Algorithm','sqp','Display','off','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'OptimalityTolerance',1e-6,'ConstraintTolerance',1e-6);
         zopt = fmincon(@(z)SimpsonObjFun(obj,q1,z), zguess, [], [], [], [], [], [], @(z)SimpsonConFun(obj,p1,q1,z), fmincon_opts);
-        
+
+%         Nz = 2*Nq+2+2*obj.Nd;
+%         prog = NonlinearProgram(Nz);
+%         prog = prog.addCost(FunctionHandleObjective(Nz,@(z)SimpsonObjFun(obj,q1,z),1));
+%         prog = prog.addConstraint(FunctionHandleConstraint(zeros(2*Nq,1),zeros(2*Nq,1),Nz,@(z)SimpsonEqCon(obj,p1,q1,z),1));
+%         prog = prog.addConstraint(FunctionHandleConstraint(zeros(40,1),inf*ones(40,1),Nz,@(z)SimpsonIneqCon(obj,q1,z),1));
+%         [zopt,objval,exitflag,infeasible_constraint_name] = prog.solve(zguess);
+
         %update state
         q2 = zopt(1:Nq);
         q3 = zopt(Nq+(1:Nq));
@@ -319,7 +330,7 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         dv3 = [(-4/h)*eye(Nq), (3/h)*eye(Nq)];
         
         p = [phi2; phi3; c1; b1; c2; b2; %height + forces have to be positive
-            -phi3*[c1; b1; c2; b2]; %contact forces can only if in contact at end of time step
+            -phi3*[c1; b1; c2; b2]; %contact forces can only act if in contact at end of time step
             -(n3'*v3)*[c1; b1; c2; b2]; %contact forces can only act if normal velocity component <= 0 at end of time step
              mu*c1-b1; mu*c2-b2]; %friction cone
           
@@ -345,11 +356,21 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         v2 = (q3 - q1)/h;
         v3 = (q1 - 4*q2 + 3*q3)/h;
         
-        r = [p1 + (h/6)*obj.D1L(q1,v1) - (1/2)*obj.D2L(q1,v1) - (2/3)*obj.D2L(q2,v2) + (1/6)*obj.D2L(q3,v3);
-             (2/3)*obj.D2L(q1,v1) + (2*h/3)*obj.D1L(q2,v2) - (2/3)*obj.D2L(q3,v3)];
+        [d1L_1, d2L_1, d1d1L_1, d1d2L_1, d2d2L_1] = obj.SimpsonLDerivs(q1,v1);
+        [d1L_2, d2L_2, d1d1L_2, d1d2L_2, d2d2L_2] = obj.SimpsonLDerivs(q2,v2);
+        [d1L_3, d2L_3, d1d1L_3, d1d2L_3, d2d2L_3] = obj.SimpsonLDerivs(q3,v3);
         
-        dr = [(2/3)*obj.D1D2L(q1,v1) - (2/h)*obj.D2D2L(q1,v1) - (2/3)*obj.D1D2L(q2,v2) - (2/(3*h))*obj.D2D2L(q3,v3), -(1/6)*obj.D1D2L(q1,v1) + (1/(2*h))*obj.D2D2L(q1,v1) - (2/(3*h))*obj.D2D2L(q2,v2) + (1/6)*obj.D1D2L(q3,v3) + (1/(2*h))*obj.D2D2L(q3,v3);
-              (8/(3*h))*obj.D2D2L(q1,v1) + (2*h/3)*obj.D1D1L(q2,v2) + (8/(3*h))*obj.D2D2L(q3,v3), -(2/(3*h))*obj.D2D2L(q1,v1) + (2/3)*obj.D1D2L(q2,v2) - (2/3)*obj.D1D2L(q3,v3) - (2/h)*obj.D2D2L(q3,v3)];
+        r = [p1 + (h/6)*d1L_1 - (1/2)*d2L_1 - (2/3)*d2L_2 + (1/6)*d2L_3;
+             (2/3)*d2L_1 + (2*h/3)*d1L_2 - (2/3)*d2L_3];
+        
+%         r2 = [p1 + (h/6)*obj.D1L(q1,v1) - (1/2)*obj.D2L(q1,v1) - (2/3)*obj.D2L(q2,v2) + (1/6)*obj.D2L(q3,v3);
+%              (2/3)*obj.D2L(q1,v1) + (2*h/3)*obj.D1L(q2,v2) - (2/3)*obj.D2L(q3,v3)];
+          
+        dr = [(2/3)*d1d2L_1 - (2/h)*d2d2L_1 - (2/3)*d1d2L_2 - (2/(3*h))*d2d2L_3, -(1/6)*d1d2L_1 + (1/(2*h))*d2d2L_1 - (2/(3*h))*d2d2L_2 + (1/6)*d1d2L_3 + (1/(2*h))*d2d2L_3;
+              (8/(3*h))*d2d2L_1 + (2*h/3)*d1d1L_2 + (8/(3*h))*d2d2L_3, -(2/(3*h))*d2d2L_1 + (2/3)*d1d2L_2 - (2/3)*d1d2L_3 - (2/h)*d2d2L_3];
+%           
+%         dr2 = [(2/3)*obj.D1D2L(q1,v1) - (2/h)*obj.D2D2L(q1,v1) - (2/3)*obj.D1D2L(q2,v2) - (2/(3*h))*obj.D2D2L(q3,v3), -(1/6)*obj.D1D2L(q1,v1) + (1/(2*h))*obj.D2D2L(q1,v1) - (2/(3*h))*obj.D2D2L(q2,v2) + (1/6)*obj.D1D2L(q3,v3) + (1/(2*h))*obj.D2D2L(q3,v3);
+%               (8/(3*h))*obj.D2D2L(q1,v1) + (2*h/3)*obj.D1D1L(q2,v2) + (8/(3*h))*obj.D2D2L(q3,v3), -(2/(3*h))*obj.D2D2L(q1,v1) + (2/3)*obj.D1D2L(q2,v2) - (2/3)*obj.D1D2L(q3,v3) - (2/h)*obj.D2D2L(q3,v3)];
     end
     
     function p = DLT(obj, q1, q2, q3)
@@ -411,6 +432,27 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         d2L = M;
     end
     
+    function [d1L, d2L, d1d1L, d1d2L, d2d2L] = SimpsonLDerivs(obj,q,v)
+        Nq = length(q);
+        Nv = length(v);
+        
+        [M,Cg,~,dM,dCg] = manipulatorDynamics(obj.manip, q, v);
+        [~,G,~,~,dG] = manipulatorDynamics(obj.manip, q, zeros(size(v)));
+        
+        Cv = Cg - G;
+        d1L = 0.5*Cv - G;
+        d2L = M*v;
+        
+        dCgdq = dCg(:,1:Nq);
+        dGdq = dG(:,1:Nq);
+        d1d1L = 0.5*(dCgdq - dGdq) - dGdq;
+        
+        dM = reshape(dM,Nq*Nq,Nq+Nv);
+        dMdq = dM(:,1:Nq);
+        d1d2L = reshape(dMdq*v,Nq,Nq); %this is just the matrix C(q,qd)
+        
+        d2d2L = M;
+    end
     
     function obj = addSensor(obj,sensor)
       if isa(sensor,'RigidBodySensor')
