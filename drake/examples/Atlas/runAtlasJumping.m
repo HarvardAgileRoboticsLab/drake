@@ -15,7 +15,7 @@ warning('off','Drake:RigidBodyManipulator:UnsupportedJointLimits')
 warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits')
 
 options.floating = true;
-options.dt = 0.001;
+options.dt = 0.005;
 options.ignore_effort_limits = false;
 r = Atlas('urdf/atlas_minimal_contact.urdf',options);
 r = r.removeCollisionGroupsExcept({'heel','toe'});

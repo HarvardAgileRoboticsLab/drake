@@ -1,18 +1,18 @@
 function fallingBrickLCP
 
-options.floating = 'quat';
-options.
+%options.floating = 'quat';
+options.floating = true;
 options.terrain = RigidBodyFlatTerrain();
-% options.ignore_self_collisions = true;
-% options.use_bullet = false;
-%s = 'FallingBrickContactPoints.urdf';
-s = 'Ball.urdf';
+%options.ignore_self_collisions = true;
+options.use_bullet = false;
+s = 'FallingBrickContactPoints.urdf';
 % s = 'FallingBrickBetterCollisionGeometry.urdf';
-p = TimeSteppingRigidBodyManipulator(s,.01,options);
+%p = TimeSteppingRigidBodyManipulator(s,.01,options);
+p = VariationalTimeSteppingRigidBodyManipulator(s,.01,options);
 %p = TimeSteppingRigidBodyManipulator(s,.01);
 %p = p.addRobotFromURDF(s,[],[],options);
-x0 = [0;1;2;rpy2quat(randn(3,1));randn(6,1)];
-%x0 = [0;1;2;rpy2quat(randn(3,1));2;1;2;rpy2quat(randn(3,1));randn(12,1)];
+%x0 = [0;1;2;rpy2quat(randn(3,1));randn(6,1)];
+x0 = [0;1;2;rpy2quat(randn(3,1));2;1;2;rpy2quat(randn(3,1));randn(12,1)];
 x0 = p.resolveConstraints(x0);
 
 if 0 

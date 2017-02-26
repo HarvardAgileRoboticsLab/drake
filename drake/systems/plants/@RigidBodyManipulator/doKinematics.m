@@ -39,7 +39,8 @@ function kinsol = doKinematics(model, q, v, options, qd_old)
 % This method signature is deprecated, please transition to using the
 % options struct. Using the old signature is supported for now.
 
-checkDirty(model);
+%Zac messed with this...
+%checkDirty(model);
 
 % method signature transition
 if nargin > 3

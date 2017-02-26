@@ -17,6 +17,23 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     cache_q1
     cache_q2
     cache_q3
+    
+    cache_Nn
+    cache_Nd
+    cache_n1
+    cache_D1
+    cache_kinq2
+    cache_phi2
+    cache_n2
+    cache_D2
+    cache_kinq3
+    cache_phi3
+    cache_n3
+    cache_D3
+    
+    cache_Mq3
+    cache_M3
+    cache_C3
   end
 
   properties (SetAccess=protected)
@@ -24,7 +41,6 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     integrator
     twoD=false
     multiple_contacts = false;
-    Nd = 4;
   end
   
   properties (Constant)
@@ -82,6 +98,21 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
       obj.cache_q1 = SharedDataHandle(0);
       obj.cache_q2 = SharedDataHandle(0);
       obj.cache_q3 = SharedDataHandle(0);
+      obj.cache_Nn = SharedDataHandle(0);
+      obj.cache_Nd = SharedDataHandle(0);
+      obj.cache_n1 = SharedDataHandle(0);
+      obj.cache_D1 = SharedDataHandle(0);
+      obj.cache_kinq2 = SharedDataHandle(0);
+      obj.cache_phi2 = SharedDataHandle(0);
+      obj.cache_n2 = SharedDataHandle(0);
+      obj.cache_D2 = SharedDataHandle(0);
+      obj.cache_kinq3 = SharedDataHandle(0);
+      obj.cache_phi3 = SharedDataHandle(0);
+      obj.cache_n3 = SharedDataHandle(0);
+      obj.cache_D3 = SharedDataHandle(0);
+      obj.cache_Mq3 = SharedDataHandle(0);
+      obj.cache_M3 = SharedDataHandle(0);
+      obj.cache_C3 = SharedDataHandle(0);
 
       obj = setSampleTime(obj,[timestep;0]);
 
@@ -183,23 +214,49 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         
         h = obj.timestep;
         Nq = obj.manip.num_positions;
-        Nd = obj.Nd;
         
-        %vToqdot = obj.manip.vToqdot(kinsol); %not sure what this is for yet...
-        zguess = zeros(2*Nq+2+2*Nd,1);
         if (length(obj.cache_x.data) == length(x)) && all(obj.cache_x.data == x)
             %we've been here before...
             q1 = x(1:Nq);
             v1 = obj.cache_x.data((Nq+1):end);
             p1 = obj.DLT(obj.cache_q1.data,obj.cache_q2.data,obj.cache_q3.data);
-            zguess = [q1+(h/2)*v1; q1+h*v1; obj.cache_f.data];
+            
+            kin1 = obj.manip.doKinematics(q1);
+            [phi1,~,~,~,~,~,~,~,n1,D1] = obj.manip.contactConstraints(kin1, obj.multiple_contacts);
+            n1 = n1';
+            D1 = cell2mat(D1)';
+            
+            obj.cache_n1.data = n1;
+            obj.cache_D1.data = D1;
+            
+            Nn = size(n1,2);
+            Nd = size(D1,2);
+            if obj.cache_Nd.data == Nd
+                zguess = [q1+(h/2)*v1; q1+h*v1; obj.cache_f.data];
+            else
+                obj.cache_Nn.data = Nn;
+                obj.cache_Nd.data = Nd;
+                zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nn+2*Nd,1)];
+            end
         else
             %Set up intitial conditions
             q1 = x(1:Nq);
             v1 = x((Nq+1):end);
             M = manipulatorDynamics(obj.manip, q1, v1);
             p1 = M*v1;
-            zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2+2*Nd,1)];
+            
+            kin1 = obj.manip.doKinematics(q1);
+            [phi1,~,~,~,~,~,~,~,n1,D1] = obj.manip.contactConstraints(kin1, obj.multiple_contacts);
+            n1 = n1';
+            D1 = cell2mat(D1)';
+            Nn = size(n1,2);
+            Nd = size(D1,2);
+            obj.cache_Nn.data = Nn;
+            obj.cache_Nd.data = Nd;
+            obj.cache_n1.data = n1;
+            obj.cache_D1.data = D1;
+            
+            zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nn+2*Nd,1)];
         end
         
         %Solve NLP
@@ -245,8 +302,9 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     function [e, de] = SimpsonObjFun(obj, q1, z)
         %Minimize kinetic energy at end of time step
         Nq = length(q1);
-        Nd = obj.Nd;
-        Nx = length(z)-(2+2*Nd);
+        Nn = obj.cache_Nn.data;
+        Nd = obj.cache_Nd.data;
+        Nx = length(z)-(2*Nn+2*Nd);
         
         h = obj.timestep;
         q2 = z(1:Nq);
@@ -255,13 +313,22 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         v3 = (q1 - 4*q2 + 3*q3)/h;
         dv3 = [(-4/h)*eye(Nq), (3/h)*eye(Nq)];
         
-        [M,~,~,dM] = manipulatorDynamics(obj.manip, q3, v3);
-        dM = reshape(dM,Nq*Nq,Nx);
-        dMdq = dM(:,1:Nq);
-        C5 = reshape(dMdq*v3,Nq,Nq); %this is just the matrix C(q,qd)
+        if (length(obj.cache_Mq3.data) == length(q3)) && all(obj.cache_Mq3.data == q3)
+            %we've been here before...
+            M3 = obj.cache_M3.data;
+            C3 = obj.cache_C3.data;
+        else
+            [M3,~,~,dM] = manipulatorDynamics(obj.manip, q3, v3);
+            dM = reshape(dM,Nq*Nq,Nx);
+            dMdq = dM(:,1:Nq);
+            C3 = reshape(dMdq*v3,Nq,Nq); %this is just the matrix C(q,qd)
+            obj.cache_Mq3.data = q3;
+            obj.cache_M3.data = M3;
+            obj.cache_C3.data = C3;
+        end
         
-        e = 0.5*v3'*M*v3;
-        de = [v3'*M*dv3 + [zeros(1,Nq), 0.5*v3'*C5], zeros(1, 2+2*Nd)];
+        e = 0.5*v3'*M3*v3;
+        de = [v3'*M3*dv3 + [zeros(1,Nq), 0.5*v3'*C3], zeros(1, 2*Nn+2*Nd)];
     end
     
     function [c, ceq, dc, dceq] = SimpsonConFun(obj, p1, q1, z)
@@ -275,72 +342,117 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     
     function [r, dr] = SimpsonEqCon(obj, p1, q1, z)
         Nq = length(q1);
-        Nd = obj.Nd;
+        Nn = obj.cache_Nn.data;
+        Nd = obj.cache_Nd.data;
         h = obj.timestep;
         q2 = z(1:Nq);
         q3 = z(Nq+(1:Nq));
         
         %Contact force coefficients
-        c1 = z(2*Nq+1);
-        b1 = z(2*Nq+1+(1:Nd));
-        c2 = z(2*Nq+1+Nd+1);
-        b2 = z(2*Nq+1+Nd+1+(1:Nd));
+        c1 = z(2*Nq+(1:Nn));
+        b1 = z(2*Nq+Nn+(1:Nd));
+        c2 = z(2*Nq+Nn+Nd+(1:Nn));
+        b2 = z(2*Nq+2*Nn+Nd+(1:Nd));
         
         [r, dr] = SimpsonDEL(obj,p1,q1,q2,q3);
         
-        %Add in contact forces
-        kin1 = obj.manip.doKinematics(q1);
-        [~,~,~,~,~,~,~,~,n1,D1] = obj.manip.contactConstraints(kin1, obj.multiple_contacts);
-        n1 = n1';
-        D1 = cell2mat(D1)';
-        kin2 = obj.manip.doKinematics(q2);
-        [~,~,~,~,~,~,~,~,n2,D2] = obj.manip.contactConstraints(kin2, obj.multiple_contacts);
-        n2 = n2';
-        D2 = cell2mat(D2)';
+        %Get contact basis
+        n1 = obj.cache_n1.data;
+        D1 = obj.cache_D1.data;
+        if (length(obj.cache_kinq2.data) == length(q2)) && all(obj.cache_kinq2.data == q2)
+            %we've been here before...
+            n2 = obj.cache_n2.data;
+            D2 = obj.cache_D2.data;
+        else
+            kin2 = obj.manip.doKinematics(q2);
+            [phi2,~,~,~,~,~,~,~,n2,D2] = obj.manip.contactConstraints(kin2, obj.multiple_contacts);
+            n2 = n2';
+            D2 = cell2mat(D2)';
+            obj.cache_kinq2.data = q2;
+            obj.cache_phi2.data = phi2;
+            obj.cache_n2.data = n2;
+            obj.cache_D2.data = D2;
+        end
         
+        %Add in contact forces
         r = r + [(h/3)*(n1*c1 + D1*b1); (2*h/3)*(n2*c2 + D2*b2)];
-        dr = [dr, [(h/3)*n1, (h/3)*D1, zeros(Nq,1+Nd); zeros(Nq,1+Nd), (2*h/3)*n2, (2*h/3)*D2]];
+        dr = [dr, [(h/3)*n1, (h/3)*D1, zeros(Nq,Nn+Nd); zeros(Nq,Nn+Nd), (2*h/3)*n2, (2*h/3)*D2]];
     end
     
     function [p, dp] = SimpsonIneqCon(obj, q1, z)
+        mu = 1; %This is currently hard coded in Drake...
+        
         Nq = length(q1);
-        Nd = obj.Nd;
+        Nn = obj.cache_Nn.data;
+        Nd = obj.cache_Nd.data;
         h = obj.timestep;
         q2 = z(1:Nq);
         q3 = z(Nq+(1:Nq));
         
         %Contact force coefficients
-        c1 = z(2*Nq+1);
-        b1 = z(2*Nq+1+(1:Nd));
-        c2 = z(2*Nq+1+Nd+1);
-        b2 = z(2*Nq+1+Nd+1+(1:Nd));
+        c1 = z(2*Nq+(1:Nn));
+        b1 = z(2*Nq+Nn+(1:Nd));
+        c2 = z(2*Nq+Nn+Nd+(1:Nn));
+        b2 = z(2*Nq+2*Nn+Nd+(1:Nd));
         
-        %Contact force basis vectors
-        kin2 = obj.manip.doKinematics(q2);
-        [phi2,~,~,~,~,~,~,mu,n2,D2] = obj.manip.contactConstraints(kin2, obj.multiple_contacts);
-        n2 = n2';
-        D2 = cell2mat(D2)';
-        kin3 = obj.manip.doKinematics(q3);
-        [phi3,~,~,~,~,~,~,~,n3,D3] = obj.manip.contactConstraints(kin3, obj.multiple_contacts);
-        n3 = n3';
-        D3 = cell2mat(D3)';
+        %Get contact basis
+%         if (length(obj.cache_kinq2.data) == length(q2)) && all(obj.cache_kinq2.data == q2)
+%             %we've been here before...
+%             n2 = obj.cache_n2.data;
+%             D2 = obj.cache_D2.data;
+%         else
+%             kin2 = obj.manip.doKinematics(q2);
+%             [phi2,~,~,~,~,~,~,~,n2,D2] = obj.manip.contactConstraints(kin2, obj.multiple_contacts);
+%             n2 = n2';
+%             D2 = cell2mat(D2)';
+%             obj.cache_kinq2.data = q2;
+%             obj.cache_phi2.data = phi2;
+%             obj.cache_n2.data = n2;
+%             obj.cache_D2.data = D2;
+%         end
+        if (length(obj.cache_kinq3.data) == length(q3)) && all(obj.cache_kinq3.data == q3)
+            %we've been here before...
+            phi3 = obj.cache_phi3.data;
+            n3 = obj.cache_n3.data;
+            D3 = obj.cache_D3.data;
+        else
+            kin3 = obj.manip.doKinematics(q3);
+            [phi3,~,~,~,~,~,~,~,n3,D3] = obj.manip.contactConstraints(kin3, obj.multiple_contacts);
+            n3 = n3';
+            D3 = cell2mat(D3)';
+            obj.cache_kinq3.data = q3;
+            obj.cache_phi3.data = phi3;
+            obj.cache_n3.data = n3;
+            obj.cache_D3.data = D3;
+        end
         
         %velocity at last knot point
         v3 = (q1 - 4*q2 + 3*q3)/h;
         dv3 = [(-4/h)*eye(Nq), (3/h)*eye(Nq)];
         
-        p = [phi2; phi3; c1; b1; c2; b2; %height + forces have to be positive
-            -phi3*[c1; b1; c2; b2]; %contact forces can only act if in contact at end of time step
-            -(n3'*v3)*[c1; b1; c2; b2]; %contact forces can only act if normal velocity component <= 0 at end of time step
-             mu*c1-b1; mu*c2-b2]; %friction cone
+        p = [phi3; c1; b1; c2; b2; %height + forces have to be positive
+            -phi3.*c1; %normal force can only act if in contact at end of time step
+            -phi3.*c2; %normal force can only act if in contact at end of time step
+            -kron(phi3,ones(Nd/Nn,1)).*b1; %contact forces can only act if in contact at end of time step
+            -kron(phi3,ones(Nd/Nn,1)).*b2; %contact forces can only act if in contact at end of time step
+            -(n3'*v3).*c1; %normal forces can only act if normal velocity component <= 0 at end of time step
+            -(n3'*v3).*c2; %normal forces can only act if normal velocity component <= 0 at end of time step
+            -kron((n3'*v3),ones(Nd/Nn,1)).*b1 %contact forces can only act if normal velocity component <= 0 at end of time step
+            -kron((n3'*v3),ones(Nd/Nn,1)).*b2;%contact forces can only act if normal velocity component <= 0 at end of time step
+             mu*kron(c1,ones(Nd/Nn,1))-b1; mu*kron(c2,ones(Nd/Nn,1))-b2]; %friction cone
           
-        dp = [n2', zeros(1,Nq+2+2*Nd); %height has to be positive
-              zeros(1,Nq), n3', zeros(1, 2+2*Nd); %height has to be positive
-              zeros(2+2*Nd, 2*Nq), eye(2+2*Nd); %forces have to be positive
-              zeros(2+2*Nd,Nq), -[c1; b1; c2; b2]*n3', -phi3*eye(2+2*Nd); %contact forces can only if in contact at end of time step
-              -[c1; b1; c2; b2]*(n3'*dv3), -(n3'*v3)*eye(2+2*Nd); %contact forces can only act if normal velocity component <= 0 at end of time step
-              zeros(Nd,2*Nq), mu*ones(Nd,1), -eye(Nd), zeros(Nd,1+Nd); %friction cone
-              zeros(Nd,2*Nq), zeros(Nd, 1+Nd), mu*ones(Nd,1), -eye(Nd)]; %friction cone
+        dp = [zeros(Nn,Nq), n3', zeros(Nn,2*Nn+2*Nd); %height has to be positive
+              zeros(2*Nn+2*Nd, 2*Nq), eye(2*Nn+2*Nd); %forces have to be positive
+              zeros(Nn,Nq), -diag(c1)*n3', -diag(phi3), zeros(Nn,2*Nd+Nn); %normal force can only act if in contact at end of time step
+              zeros(Nn,Nq), -diag(c2)*n3', zeros(Nn,Nn+Nd), -diag(phi3), zeros(Nn,Nd); %normal force can only act if in contact at end of time step
+              zeros(Nd,Nq), -diag(b1)*kron(n3',ones(Nd/Nn,1)), zeros(Nd,Nn), -diag(kron(phi3,ones(Nd/Nn,1))), zeros(Nd,Nn+Nd);
+              zeros(Nd,Nq), -diag(b1)*kron(n3',ones(Nd/Nn,1)), zeros(Nd,2*Nn+Nd), -diag(kron(phi3,ones(Nd/Nn,1)));
+              -diag(c1)*n3'*dv3, -diag(n3'*v3), zeros(Nn,2*Nd+Nn);
+              -diag(c2)*n3'*dv3, zeros(Nn,Nn+Nd), -diag(n3'*v3), zeros(Nn,Nd);
+              -diag(b1)*kron((n3'*dv3),ones(Nd/Nn,1)), zeros(Nd,Nn), -diag(kron((n3'*v3),ones(Nd/Nn,1))), zeros(Nd,Nn+Nd);
+              -diag(b2)*kron((n3'*dv3),ones(Nd/Nn,1)), zeros(Nd,2*Nn+Nd), -diag(kron((n3'*v3),ones(Nd/Nn,1)));
+              zeros(Nd,2*Nq), mu*kron(eye(Nn),ones(Nd/Nn,1)), -eye(Nd), zeros(Nd,Nn+Nd); %friction cone
+              zeros(Nd,2*Nq), zeros(Nd,Nn+Nd), mu*kron(eye(Nn),ones(Nd/Nn,1)), -eye(Nd)]; %friction cone
     end
     
     function [r, dr] = MidpointDEL(obj, q1, q2, q3)
@@ -359,6 +471,10 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         [d1L_1, d2L_1, d1d1L_1, d1d2L_1, d2d2L_1] = obj.SimpsonLDerivs(q1,v1);
         [d1L_2, d2L_2, d1d1L_2, d1d2L_2, d2d2L_2] = obj.SimpsonLDerivs(q2,v2);
         [d1L_3, d2L_3, d1d1L_3, d1d2L_3, d2d2L_3] = obj.SimpsonLDerivs(q3,v3);
+        
+        obj.cache_Mq3.data = q3;
+        obj.cache_M3.data = d2d2L_3;
+        obj.cache_C3.data = d1d2L_3;
         
         r = [p1 + (h/6)*d1L_1 - (1/2)*d2L_1 - (2/3)*d2L_2 + (1/6)*d2L_3;
              (2/3)*d2L_1 + (2*h/3)*d1L_2 - (2/3)*d2L_3];
