@@ -6,7 +6,7 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
   % Note: Does not like joint friction being included in C. Edit URDF to
   % set friction constant to zero before using this class.
 
-  properties (Access=protected)
+  properties %(Access=protected)
     manip  % the CT manipulator
     sensor % additional TimeSteppingRigidBodySensors (beyond the sensors attached to manip)
     dirty=true;
@@ -38,6 +38,7 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
 
   properties (SetAccess=protected)
     timestep
+    tolerance = 1e-7;
     integrator
     twoD=false
     multiple_contacts = false;
@@ -232,11 +233,11 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
             Nn = size(n1,2);
             Nd = size(D1,2);
             if obj.cache_Nd.data == Nd
-                zguess = [q1+(h/2)*v1; q1+h*v1; obj.cache_f.data];
+                zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nd+4*Nn,1); 1];% obj.cache_f.data];
             else
                 obj.cache_Nn.data = Nn;
                 obj.cache_Nd.data = Nd;
-                zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nn+2*Nd,1)];
+                zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nd+4*Nn,1); 1];
             end
         else
             %Set up intitial conditions
@@ -256,19 +257,12 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
             obj.cache_n1.data = n1;
             obj.cache_D1.data = D1;
             
-            zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nn+2*Nd,1)];
+            zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nd+4*Nn,1); 1];
         end
         
-        %Solve NLP
-        fmincon_opts = optimoptions('fmincon','Algorithm','sqp','Display','off','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'OptimalityTolerance',1e-6,'ConstraintTolerance',1e-6);
-        zopt = fmincon(@(z)SimpsonObjFun(obj,q1,z), zguess, [], [], [], [], [], [], @(z)SimpsonConFun(obj,p1,q1,z), fmincon_opts);
-
-%         Nz = 2*Nq+2+2*obj.Nd;
-%         prog = NonlinearProgram(Nz);
-%         prog = prog.addCost(FunctionHandleObjective(Nz,@(z)SimpsonObjFun(obj,q1,z),1));
-%         prog = prog.addConstraint(FunctionHandleConstraint(zeros(2*Nq,1),zeros(2*Nq,1),Nz,@(z)SimpsonEqCon(obj,p1,q1,z),1));
-%         prog = prog.addConstraint(FunctionHandleConstraint(zeros(40,1),inf*ones(40,1),Nz,@(z)SimpsonIneqCon(obj,q1,z),1));
-%         [zopt,objval,exitflag,infeasible_constraint_name] = prog.solve(zguess);
+        %Solve Complementarity Problem
+        L = diag([zeros(2*Nq,1); .1*ones(4*Nn+2*Nd,1); 1]);
+        zopt = obj.dnsolver(q1,p1,L,zguess);
 
         %update state
         q2 = zopt(1:Nq);
@@ -299,160 +293,145 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         
     end
     
-    function [e, de] = SimpsonObjFun(obj, q1, z)
-        %Minimize kinetic energy at end of time step
-        Nq = length(q1);
-        Nn = obj.cache_Nn.data;
-        Nd = obj.cache_Nd.data;
-        Nx = length(z)-(2*Nn+2*Nd);
+    function z = dnsolver(obj,q1,p1,L,zguess)
         
-        h = obj.timestep;
-        q2 = z(1:Nq);
-        q3 = z(Nq+(1:Nq));
+        tol = obj.tolerance;
         
-        v3 = (q1 - 4*q2 + 3*q3)/h;
-        dv3 = [(-4/h)*eye(Nq), (3/h)*eye(Nq)];
-        
-        if (length(obj.cache_Mq3.data) == length(q3)) && all(obj.cache_Mq3.data == q3)
-            %we've been here before...
-            M3 = obj.cache_M3.data;
-            C3 = obj.cache_C3.data;
-        else
-            [M3,~,~,dM] = manipulatorDynamics(obj.manip, q3, v3);
-            dM = reshape(dM,Nq*Nq,Nx);
-            dMdq = dM(:,1:Nq);
-            C3 = reshape(dMdq*v3,Nq,Nq); %this is just the matrix C(q,qd)
-            obj.cache_Mq3.data = q3;
-            obj.cache_M3.data = M3;
-            obj.cache_C3.data = C3;
+        z = zguess;
+        f = 1;
+        while max(abs(f)) > tol
+            [f, df] = obj.SimpsonResidual(q1,p1,z);
+            J = f'*f;
+            
+            [Q,R] = qr([df; L],0);
+            delta = -R\(Q(1:length(f),:)'*f);
+            
+            znew = z+delta;
+            fnew = obj.SimpsonResidual(q1,p1,znew);
+            Jnew = fnew'*fnew;
+            
+            if Jnew > J
+                L = 10*L;
+                alpha = (1/3);
+                while Jnew > J && alpha > 1e-10
+                    znew = z + alpha*delta;
+                    znew(end) = max(tol, z(end));
+                    fnew = obj.SimpsonResidual(q1,p1,znew);
+                    Jnew = fnew'*fnew;
+                    alpha = alpha/3;
+                end
+                if alpha < 1e-10
+                    L = 1000*L;
+                    znew = z;
+                    znew(end) = max(tol, z(end));
+                end
+            else
+                L = .2*L;
+            end
+            z = znew;
         end
-        
-        e = 0.5*v3'*M3*v3;
-        de = [v3'*M3*dv3 + [zeros(1,Nq), 0.5*v3'*C3], zeros(1, 2*Nn+2*Nd)];
     end
     
-    function [c, ceq, dc, dceq] = SimpsonConFun(obj, p1, q1, z)
-        %This is repackaged for fmincon
-        [c, dc] = SimpsonIneqCon(obj, q1, z);
-        c = -c;
-        dc = -dc';
-        [ceq, dceq] = SimpsonEqCon(obj, p1, q1, z);
-        dceq = dceq';
-    end
-    
-    function [r, dr] = SimpsonEqCon(obj, p1, q1, z)
-        Nq = length(q1);
-        Nn = obj.cache_Nn.data;
-        Nd = obj.cache_Nd.data;
-        h = obj.timestep;
-        q2 = z(1:Nq);
-        q3 = z(Nq+(1:Nq));
-        
-        %Contact force coefficients
-        c1 = z(2*Nq+(1:Nn));
-        b1 = z(2*Nq+Nn+(1:Nd));
-        c2 = z(2*Nq+Nn+Nd+(1:Nn));
-        b2 = z(2*Nq+2*Nn+Nd+(1:Nd));
-        
-        [r, dr] = SimpsonDEL(obj,p1,q1,q2,q3);
-        
-        %Get contact basis
-        n1 = obj.cache_n1.data;
-        D1 = obj.cache_D1.data;
-        if (length(obj.cache_kinq2.data) == length(q2)) && all(obj.cache_kinq2.data == q2)
-            %we've been here before...
-            n2 = obj.cache_n2.data;
-            D2 = obj.cache_D2.data;
-        else
-            kin2 = obj.manip.doKinematics(q2);
-            [phi2,~,~,~,~,~,~,~,n2,D2] = obj.manip.contactConstraints(kin2, obj.multiple_contacts);
-            n2 = n2';
-            D2 = cell2mat(D2)';
-            obj.cache_kinq2.data = q2;
-            obj.cache_phi2.data = phi2;
-            obj.cache_n2.data = n2;
-            obj.cache_D2.data = D2;
-        end
-        
-        %Add in contact forces
-        r = r + [(h/3)*(n1*c1 + D1*b1); (2*h/3)*(n2*c2 + D2*b2)];
-        dr = [dr, [(h/3)*n1, (h/3)*D1, zeros(Nq,Nn+Nd); zeros(Nq,Nn+Nd), (2*h/3)*n2, (2*h/3)*D2]];
-    end
-    
-    function [p, dp] = SimpsonIneqCon(obj, q1, z)
+    function [f, df] = SimpsonResidual(obj,q1,p1,z)
         mu = 1; %This is currently hard coded in Drake...
         
         Nq = length(q1);
         Nn = obj.cache_Nn.data;
         Nd = obj.cache_Nd.data;
+        Nl = 2*Nn+2*Nd;
         h = obj.timestep;
+        
+        %z vector is stacked [q_{1/2}; q_2; c1; b1; c2; b2; eta; psi; s]
+        
+        %Configurations
         q2 = z(1:Nq);
         q3 = z(Nq+(1:Nq));
         
         %Contact force coefficients
-        c1 = z(2*Nq+(1:Nn));
-        b1 = z(2*Nq+Nn+(1:Nd));
-        c2 = z(2*Nq+Nn+Nd+(1:Nn));
-        b2 = z(2*Nq+2*Nn+Nd+(1:Nd));
+        lambda = z(2*Nq+(1:Nl));
+        c1 = lambda(1:Nn);
+        b1 = lambda(Nn+(1:Nd));
+        c2 = lambda(Nn+Nd+(1:Nn));
+        b2 = lambda(2*Nn+Nd+(1:Nd));
+        
+        %Normal contact velocity
+        eta = z(2*Nq+Nl+(1:Nn));
+        
+        %Tangential contact velocity
+        psi = z(2*Nq+Nl+Nn+(1:Nn));
+        
+        %Slack variable for complementarity smoothing
+        s = z(end);
         
         %Get contact basis
-%         if (length(obj.cache_kinq2.data) == length(q2)) && all(obj.cache_kinq2.data == q2)
-%             %we've been here before...
-%             n2 = obj.cache_n2.data;
-%             D2 = obj.cache_D2.data;
-%         else
-%             kin2 = obj.manip.doKinematics(q2);
-%             [phi2,~,~,~,~,~,~,~,n2,D2] = obj.manip.contactConstraints(kin2, obj.multiple_contacts);
-%             n2 = n2';
-%             D2 = cell2mat(D2)';
-%             obj.cache_kinq2.data = q2;
-%             obj.cache_phi2.data = phi2;
-%             obj.cache_n2.data = n2;
-%             obj.cache_D2.data = D2;
-%         end
+        e = ones(Nd/Nn,1);
         if (length(obj.cache_kinq3.data) == length(q3)) && all(obj.cache_kinq3.data == q3)
             %we've been here before...
             phi3 = obj.cache_phi3.data;
-            n3 = obj.cache_n3.data;
-            D3 = obj.cache_D3.data;
+            n = obj.cache_n3.data;
+            D = obj.cache_D3.data;
         else
             kin3 = obj.manip.doKinematics(q3);
-            [phi3,~,~,~,~,~,~,~,n3,D3] = obj.manip.contactConstraints(kin3, obj.multiple_contacts);
-            n3 = n3';
-            D3 = cell2mat(D3)';
+            [phi3,~,~,~,~,~,~,~,n,D] = obj.manip.contactConstraints(kin3, obj.multiple_contacts);
+            n = n';
+            D = cell2mat(D)';
             obj.cache_kinq3.data = q3;
             obj.cache_phi3.data = phi3;
-            obj.cache_n3.data = n3;
-            obj.cache_D3.data = D3;
+            obj.cache_n3.data = n;
+            obj.cache_D3.data = D;
         end
         
         %velocity at last knot point
         v3 = (q1 - 4*q2 + 3*q3)/h;
         dv3 = [(-4/h)*eye(Nq), (3/h)*eye(Nq)];
         
-        p = [phi3; c1; b1; c2; b2; %height + forces have to be positive
-            -phi3.*c1; %normal force can only act if in contact at end of time step
-            -phi3.*c2; %normal force can only act if in contact at end of time step
-            -kron(phi3,ones(Nd/Nn,1)).*b1; %contact forces can only act if in contact at end of time step
-            -kron(phi3,ones(Nd/Nn,1)).*b2; %contact forces can only act if in contact at end of time step
-            -(n3'*v3).*c1; %normal forces can only act if normal velocity component <= 0 at end of time step
-            -(n3'*v3).*c2; %normal forces can only act if normal velocity component <= 0 at end of time step
-            -kron((n3'*v3),ones(Nd/Nn,1)).*b1 %contact forces can only act if normal velocity component <= 0 at end of time step
-            -kron((n3'*v3),ones(Nd/Nn,1)).*b2;%contact forces can only act if normal velocity component <= 0 at end of time step
-             mu*kron(c1,ones(Nd/Nn,1))-b1; mu*kron(c2,ones(Nd/Nn,1))-b2]; %friction cone
-          
-        dp = [zeros(Nn,Nq), n3', zeros(Nn,2*Nn+2*Nd); %height has to be positive
-              zeros(2*Nn+2*Nd, 2*Nq), eye(2*Nn+2*Nd); %forces have to be positive
-              zeros(Nn,Nq), -diag(c1)*n3', -diag(phi3), zeros(Nn,2*Nd+Nn); %normal force can only act if in contact at end of time step
-              zeros(Nn,Nq), -diag(c2)*n3', zeros(Nn,Nn+Nd), -diag(phi3), zeros(Nn,Nd); %normal force can only act if in contact at end of time step
-              zeros(Nd,Nq), -diag(b1)*kron(n3',ones(Nd/Nn,1)), zeros(Nd,Nn), -diag(kron(phi3,ones(Nd/Nn,1))), zeros(Nd,Nn+Nd);
-              zeros(Nd,Nq), -diag(b1)*kron(n3',ones(Nd/Nn,1)), zeros(Nd,2*Nn+Nd), -diag(kron(phi3,ones(Nd/Nn,1)));
-              -diag(c1)*n3'*dv3, -diag(n3'*v3), zeros(Nn,2*Nd+Nn);
-              -diag(c2)*n3'*dv3, zeros(Nn,Nn+Nd), -diag(n3'*v3), zeros(Nn,Nd);
-              -diag(b1)*kron((n3'*dv3),ones(Nd/Nn,1)), zeros(Nd,Nn), -diag(kron((n3'*v3),ones(Nd/Nn,1))), zeros(Nd,Nn+Nd);
-              -diag(b2)*kron((n3'*dv3),ones(Nd/Nn,1)), zeros(Nd,2*Nn+Nd), -diag(kron((n3'*v3),ones(Nd/Nn,1)));
-              zeros(Nd,2*Nq), mu*kron(eye(Nn),ones(Nd/Nn,1)), -eye(Nd), zeros(Nd,Nn+Nd); %friction cone
-              zeros(Nd,2*Nq), zeros(Nd,Nn+Nd), mu*kron(eye(Nn),ones(Nd/Nn,1)), -eye(Nd)]; %friction cone
+        [r_del, dr_del] = obj.SimpsonDEL(p1, q1, q2, q3);
+        
+        r_f = r_del + [(h/3)*(n*c1 + D*b1); (2*h/3)*(n*c2 + D*b2)];
+        dr_f = [dr_del, [(h/3)*n, (h/3)*D, zeros(Nq,Nn+Nd); zeros(Nq,Nn+Nd), (2*h/3)*n, (2*h/3)*D]];
+        
+        [fb1, dfba1, dfbb1, dfbs1] = obj.smoothFB(kron(phi3,[1;1;e;e]),lambda,s);
+        [fb2, dfba2, dfbb2, dfbs2] = obj.smoothFB(kron(eta,[1;1;e;e]),lambda,s);
+        [fb3, dfba3, dfbb3, dfbs3] = obj.smoothFB(eta, (eta - n'*v3), s);
+        [fb4, dfba4, dfbb4, dfbs4] = obj.smoothFB(mu*c1-kron(eye(Nn),e')*b1, psi, s);
+        [fb5, dfba5, dfbb5, dfbs5] = obj.smoothFB(mu*c2-kron(eye(Nn),e')*b2, psi, s);
+        [fb6, dfba6, dfbb6, dfbs6] = obj.smoothFB((kron(psi,e) + D'*v3), b1, s);
+        [fb7, dfba7, dfbb7, dfbs7] = obj.smoothFB((kron(psi,e) + D'*v3), b2, s);
+        
+        f = [r_f; exp(s)-1; fb1; fb2; fb3; fb4; fb5; fb6; fb7];
+        df = [dr_f, zeros(2*Nq, 2*Nn+1);
+              zeros(1,2*Nq+Nl+2*Nn), exp(s);
+              zeros(Nl,Nq), dfba1*kron(n',[1;1;e;e]), dfbb1, zeros(Nl,2*Nn), dfbs1;
+              zeros(Nl,2*Nq), dfbb2, dfba2*kron(eye(Nn),[1;1;e;e]), zeros(Nl,Nn), dfbs2;
+              -dfbb3*n'*dv3, zeros(Nn,Nl), dfba3+dfbb3, zeros(Nn,Nn), dfbs3;
+              zeros(Nn,2*Nq), mu*dfba4*eye(Nn), -dfba4*kron(eye(Nn),e'), zeros(Nn,Nn+Nd), zeros(Nn,Nn), dfbb4, dfbs4;
+              zeros(Nn,2*Nq+Nn+Nd), mu*dfba5*eye(Nn), -dfba5*kron(eye(Nn),e'), zeros(Nn,Nn), dfbb5, dfbs5;
+              dfba6*D'*dv3, zeros(Nd,Nn), dfbb6, zeros(Nd,2*Nn+Nd), dfba6*kron(eye(Nn),e), dfbs6;
+              dfba7*D'*dv3, zeros(Nd,2*Nn+Nd), dfbb7, zeros(Nd,Nn), dfba7*kron(eye(Nn),e), dfbs7];
+    end
+    
+    function [f, dfda, dfdb, dfds] = smoothFB(obj,a,b,s)
+        Na = length(a);
+        Nb = length(b);
+        if Na == Nb %vector version
+            f1 = sqrt(a.*a + b.*b  + s*s*ones(Nb,1));
+            f = f1 - (a + b);
+            dfda = diag(a./f1) - eye(Na);
+            dfdb = diag(b./f1) - eye(Nb);
+            dfds = s*ones(Nb,1)./f1;
+        elseif Na == 1
+            f1 = sqrt(a*a*ones(Nb,1) + b.*b  + s*s*ones(Nb,1));
+            f = f1 - (a*ones(Nb,1) + b);
+            dfda = a*ones(Nb,1)./f1 - ones(Nb,1);
+            dfdb = diag(b./f1) - eye(Nb);
+            dfds = s*ones(Nb,1)./f1;
+        else %Nb == 1
+            f1 = sqrt(a.*a + b*b*ones(Na,1)  + s*s*ones(Na,1));
+            f = f1 - (a + b*ones(Na,1));
+            dfda = diag(a./f1) - ones(Na,1);
+            dfdb = b*ones(Na,1)./f1 - eye(Nb);
+            dfds = s*ones(Na,1)./f1;
+        end
     end
     
     function [r, dr] = MidpointDEL(obj, q1, q2, q3)
@@ -479,14 +458,9 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         r = [p1 + (h/6)*d1L_1 - (1/2)*d2L_1 - (2/3)*d2L_2 + (1/6)*d2L_3;
              (2/3)*d2L_1 + (2*h/3)*d1L_2 - (2/3)*d2L_3];
         
-%         r2 = [p1 + (h/6)*obj.D1L(q1,v1) - (1/2)*obj.D2L(q1,v1) - (2/3)*obj.D2L(q2,v2) + (1/6)*obj.D2L(q3,v3);
-%              (2/3)*obj.D2L(q1,v1) + (2*h/3)*obj.D1L(q2,v2) - (2/3)*obj.D2L(q3,v3)];
           
         dr = [(2/3)*d1d2L_1 - (2/h)*d2d2L_1 - (2/3)*d1d2L_2 - (2/(3*h))*d2d2L_3, -(1/6)*d1d2L_1 + (1/(2*h))*d2d2L_1 - (2/(3*h))*d2d2L_2 + (1/6)*d1d2L_3 + (1/(2*h))*d2d2L_3;
               (8/(3*h))*d2d2L_1 + (2*h/3)*d1d1L_2 + (8/(3*h))*d2d2L_3, -(2/(3*h))*d2d2L_1 + (2/3)*d1d2L_2 - (2/3)*d1d2L_3 - (2/h)*d2d2L_3];
-%           
-%         dr2 = [(2/3)*obj.D1D2L(q1,v1) - (2/h)*obj.D2D2L(q1,v1) - (2/3)*obj.D1D2L(q2,v2) - (2/(3*h))*obj.D2D2L(q3,v3), -(1/6)*obj.D1D2L(q1,v1) + (1/(2*h))*obj.D2D2L(q1,v1) - (2/(3*h))*obj.D2D2L(q2,v2) + (1/6)*obj.D1D2L(q3,v3) + (1/(2*h))*obj.D2D2L(q3,v3);
-%               (8/(3*h))*obj.D2D2L(q1,v1) + (2*h/3)*obj.D1D1L(q2,v2) + (8/(3*h))*obj.D2D2L(q3,v3), -(2/(3*h))*obj.D2D2L(q1,v1) + (2/3)*obj.D1D2L(q2,v2) - (2/3)*obj.D1D2L(q3,v3) - (2/h)*obj.D2D2L(q3,v3)];
     end
     
     function p = DLT(obj, q1, q2, q3)
@@ -531,8 +505,7 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         
         [~,~,~,dM] = manipulatorDynamics(obj.manip, q, v);
         dM = reshape(dM,Nq*Nq,Nq+Nv);
-        dMdq = dM(:,1:Nq);
-        d2L = reshape(dMdq*v,Nq,Nq); %this is just the matrix C(q,qd)
+        d2L = reshape(dM(:,1:Nq)*v,Nq,Nq); %this is just the matrix C(q,qd)
         
         %This should give the same answer...
         %Nq = length(q);

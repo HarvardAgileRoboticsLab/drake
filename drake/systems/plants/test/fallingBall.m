@@ -20,7 +20,7 @@ x0 = [0;0;1;0;0;0;0;0;0;50;0;0];
 % toc
 % v1.playback(xtraj1);
 
-p2 = VariationalTimeSteppingRigidBodyManipulator(s,.02,options);
+p2 = VariationalTimeSteppingRigidBodyManipulator(s,.1,options);
 x02 = p2.resolveConstraints(x0);
 tic
 xtraj2 = p2.simulate([0 2],x02);
