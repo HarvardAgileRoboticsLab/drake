@@ -38,6 +38,8 @@ namespace {
 const char* const kLcmStatusChannel = "IIWA_STATUS";
 const char* const kLcmControlRefChannel = "CONTROLLER_REFERENCE";
 const char* const kLcmPlanChannel = "COMMITTED_ROBOT_PLAN";
+const char* const kCancelPlanRunning = "CANCEL_PLAN";
+
 const int kNumJoints = 7;
 
 typedef PiecewisePolynomial<double> PPType;
@@ -46,6 +48,8 @@ typedef PPType::PolynomialMatrix PPMatrix;
 
 class RobotPlanRunner {
  public:
+
+   bool run_ = false;
   /// tree is aliased
   explicit RobotPlanRunner(const RigidBodyTree<double>& tree)
       : tree_(tree), plan_number_(0) {
@@ -54,6 +58,8 @@ class RobotPlanRunner {
                     &RobotPlanRunner::HandleStatus, this);
     lcm_.subscribe(kLcmPlanChannel,
                     &RobotPlanRunner::HandlePlan, this);
+    lcm_.subscribe(kCancelPlanRunning,
+                    &RobotPlanRunner::HandleCancelPlan, this);
   }
 
   void Run() {
@@ -74,6 +80,15 @@ class RobotPlanRunner {
     while (true) {
       // Call lcm handle until at least one message is processed
       while (0 == lcm_.handleTimeout(10)) { }
+
+      if(!run_){
+        robot_controller_reference.num_joints = kNumJoints;
+        robot_controller_reference.joint_position_desired.resize(kNumJoints, 0.);
+        robot_controller_reference.joint_velocity_desired.resize(kNumJoints, 0.);
+        robot_controller_reference.joint_accel_desired.resize(kNumJoints, 0.);
+        robot_controller_reference.u_nominal.resize(kNumJoints, 0.);
+        continue;
+      }
 
       DRAKE_ASSERT(iiwa_status_.utime != -1);
       cur_time_us = iiwa_status_.utime;
@@ -110,6 +125,12 @@ class RobotPlanRunner {
     iiwa_status_ = *status;
   }
 
+  void HandleCancelPlan(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
+                    const lcmt_iiwa_status* status) {
+    std::cout << "Plan Cancel Command Recieved!" << std::endl;
+    run_ = false;
+  }
+
   void HandlePlan(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
                   const robotlocomotion::robot_plan_t* plan) {
     std::cout << "New plan received." << std::endl;
@@ -139,6 +160,8 @@ class RobotPlanRunner {
     qdtraj_.reset(new PiecewisePolynomialTrajectory(qtraj_->getPP().derivative(1)));
     qddtraj_.reset(new PiecewisePolynomialTrajectory(qdtraj_->getPP().derivative(1)));
     ++plan_number_;
+    run_ = true;
+
   }
 
   lcm::LCM lcm_;

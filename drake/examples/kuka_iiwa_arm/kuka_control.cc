@@ -1,6 +1,6 @@
 /// @file
 ///
-/// kuka_control is designed to compute the torque command based on 
+/// kuka_control is designed to compute the torque command based on
 /// desired joint position, velocity, and acceleration, and measured joint position and velocity.
 /// Currently, the final torque command is composed of inverse dynamics torque command and joint position PD
 /// controller command.
@@ -36,10 +36,14 @@ namespace {
 const char* const kLcmStatusChannel = "IIWA_STATUS";
 const char* const kLcmControlRefChannel = "CONTROLLER_REFERENCE";
 const char* const kLcmCommandChannel = "IIWA_COMMAND";
+const char* const kCancelPlanRunning = "CANCEL_PLAN";
+
 const int kNumJoints = 7;
 
 class RobotController {
  public:
+   bool run_ = false;
+
   /// tree is aliased
   explicit RobotController(const RigidBodyTree<double>& tree)
       : tree_(tree), controller_trigger_(false) {
@@ -48,6 +52,8 @@ class RobotController {
                     &RobotController::HandleStatus, this);
     lcm_.subscribe(kLcmControlRefChannel,
                     &RobotController::HandleControl, this);
+    lcm_.subscribe(kCancelPlanRunning,
+                    &RobotController::HandleCancelPlan, this);
   }
 
   void Run() {
@@ -63,19 +69,31 @@ class RobotController {
     iiwa_command.num_torques = kNumJoints;
     iiwa_command.joint_torque.resize(kNumJoints, 0.);
 
-    Eigen::VectorXd joint_position_desired(kNumJoints); 
-    Eigen::VectorXd joint_velocity_desired(kNumJoints); 
-    Eigen::VectorXd joint_accel_desired(kNumJoints); 
+    Eigen::VectorXd joint_position_desired(kNumJoints);
+    Eigen::VectorXd joint_velocity_desired(kNumJoints);
+    Eigen::VectorXd joint_accel_desired(kNumJoints);
 
     bool half_servo_rate_flag_ = true; // make the iiwa command get published every two servo loops
 
     while (true) {
       // Call lcm handle until at least one message is processed
       while (0 == lcm_.handleTimeout(10)) { }
+
+      if (!run_){
+        // std::cout << "I am quitting!  \n" << run_ << std::endl;
+        iiwa_status_.utime = iiwa_status_.utime;
+
+        lcmt_iiwa_command iiwa_command;
+        iiwa_command.num_joints = kNumJoints;
+        iiwa_command.joint_position.resize(kNumJoints, 0.);
+        iiwa_command.num_torques = kNumJoints;
+        iiwa_command.joint_torque.resize(kNumJoints, 0.);
+      }
+
       DRAKE_ASSERT(iiwa_status_.utime != -1);
       cur_time_us = iiwa_status_.utime;
 
-      if (controller_trigger_) {  
+      if (controller_trigger_) {
         const int kNumDof = 7;
         iiwa_command.utime = iiwa_status_.utime;
 
@@ -98,18 +116,19 @@ class RobotController {
         Eigen::VectorXd torque_command = tree_.inverseDynamics(cache, no_external_wrenches, joint_accel_desired, false);
 
         // gravity compensation without gripper (to cancel out the low-level kuka controller)
-        Eigen::VectorXd z = Eigen::VectorXd::Zero(kNumDof); 
+        Eigen::VectorXd z = Eigen::VectorXd::Zero(kNumDof);
         Eigen::VectorXd gravity_torque = gravity_comp_no_gripper(cache, z, false, tree_);
         torque_command -= gravity_torque;
-        
+
         // PD position control
         Eigen::VectorXd position_ctrl_torque_command(kNumDof);
         Eigen::VectorXd Kp_pos_ctrl(kNumDof); // 7 joints
-        Kp_pos_ctrl << 225, 361, 144, 81, 324, 36, 49;// best gains for December 9th kuka demo
+        Kp_pos_ctrl << 80, 95, 94, 77, 79, 19, 37;// best gains for December 9th kuka demo
         //Kp_pos_ctrl << 100, 100, 100, 100, 100, 81, 50;// original gains
         Eigen::VectorXd Kd_pos_ctrl(kNumDof); // 7 joints
-        Kd_pos_ctrl << 25, 33, 20, 15, 36, 2, 3;// best gains for December 9th kuka demo, tune down damping gains from dummy critically damped gains
+        Kd_pos_ctrl << 40, 18, 18, 15, 10, 1, 5;// best gains for December 9th kuka demo, tune down damping gains from dummy critically damped gains
         //Kd_pos_ctrl << 19, 19, 19, 19, 19, 18, 14;// original gains
+
         // (TODOs) Add integral control (anti-windup)
         for (int joint = 0; joint < kNumJoints; joint++) {
           position_ctrl_torque_command(joint) = Kp_pos_ctrl(joint)*(joint_position_desired(joint) - iiwa_status_.joint_position_measured[joint])
@@ -131,12 +150,14 @@ class RobotController {
 
         if (half_servo_rate_flag_){
           half_servo_rate_flag_ = false;
-          lcm_.publish(kLcmCommandChannel, &iiwa_command);
+          if(run_){
+            lcm_.publish(kLcmCommandChannel, &iiwa_command);
+          }
         }else{
           half_servo_rate_flag_ = true;
         }
       }
-    
+
     }
   }
 
@@ -145,11 +166,17 @@ class RobotController {
                     const lcmt_iiwa_status* status) {
     iiwa_status_ = *status;
   }
-
+  void HandleCancelPlan(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
+                    const lcmt_iiwa_status* status) {
+    std::cout << "Plan Cancel Command Recieved!" << std::endl;
+    run_ = false;
+  }
   void HandleControl(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
                     const lcmt_robot_controller_reference* input) {
     robot_controller_reference_ = *input;
     controller_trigger_ = true;
+    run_ = true;
+
   }
 
   Eigen::VectorXd gravity_comp_no_gripper(KinematicsCache<double>& cache, const Eigen::VectorXd& vd,
@@ -196,7 +223,7 @@ class RobotController {
       }
     }
 
-    // Do a backwards pass to compute joint wrenches from net wrenches, 
+    // Do a backwards pass to compute joint wrenches from net wrenches,
     // and project the joint wrenches onto the joint's motion subspace to find the joint torque.
     auto& joint_wrenches = net_wrenches;
     const auto& joint_wrenches_const = net_wrenches;
@@ -224,7 +251,7 @@ class RobotController {
 
   lcm::LCM lcm_;
   const RigidBodyTree<double>& tree_;
-  bool controller_trigger_;// control runner wait for the first message from plan runner 
+  bool controller_trigger_;// control runner wait for the first message from plan runner
   lcmt_iiwa_status iiwa_status_;
   lcmt_robot_controller_reference robot_controller_reference_;
 };
