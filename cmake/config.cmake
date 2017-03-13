@@ -186,7 +186,7 @@ macro(drake_setup_fortran)
     else()
       enable_language(Fortran)
 
-      if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "4.9")
+      if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "4.8")
         message(FATAL_ERROR "GCC version must be at least 4.9")
       endif()
     endif()

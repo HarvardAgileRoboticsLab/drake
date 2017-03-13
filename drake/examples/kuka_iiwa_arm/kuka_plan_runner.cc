@@ -38,6 +38,8 @@ namespace {
 const char* const kLcmStatusChannel = "IIWA_STATUS";
 const char* const kLcmControlRefChannel = "CONTROLLER_REFERENCE";
 const char* const kLcmPlanChannel = "COMMITTED_ROBOT_PLAN";
+const char* const kCancelPlanRunning = "CANCEL_PLAN";
+
 const int kNumJoints = 7;
 
 typedef PiecewisePolynomial<double> PPType;
@@ -47,6 +49,7 @@ typedef PPType::PolynomialMatrix PPMatrix;
 class RobotPlanRunner {
  public:
   /// tree is aliased
+  bool run_ = false;
   explicit RobotPlanRunner(const RigidBodyTree<double>& tree)
       : tree_(tree), plan_number_(0) {
     VerifyIiwaTree(tree);
@@ -54,6 +57,8 @@ class RobotPlanRunner {
                     &RobotPlanRunner::HandleStatus, this);
     lcm_.subscribe(kLcmPlanChannel,
                     &RobotPlanRunner::HandlePlan, this);
+    lcm_.subscribe(kCancelPlanRunning,
+                    &RobotPlanRunner::HandleCancelPlan, this);
   }
 
   void Run() {
@@ -99,7 +104,9 @@ class RobotPlanRunner {
         }
 
         // publish robot controller reference to kuka control runner
-        lcm_.publish(kLcmControlRefChannel, &robot_controller_reference);
+        if(run_){
+          lcm_.publish(kLcmControlRefChannel, &robot_controller_reference);
+        }
       }
     }
   }
@@ -109,7 +116,11 @@ class RobotPlanRunner {
                     const lcmt_iiwa_status* status) {
     iiwa_status_ = *status;
   }
-
+  void HandleCancelPlan(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
+                    const lcmt_iiwa_status* status) {
+    std::cout << "Plan Cancel Command Recieved!" << std::endl;
+    run_ = false;
+  }
   void HandlePlan(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
                   const robotlocomotion::robot_plan_t* plan) {
     std::cout << "New plan received." << std::endl;
@@ -139,6 +150,7 @@ class RobotPlanRunner {
     qdtraj_.reset(new PiecewisePolynomialTrajectory(qtraj_->getPP().derivative(1)));
     qddtraj_.reset(new PiecewisePolynomialTrajectory(qdtraj_->getPP().derivative(1)));
     ++plan_number_;
+    run_ = true;
   }
 
   lcm::LCM lcm_;
