@@ -14,6 +14,11 @@ mode = 'measnoise';
 % 'energetic'   = use energetic model - doesn't require qdd
 parameterEstimationOptions.model = 'energetic';
 
+% Parameter Estimation robot
+% 'Acrobot' 
+% 'KukaArm'
+parameterEstimationOptions.robot = 'Acrobot';
+
 % Method by which to obtain qdd (not used if using energetic model)
 % 'manipul':   Use acrobot manipulator equations to estimate true qdd
 % 'derivative': Take the derivative of qd
@@ -117,11 +122,11 @@ end
 xsamplesfinal = xsamples+measurementNoise;
 
 
-% % Debugging purposes
-% v = AcrobotVisualizer(r);
-% vtrue = AcrobotVisualizer(rtrue);
-% vtrue.playback(xtraj);
-% 
+% Debugging purposes
+v = AcrobotVisualizer(r);
+vtrue = AcrobotVisualizer(rtrue);
+vtrue.playback(xtraj);
+
 % % plot(xsamples(:,1)); hold on; plot(xsamplesfinal(:,1));
 % plot(xsamples); hold on; plot(xsamplesfinal);
 % % Testing to see if estimate is produced by local minima

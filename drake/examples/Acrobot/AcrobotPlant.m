@@ -28,10 +28,14 @@ classdef AcrobotPlant < Manipulator
       obj.xG = Point(obj.getStateFrame,[pi;0;0;0]);
       obj.uG = Point(obj.getInputFrame,0);
       
-      obj = setParamFrame(obj,CoordinateFrame('AcrobotParams',6,'p',...
-        { 'b1','b2','lc1','lc2','Ic1','Ic2' }));
-%      obj = setParamFrame(obj,CoordinateFrame('AcrobotParams',10,'p',...
-%        { 'l1','l2','m1','m2','b1','b2','lc1','lc2','I1','I2' }));
+%       obj = setParamFrame(obj,CoordinateFrame('AcrobotParams',6,'p',...
+%         { 'b1','b2','lc1','lc2','Ic1','Ic2' }));
+%      obj = setParamFrame(obj,CoordinateFrame('AcrobotParams',4,'p',...
+%        {'m1','m2','Ic1','Ic2' }));
+     obj = setParamFrame(obj,CoordinateFrame('AcrobotParams',4,'p',...
+       {'m1','m2','Ic1','Ic2'}));
+%    obj = setParamFrame(obj,CoordinateFrame('AcrobotParams',1,'p',...
+%        {'m2' }));
 %      obj = setParamFrame(obj,CoordinateFrame('AcrobotParams',1,'p',...
 %        { 'lc2' }));
       obj = setParamLimits(obj,zeros(obj.getParamFrame.dim,1));
@@ -51,7 +55,7 @@ classdef AcrobotPlant < Manipulator
       C = [ -2*m2l1lc2*s(2)*qd(2), -m2l1lc2*s(2)*qd(2); m2l1lc2*s(2)*qd(1), 0 ];
       G = g*[ m1*lc1*s(1) + m2*(l1*s(1)+lc2*s12); m2*lc2*s12 ];
             
-      % accumate total C and add a damping term:
+      % accumulate total C and add a damping term:
       C = C*qd + G + [b1;b2].*qd;
 
       B = [0; 1];
@@ -107,7 +111,8 @@ classdef AcrobotPlant < Manipulator
     function [utraj,xtraj]=swingUpTrajectory(obj)
       x0 = zeros(4,1); 
       xf = double(obj.xG);
-      tf0 = 4;
+      tf0 = 4;%[changed]
+      obj.m1
       
       N = 21;
       prog = DircolTrajectoryOptimization(obj,N,[2 6]);
@@ -120,6 +125,7 @@ classdef AcrobotPlant < Manipulator
       
       for attempts=1:10
         tic
+        size(traj_init)
         [xtraj,utraj,z,F,info] = prog.solveTraj(tf0,traj_init);
         toc
         if info==1, break; end
@@ -136,7 +142,7 @@ classdef AcrobotPlant < Manipulator
         xerr(1,:) = mod(xerr(1,:)+pi,2*pi)-pi;
         
         Q = diag([10,10,1,1]);
-        R = 100;
+        R = 80;%100;
         g = sum((Q*xerr).*xerr + (R*u).*u,1);
         
         if (nargout>1)

@@ -55,6 +55,7 @@ IiwaStatusSender::AllocateOutput(
   msg.joint_position_commanded.resize(msg.num_joints, 0);
   msg.joint_position_ipo.resize(msg.num_joints, 0);
   msg.joint_velocity_estimated.resize(msg.num_joints, 0);
+  msg.joint_acceleration_estimated.resize(msg.num_joints, 0);
   msg.joint_torque_measured.resize(msg.num_joints, 0);
   msg.joint_torque_commanded.resize(msg.num_joints, 0);
   msg.joint_torque_external.resize(msg.num_joints, 0);

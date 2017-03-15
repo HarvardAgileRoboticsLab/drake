@@ -64,8 +64,77 @@ if(lcm_FOUND)
     robotlocomotion-lcmtypes-cpp
     lcm)
 
+
+  add_executable(kuka_plan_runner_inertia_J5toJ7_chirp kuka_plan_runner_inertia_J5toJ7_chirp.cc)
+  target_link_libraries(kuka_plan_runner_inertia_J5toJ7_chirp
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeMultibodyParsers
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
+  add_executable(kuka_plan_runner_inertia_J2toJ7_chirp kuka_plan_runner_inertia_J2toJ7_chirp.cc)
+  target_link_libraries(kuka_plan_runner_inertia_J2toJ7_chirp
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeMultibodyParsers
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
+  add_executable(kuka_plan_runner_friction_estimation kuka_plan_runner_friction_estimation.cc)
+  target_link_libraries(kuka_plan_runner_friction_estimation
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeMultibodyParsers
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
+  add_executable(kuka_plan_runner_mass_and_CoM_estimation_J5toJ7 kuka_plan_runner_mass_and_CoM_estimation_J5toJ7.cc)
+  target_link_libraries(kuka_plan_runner_mass_and_CoM_estimation_J5toJ7
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeMultibodyParsers
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
+  add_executable(kuka_plan_runner_mass_and_CoM_estimation_J2toJ7 kuka_plan_runner_mass_and_CoM_estimation_J2toJ7.cc)
+  target_link_libraries(kuka_plan_runner_mass_and_CoM_estimation_J2toJ7
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeMultibodyParsers
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
   add_executable(kuka_control kuka_control.cc)
   target_link_libraries(kuka_control
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
+  add_executable(kuka_control_gravity_comp_test kuka_control_gravity_comp_test.cc)
+  target_link_libraries(kuka_control_gravity_comp_test
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
+
+  add_executable(kuka_control_torque_comp_test kuka_control_torque_comp_test.cc)
+  target_link_libraries(kuka_control_torque_comp_test
     drakeKukaIiwaArmCommon
     drakeTrajectories
     drakeRBM

@@ -51,6 +51,7 @@ class RobotPlanRunner {
 
    bool run_ = false;
   /// tree is aliased
+  bool run_ = false;
   explicit RobotPlanRunner(const RigidBodyTree<double>& tree)
       : tree_(tree), plan_number_(0) {
     VerifyIiwaTree(tree);
@@ -114,7 +115,9 @@ class RobotPlanRunner {
         }
 
         // publish robot controller reference to kuka control runner
-        lcm_.publish(kLcmControlRefChannel, &robot_controller_reference);
+        if(run_){
+          lcm_.publish(kLcmControlRefChannel, &robot_controller_reference);
+        }
       }
     }
   }
@@ -177,7 +180,7 @@ int do_main(int argc, const char* argv[]) {
 
   auto tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-      GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_fixed_gripper.urdf",
+      GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_estimated_params_fixed_gripper.urdf",
       multibody::joints::kFixed, tree.get());
 
   RobotPlanRunner runner(*tree);

@@ -1,0 +1,1 @@
+position mode. In these tests, joint 4 is set to be -90 degree while joint 6 is set to be 90 degree. Joint 5 is tested with non-zero load (similar even number joints, like joint 2, 4, 6).

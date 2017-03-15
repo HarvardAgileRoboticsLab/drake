@@ -106,5 +106,7 @@ applogic.resetCamera(viewDirection=[-1,0,0], view=app.view)
 
 tester = Robotiq_Command.Robotiq_Command()
 
+robotSystem.ikPlanner.addPostureGoalListener(robotSystem.robotStateJointController)
+
 # start!
 app.app.start()
