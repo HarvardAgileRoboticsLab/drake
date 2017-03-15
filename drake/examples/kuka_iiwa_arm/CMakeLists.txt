@@ -63,7 +63,15 @@ if(lcm_FOUND)
     drakeLCMTypes
     robotlocomotion-lcmtypes-cpp
     lcm)
-
+  add_executable(ilqr ilqr.cc)
+  target_link_libraries(ilqr
+    drakeKukaIiwaArmCommon
+    drakeTrajectories
+    drakeMultibodyParsers
+    drakeRBM
+    drakeLCMTypes
+    robotlocomotion-lcmtypes-cpp
+    lcm)
 
   add_executable(kuka_plan_runner_inertia_J5toJ7_chirp kuka_plan_runner_inertia_J5toJ7_chirp.cc)
   target_link_libraries(kuka_plan_runner_inertia_J5toJ7_chirp

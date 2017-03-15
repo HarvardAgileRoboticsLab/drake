@@ -299,18 +299,14 @@ class RobotController {
                     const lcmt_iiwa_status* status) {
     std::cout << "Plan Cancel Command Recieved!" << std::endl;
     run_ = false;
+    controller_trigger_ = false;
+
   }
   void HandleControl(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
                     const lcmt_robot_controller_reference* input) {
     robot_controller_reference_ = *input;
     controller_trigger_ = true;
     run_ = true;
-
-  }
-  void HandleCancelPlan(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
-                    const lcmt_iiwa_status* status) {
-    std::cout << "Plan Cancel Command Recieved!" << std::endl;
-    controller_trigger_ = false;
 
   }
 
@@ -395,7 +391,7 @@ int DoMain(int argc, const char* argv[]) {
 
   auto tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-      GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_estimated_params_fixed_gripper.urdf",
+      GetDrakePath() + "",
       multibody::joints::kFixed, tree.get());
 
   RobotController runner(*tree);

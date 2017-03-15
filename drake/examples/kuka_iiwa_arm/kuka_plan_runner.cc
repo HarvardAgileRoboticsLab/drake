@@ -48,8 +48,6 @@ typedef PPType::PolynomialMatrix PPMatrix;
 
 class RobotPlanRunner {
  public:
-
-   bool run_ = false;
   /// tree is aliased
   bool run_ = false;
   explicit RobotPlanRunner(const RigidBodyTree<double>& tree)
