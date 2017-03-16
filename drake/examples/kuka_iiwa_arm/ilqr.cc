@@ -30,6 +30,8 @@ const double dt = 0.05;
 const double finite_differences_epsilon = 1e-4;
 const int maxIterations = 10;
 const double converganceThreshold = 0.000001;
+const double terminalPosWeight = 0.0001;
+const double terminalVelWeight = 0.0001;
 
 class iLQR {
  public:
@@ -58,7 +60,6 @@ class iLQR {
   MatrixXd l;
   MatrixXd lx;
   MatrixXd lu;
-
 
   explicit iLQR(const RigidBodyTree<double>& tree)
       : tree_(tree)  {
@@ -103,6 +104,21 @@ class iLQR {
     }
   }
 
+
+  void computeControlSequence(VectorXd x0, MatrixXd X, MatrixXd U) {
+      MatrixXd newX(T,numStates);
+      newX.row(0) = x0;
+
+      double cost = 0.0;
+
+      for (int i = 0; i < (T - 1) ; i++) {
+        newX.row(i) = forwardDynamics(X.row(i) , U.row(i), i);
+        cost += computeL(newX.row(i+1), U.row(i)) * dt;
+      }
+
+      // return X, cost TODO fix return / pass through
+  }
+
   void forwardPass(VectorXd x0, MatrixXd U) {
     update_rollout_ = false;
 
@@ -126,13 +142,14 @@ class iLQR {
     }
 
     for (int i = 0; i < T; i++) {
-      computeCost( X.row(i) , U.row(i));
+
+      l(i) = computeCost( X.row(i) , U.row(i), lx, lxx.at(i), lu, luu.at(i), lux.at(i), i);
 
       MatrixXd A(numStates,numStates);
       MatrixXd B(numStates,kDof);
 
       // TODO Why multiply bt dt
-      l.row(i) *= dt;
+      l(i) *= dt;
       lx.row(i) *= dt;
       lxx.at(i) *= dt;
       lu.row(i) *= dt;
@@ -147,10 +164,90 @@ class iLQR {
       // #TODO ADD IN FINAL TIMESTEP COST.
   }
 
-  void computeCost(VectorXd x, VectorXd u) {
+   VectorXd forwardDynamics(VectorXd x, MatrixXd u, int t) {
+     MatrixXd M;
+     MatrixXd C;
+     MatrixXd G;
+     double q[kDof];
+     double qd[kDof];
+
+     for(int i = 0; i < kDof; i++) {
+       q[i] = x(i);
+       qd[i] = x(i+kDof);
+     }
+
+     computeMCG(q, qd, M, C, G);
 
 
+     return x;
+
+   }
+
+  double computeL(VectorXd x, VectorXd u) {
+    return u.squaredNorm();
   }
+
+
+  double computeCost(VectorXd x, VectorXd u, MatrixXd &lx, MatrixXd &lxx, MatrixXd &lu, MatrixXd &luu, MatrixXd &lux, int i ) {
+    double l = u.squaredNorm();
+    lx.row(i) = Eigen::VectorXd::Zero(numStates);
+    lxx = Eigen::MatrixXd::Zero(numStates,numStates);
+    lu.row(i)  = 2.0 * u;
+    luu = 2.0 * Eigen::MatrixXd::Identity(kDof,kDof);
+    lux = Eigen::MatrixXd::Zero(kDof, numStates);
+    return l;
+  }
+
+  double computeFinalCost(VectorXd x, VectorXd u, MatrixXd &lx, MatrixXd &lxx) {
+    VectorXd q = x.block<1,kDof>(0,0);
+    VectorXd qd = x.block<1,kDof>(0,kDof);
+    VectorXd dis = q - xt_;
+
+    for (int i =0 ; i < dis.size(); i++) {
+      dis(i) = dis(i) + 180.0;
+      dis(i) = fmod((double)dis(i) ,360.0);
+      dis(i) = dis(i) - 180.0;
+    }
+
+    double l = terminalPosWeight * dis.squaredNorm() + terminalVelWeight * qd.squaredNorm();
+
+
+
+    return l;
+  }
+  //
+  //     def cost_final(self, x):
+  //         """ the final state cost function """
+  //         num_states = x.shape[0]
+  //         l_x = np.zeros((num_states))
+  //         l_xx = np.zeros((num_states, num_states))
+  //
+  //         wp = 1e4 # terminal position cost weight
+  //         wv = 1e4 # terminal velocity cost weight
+  //
+  //         xy = self.arm.x
+  //         xy_err = np.array([xy[0] - self.target[0], xy[1] - self.target[1]])
+  //         l = (wp * np.sum(xy_err**2) +
+  //                 wv * np.sum(x[self.arm.DOF:self.arm.DOF*2]**2))
+  //
+  //         l_x[0:self.arm.DOF] = wp * self.dif_end(x[0:self.arm.DOF])
+  //         l_x[self.arm.DOF:self.arm.DOF*2] = (2 *
+  //                 wv * x[self.arm.DOF:self.arm.DOF*2])
+  //
+  //         eps = 1e-4 # finite difference epsilon
+  //         # calculate second derivative with finite differences
+  //         for k in range(self.arm.DOF):
+  //             veps = np.zeros(self.arm.DOF)
+  //             veps[k] = eps
+  //             d1 = wp * self.dif_end(x[0:self.arm.DOF] + veps)
+  //             d2 = wp * self.dif_end(x[0:self.arm.DOF] - veps)
+  //             l_xx[0:self.arm.DOF, k] = ((d1-d2) / 2.0 / eps).flatten()
+  //
+  //         l_xx[self.arm.DOF:self.arm.DOF*2, self.arm.DOF:self.arm.DOF*2] = 2 * wv * np.eye(self.arm.DOF)
+  //
+  //         # Final cost only requires these three values
+  // return l, l_x, l_xx
+
   void computeMCG(double * q_in, double * qd_in, MatrixXd &M, MatrixXd &C, MatrixXd &G) {
     double *qptr = &q_in[0];
     Eigen::Map<Eigen::VectorXd> q(qptr, kDof);
