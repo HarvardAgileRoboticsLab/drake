@@ -43,8 +43,8 @@ class iLQR {
   Eigen::MatrixXd U_;
   Eigen::MatrixXd Fm_;
   Eigen::MatrixXd fv_;
-  Eigen::VectorXd optimal_cost_;
-  Eigen::VectorXd current_cost_;
+  double optimal_cost_;
+  double current_cost_;
   double optimal_cost_sum_;
   double current_cost_sum_;
 
@@ -73,6 +73,7 @@ class iLQR {
 
   void update(){
     optimal_cost_ = trajectoryCost(X_,U_);
+
     //TODO optimal_cost_sum_
 
     for(int i = 0; i < maxIterations; i++) {
@@ -83,7 +84,8 @@ class iLQR {
       update_rollout_ = false;
 
       backwardsPass();
-      // current_cost_ , Xc_ , Uc_ = generateAndEvalNewTrajectory(x0_,X_,U_)
+
+      current_cost_ = computeControlSequence(X_.row(0) , U_, X_);
 
       //TODO current_cost_sum_
       if (current_cost_sum_ < optimal_cost_sum_) {
@@ -105,27 +107,51 @@ class iLQR {
   }
 
 
-  void computeControlSequence(VectorXd x0, MatrixXd X, MatrixXd U) {
-      MatrixXd newX(T,numStates);
+  double computeControlSequence(VectorXd x0, MatrixXd U, MatrixXd &newX) {
+      newX = MatrixXd(T,numStates);
       newX.row(0) = x0;
 
       double cost = 0.0;
 
       for (int i = 0; i < (T - 1) ; i++) {
-        newX.row(i) = forwardDynamics(X.row(i) , U.row(i), i);
+        newX.row(i) = forwardDynamics(newX.row(i) , U.row(i), i);
         cost += computeL(newX.row(i+1), U.row(i)) * dt;
       }
 
-      // return X, cost TODO fix return / pass through
+      return cost;
   }
+
+  void finiteDifferences(MatrixXd &A, MatrixXd &B, VectorXd x, VectorXd u, int t) {
+      A = MatrixXd(numStates,numStates);
+      B = MatrixXd(numStates, kDof);
+
+      for(int i =0; i < numStates;i++) {
+          MatrixXd xPlus = x + Eigen::VectorXd::Ones(x.size()) *  finite_differences_epsilon;
+          MatrixXd xMinus = x -  Eigen::VectorXd::Ones(x.size()) *  finite_differences_epsilon;
+          MatrixXd xPlusNew = forwardDynamics(xPlus, u, t);
+          MatrixXd xMinusNew = forwardDynamics(xMinus, u, t);
+          MatrixXd diff = (xPlusNew - xMinusNew) / (2 * finite_differences_epsilon);
+          A.col(i) = diff;
+      }
+      for(int i =0; i < kDof;i++) {
+          MatrixXd uPlus = u + Eigen::VectorXd::Ones(u.size()) *  finite_differences_epsilon;
+          MatrixXd uMinus = u -  Eigen::VectorXd::Ones(u.size()) *  finite_differences_epsilon;
+          MatrixXd xPlusNew = forwardDynamics(x, uPlus, t);
+          MatrixXd xMinusNew = forwardDynamics(x, uMinus, t);
+          MatrixXd diff = (xPlusNew - xMinusNew) / (2 * finite_differences_epsilon);
+          B.col(i) = diff;
+      }
+  }
+
 
   void forwardPass(VectorXd x0, MatrixXd U) {
     update_rollout_ = false;
 
     MatrixXd X(T, kDof);
+    MatrixXd newX(T, kDof);
     VectorXd cost(kDof);
 
-    // control_sequence_rollout(x0 , U , X, cost)
+    computeControlSequence(x0 , U , newX);
     fx.clear();
     fu.clear();
     lxx.clear();
@@ -143,7 +169,7 @@ class iLQR {
 
     for (int i = 0; i < T; i++) {
 
-      l(i) = computeCost( X.row(i) , U.row(i), lx, lxx.at(i), lu, luu.at(i), lux.at(i), i);
+      l(i) = computeCost( newX.row(i) , U.row(i), lx, lxx.at(i), lu, luu.at(i), lux.at(i), i);
 
       MatrixXd A(numStates,numStates);
       MatrixXd B(numStates,kDof);
@@ -156,7 +182,7 @@ class iLQR {
       luu.at(i) *= dt;
       lux.at(i) *= dt;
 
-      // finiteDifferences(X.row(i), U.row(i), i, A, B);
+      finiteDifferences(A, B, newX.row(i), U.row(i), i);
       fx.at(i) = Eigen::MatrixXd::Identity(numStates,numStates) + A * dt;
       fu.at(i) = B * dt;
 
@@ -168,19 +194,25 @@ class iLQR {
      MatrixXd M;
      MatrixXd C;
      MatrixXd G;
-     double q[kDof];
-     double qd[kDof];
+     VectorXd qd_0(kDof);
+     VectorXd q_0(kDof);
+     double q_in[kDof];
+     double qd_in[kDof];
 
      for(int i = 0; i < kDof; i++) {
-       q[i] = x(i);
-       qd[i] = x(i+kDof);
+       q_in[i] = x(i);
+       qd_in[i] = x(i+kDof);
+       qd_0(i) = qd_in[i];
+       q_0(i) = q_in[i];
      }
 
-     computeMCG(q, qd, M, C, G);
+     computeMCG(q_in, qd_in, M, C, G);
 
+     MatrixXd qdd = M.inverse() * (u - C);
+     MatrixXd qd = qd_0 + qdd * dt;
+     VectorXd q = q_0 + qd * dt + 0.5 * qdd * pow(dt,2);
 
-     return x;
-
+     return q;
    }
 
   double computeL(VectorXd x, VectorXd u) {
@@ -215,38 +247,7 @@ class iLQR {
 
     return l;
   }
-  //
-  //     def cost_final(self, x):
-  //         """ the final state cost function """
-  //         num_states = x.shape[0]
-  //         l_x = np.zeros((num_states))
-  //         l_xx = np.zeros((num_states, num_states))
-  //
-  //         wp = 1e4 # terminal position cost weight
-  //         wv = 1e4 # terminal velocity cost weight
-  //
-  //         xy = self.arm.x
-  //         xy_err = np.array([xy[0] - self.target[0], xy[1] - self.target[1]])
-  //         l = (wp * np.sum(xy_err**2) +
-  //                 wv * np.sum(x[self.arm.DOF:self.arm.DOF*2]**2))
-  //
-  //         l_x[0:self.arm.DOF] = wp * self.dif_end(x[0:self.arm.DOF])
-  //         l_x[self.arm.DOF:self.arm.DOF*2] = (2 *
-  //                 wv * x[self.arm.DOF:self.arm.DOF*2])
-  //
-  //         eps = 1e-4 # finite difference epsilon
-  //         # calculate second derivative with finite differences
-  //         for k in range(self.arm.DOF):
-  //             veps = np.zeros(self.arm.DOF)
-  //             veps[k] = eps
-  //             d1 = wp * self.dif_end(x[0:self.arm.DOF] + veps)
-  //             d2 = wp * self.dif_end(x[0:self.arm.DOF] - veps)
-  //             l_xx[0:self.arm.DOF, k] = ((d1-d2) / 2.0 / eps).flatten()
-  //
-  //         l_xx[self.arm.DOF:self.arm.DOF*2, self.arm.DOF:self.arm.DOF*2] = 2 * wv * np.eye(self.arm.DOF)
-  //
-  //         # Final cost only requires these three values
-  // return l, l_x, l_xx
+
 
   void computeMCG(double * q_in, double * qd_in, MatrixXd &M, MatrixXd &C, MatrixXd &G) {
     double *qptr = &q_in[0];
@@ -272,9 +273,12 @@ class iLQR {
 
 
   void backwardsPass(){
+    std::cout << "HERE" << l.size() <<","<< lx.size()<<","<< lxx.size()<< std::endl;
+
     MatrixXd V = l.row(T);
     MatrixXd Vx = lx.row(T);
     MatrixXd Vxx = lxx.at(T);
+    std::cout << "HERE" << std::endl;
 
     MatrixXd Qx(numStates , 1);
     MatrixXd Qu(kDof , 1);
@@ -309,9 +313,12 @@ class iLQR {
 
  private:
 
-   VectorXd trajectoryCost(MatrixXd X, MatrixXd U) {
-     VectorXd cost(kDof);
+   double trajectoryCost(MatrixXd X, MatrixXd U) {
+     double cost = 0.0;
 
+     for(int i =0; i < T;i++) {
+       cost += computeL(X.row(i), U.row(i)) * dt;
+     }
      return cost;
    }
 
@@ -329,6 +336,9 @@ int do_main(int argc, const char* argv[]) {
 
 
   iLQR ilqr(*tree);
+  ilqr.X_ = Eigen::MatrixXd::Zero(50,14);
+  ilqr.U_ = Eigen::MatrixXd::Zero(50,7);
+  ilqr.update();
 
   double q_in[7] = {0,-0.05,0,0,0,0,0};
   double qd_in[7] = {0,0,0,0,0,0,0};
