@@ -20,7 +20,7 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
 
   properties (SetAccess=protected)
     timestep
-    tolerance = 1e-7;
+    tolerance = 1e-6;
     damping = 1e-3;
     sdamping = .1;
     integrator
@@ -261,10 +261,10 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
             J = f'*f;
             
             %--------- First Derivatives ---------%
-            dz = .5*tol*eye(length(z));
+            dz = 1e-7*eye(length(z));
             df = zeros(length(f), length(z));
             for k = 1:length(z)
-                df(:,k) = (obj.SimpsonResidual(q1,p1,z+dz(:,k),Np,Nd)-obj.SimpsonResidual(q1,p1,z-dz(:,k),Np,Nd))/tol;
+                df(:,k) = (obj.SimpsonResidual(q1,p1,z+dz(:,k),Np,Nd)-obj.SimpsonResidual(q1,p1,z-dz(:,k),Np,Nd))/2e-7;
             end
             %-------------------------------------%
             

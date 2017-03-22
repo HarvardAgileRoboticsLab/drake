@@ -12,7 +12,7 @@
         <box size="1 1 1" />
       </geometry>
     </visual>
-<!--     <collision>
+    <collision>
       <origin xyz=".5 .5 .5"/>
       <geometry>
         <sphere radius="0" />
@@ -35,14 +35,14 @@
       <geometry>
         <sphere radius="0" />
       </geometry>
-    </collision> -->
+    </collision>
     <collision>
       <origin xyz=".5 .5 -.5"/>
       <geometry>
         <sphere radius="0" />
       </geometry>
     </collision>
-    <!-- <collision>
+    <collision>
       <origin xyz="-.5 .5 -.5"/>
       <geometry>
         <sphere radius="0" />
@@ -59,7 +59,7 @@
       <geometry>
         <sphere radius="0" />
       </geometry>
-    </collision> -->
+    </collision>
   </link>
 </robot>
 
