@@ -13,32 +13,16 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     
     % cache stuff for warm starting
     cache_x
-    cache_f
     cache_q1
     cache_q2
     cache_q3
-    
-    cache_Nn
-    cache_Nd
-    cache_n1
-    cache_D1
-    cache_kinq2
-    cache_phi2
-    cache_n2
-    cache_D2
-    cache_kinq3
-    cache_phi3
-    cache_n3
-    cache_D3
-    
-    cache_Mq3
-    cache_M3
-    cache_C3
   end
 
   properties (SetAccess=protected)
     timestep
     tolerance = 1e-7;
+    damping = 1e-3;
+    sdamping = .1;
     integrator
     twoD=false
     multiple_contacts = false;
@@ -87,33 +71,13 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
       else
           obj.integrator = VariationalTimeSteppingRigidBodyManipulator.SIMPSON;
       end
-
-      if obj.twoD
-          obj.Nd = 2;
-      end
       
       obj.timestep = timestep;
       
       obj.cache_x = SharedDataHandle(0);
-      obj.cache_f = SharedDataHandle(0);
       obj.cache_q1 = SharedDataHandle(0);
       obj.cache_q2 = SharedDataHandle(0);
       obj.cache_q3 = SharedDataHandle(0);
-      obj.cache_Nn = SharedDataHandle(0);
-      obj.cache_Nd = SharedDataHandle(0);
-      obj.cache_n1 = SharedDataHandle(0);
-      obj.cache_D1 = SharedDataHandle(0);
-      obj.cache_kinq2 = SharedDataHandle(0);
-      obj.cache_phi2 = SharedDataHandle(0);
-      obj.cache_n2 = SharedDataHandle(0);
-      obj.cache_D2 = SharedDataHandle(0);
-      obj.cache_kinq3 = SharedDataHandle(0);
-      obj.cache_phi3 = SharedDataHandle(0);
-      obj.cache_n3 = SharedDataHandle(0);
-      obj.cache_D3 = SharedDataHandle(0);
-      obj.cache_Mq3 = SharedDataHandle(0);
-      obj.cache_M3 = SharedDataHandle(0);
-      obj.cache_C3 = SharedDataHandle(0);
 
       obj = setSampleTime(obj,[timestep;0]);
 
@@ -214,65 +178,56 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     function [xdn, dxdn] = update(obj,t,x,u)
         
         h = obj.timestep;
-        Nq = obj.manip.num_positions;
+        Nq = obj.getNumPositions;
         
         if (length(obj.cache_x.data) == length(x)) && all(obj.cache_x.data == x)
             %we've been here before...
             q1 = x(1:Nq);
             v1 = obj.cache_x.data((Nq+1):end);
             p1 = obj.DLT(obj.cache_q1.data,obj.cache_q2.data,obj.cache_q3.data);
-            
-            kin1 = obj.manip.doKinematics(q1);
-            [phi1,~,~,~,~,~,~,~,n1,D1] = obj.manip.contactConstraints(kin1, obj.multiple_contacts);
-            n1 = n1';
-            D1 = cell2mat(D1)';
-            
-            obj.cache_n1.data = n1;
-            obj.cache_D1.data = D1;
-            
-            Nn = size(n1,2);
-            Nd = size(D1,2);
-            if obj.cache_Nd.data == Nd
-                zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nd+4*Nn,1); 1];% obj.cache_f.data];
-            else
-                obj.cache_Nn.data = Nn;
-                obj.cache_Nd.data = Nd;
-                zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nd+4*Nn,1); 1];
-            end
         else
             %Set up intitial conditions
             q1 = x(1:Nq);
             v1 = x((Nq+1):end);
             M = manipulatorDynamics(obj.manip, q1, v1);
             p1 = M*v1;
-            
-            kin1 = obj.manip.doKinematics(q1);
-            [phi1,~,~,~,~,~,~,~,n1,D1] = obj.manip.contactConstraints(kin1, obj.multiple_contacts);
-            n1 = n1';
-            D1 = cell2mat(D1)';
-            Nn = size(n1,2);
-            Nd = size(D1,2);
-            obj.cache_Nn.data = Nn;
-            obj.cache_Nd.data = Nd;
-            obj.cache_n1.data = n1;
-            obj.cache_D1.data = D1;
-            
-            zguess = [q1+(h/2)*v1; q1+h*v1; zeros(2*Nd+4*Nn,1); 1];
         end
         
+        kin1 = obj.manip.doKinematics(q1);
+        colopts = struct();
+        [phi1,~,~,~,~,~,~,~,n1,D1] = obj.manip.contactConstraints(kin1, obj.multiple_contacts, colopts);
+        
+        Np = size(n1,1);
+        Nd = length(D1);
+        
+        D1 = reshape(cell2mat(D1')',Nq,Np*Nd)';
+        
+        zguess = [q1; q1; zeros(2*Np+2*Np*Nd+2*Np,1); 1];
+        
         %Solve Complementarity Problem
-        L = diag([zeros(2*Nq,1); .1*ones(4*Nn+2*Nd,1); 1]);
-        zopt = obj.dnsolver(q1,p1,L,zguess);
-
+        if Np == 0
+            %No contact -- yay!
+            q2 = zguess(1:Nq);
+            q3 = zguess(Nq+(1:Nq));
+            r = 1;
+            while max(abs(r)) > obj.tolerance
+                [r, dr] = obj.SimpsonDEL(p1, q1, q2, q3);
+                delta = -dr\r;
+                q2 = q2 + delta(1:Nq);
+                q3 = q3 + delta(Nq+(1:Nq));
+            end
+        else
+            zopt = obj.dnsolver(q1,p1,zguess,Np,Nd);
+            q2 = zopt(1:Nq);
+            q3 = zopt(Nq+(1:Nq));
+        end
+        
         %update state
-        q2 = zopt(1:Nq);
-        q3 = zopt(Nq+(1:Nq));
         v3 = (q1 - 4*q2 + 3*q3)/h;
         xdn = [q3; v3];
         
         %update cache
         obj.cache_x.data = xdn;
-        obj.cache_f.data = zopt((2*Nq+1):end);
         obj.cache_q1.data = q1;
         obj.cache_q2.data = q2;
         obj.cache_q3.data = q3;
@@ -293,52 +248,56 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         
     end
     
-    function z = dnsolver(obj,q1,p1,L,zguess)
-        
+    function z = dnsolver(obj,q1,p1,zguess,Np,Nd)
         tol = obj.tolerance;
+        Nq = length(q1);
         
         z = zguess;
         f = 1;
+        L = diag([zeros(2*Nq,1); obj.damping*ones(2*(Np+Np*Nd),1); zeros(2*Np,1); obj.sdamping]);
         while max(abs(f)) > tol
-            [f, df] = obj.SimpsonResidual(q1,p1,z);
+            
+            f = obj.SimpsonResidual(q1,p1,z,Np,Nd);
             J = f'*f;
             
+            %--------- First Derivatives ---------%
+            dz = .5*tol*eye(length(z));
+            df = zeros(length(f), length(z));
+            for k = 1:length(z)
+                df(:,k) = (obj.SimpsonResidual(q1,p1,z+dz(:,k),Np,Nd)-obj.SimpsonResidual(q1,p1,z-dz(:,k),Np,Nd))/tol;
+            end
+            %-------------------------------------%
+            
+            %Damped + Regularized Newton descent direction
             [Q,R] = qr([df; L],0);
             delta = -R\(Q(1:length(f),:)'*f);
             
             znew = z+delta;
-            fnew = obj.SimpsonResidual(q1,p1,znew);
+            
+            fnew = obj.SimpsonResidual(q1,p1,znew,Np,Nd);
             Jnew = fnew'*fnew;
             
             if Jnew > J
-                L = 10*L;
-                alpha = (1/3);
-                while Jnew > J && alpha > 1e-10
+                alpha = (1/2);
+                while Jnew > J && alpha > tol
                     znew = z + alpha*delta;
-                    znew(end) = max(tol, z(end));
-                    fnew = obj.SimpsonResidual(q1,p1,znew);
+                    fnew = obj.SimpsonResidual(q1,p1,znew,Np,Nd);
                     Jnew = fnew'*fnew;
-                    alpha = alpha/3;
+                    alpha = alpha/2;
                 end
-                if alpha < 1e-10
-                    L = 1000*L;
+                if alpha < tol
                     znew = z;
-                    znew(end) = max(tol, z(end));
                 end
-            else
-                L = .2*L;
             end
             z = znew;
         end
     end
     
-    function [f, df] = SimpsonResidual(obj,q1,p1,z)
+    function f = SimpsonResidual(obj,q1,p1,z,Np,Nd)
         mu = 1; %This is currently hard coded in Drake...
         
         Nq = length(q1);
-        Nn = obj.cache_Nn.data;
-        Nd = obj.cache_Nd.data;
-        Nl = 2*Nn+2*Nd;
+
         h = obj.timestep;
         
         %z vector is stacked [q_{1/2}; q_2; c1; b1; c2; b2; eta; psi; s]
@@ -348,66 +307,70 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         q3 = z(Nq+(1:Nq));
         
         %Contact force coefficients
-        lambda = z(2*Nq+(1:Nl));
-        c1 = lambda(1:Nn);
-        b1 = lambda(Nn+(1:Nd));
-        c2 = lambda(Nn+Nd+(1:Nn));
-        b2 = lambda(2*Nn+Nd+(1:Nd));
+        c1 = z(2*Nq+(1:Np));
+        b1 = z(2*Nq+Np+(1:Np*Nd));
+        c2 = z(2*Nq+Np+Np*Nd+(1:Np));
+        b2 = z(2*Nq+2*Np+Np*Nd+(1:Np*Nd));
         
         %Normal contact velocity
-        eta = z(2*Nq+Nl+(1:Nn));
+        eta = z(2*Nq+2*Np+2*Np*Nd+(1:Np));
         
         %Tangential contact velocity
-        psi = z(2*Nq+Nl+Nn+(1:Nn));
+        psi = z(2*Nq+2*Np+2*Np*Nd+Np+(1:Np));
         
-        %Slack variable for complementarity smoothing
         s = z(end);
-        
-        %Get contact basis
-        e = ones(Nd/Nn,1);
-        if (length(obj.cache_kinq3.data) == length(q3)) && all(obj.cache_kinq3.data == q3)
-            %we've been here before...
-            phi3 = obj.cache_phi3.data;
-            n = obj.cache_n3.data;
-            D = obj.cache_D3.data;
-        else
-            kin3 = obj.manip.doKinematics(q3);
-            [phi3,~,~,~,~,~,~,~,n,D] = obj.manip.contactConstraints(kin3, obj.multiple_contacts);
-            n = n';
-            D = cell2mat(D)';
-            obj.cache_kinq3.data = q3;
-            obj.cache_phi3.data = phi3;
-            obj.cache_n3.data = n;
-            obj.cache_D3.data = D;
-        end
         
         %velocity at last knot point
         v3 = (q1 - 4*q2 + 3*q3)/h;
-        dv3 = [(-4/h)*eye(Nq), (3/h)*eye(Nq)];
+%         dv3 = [(-4/h)*eye(Nq), (3/h)*eye(Nq)];
         
-        [r_del, dr_del] = obj.SimpsonDEL(p1, q1, q2, q3);
+        %Get contact basis
+        e = ones(Nd,1);
         
-        r_f = r_del + [(h/3)*(n*c1 + D*b1); (2*h/3)*(n*c2 + D*b2)];
-        dr_f = [dr_del, [(h/3)*n, (h/3)*D, zeros(Nq,Nn+Nd); zeros(Nq,Nn+Nd), (2*h/3)*n, (2*h/3)*D]];
+        kin1 = obj.manip.doKinematics(q1);
+        [phi1,~,~,~,~,~,~,~,n1,D1] = obj.manip.contactConstraints(kin1, obj.multiple_contacts);
         
-        [fb1, dfba1, dfbb1, dfbs1] = obj.smoothFB(kron(phi3,[1;1;e;e]),lambda,s);
-        [fb2, dfba2, dfbb2, dfbs2] = obj.smoothFB(kron(eta,[1;1;e;e]),lambda,s);
-        [fb3, dfba3, dfbb3, dfbs3] = obj.smoothFB(eta, (eta - n'*v3), s);
-        [fb4, dfba4, dfbb4, dfbs4] = obj.smoothFB(mu*c1-kron(eye(Nn),e')*b1, psi, s);
-        [fb5, dfba5, dfbb5, dfbs5] = obj.smoothFB(mu*c2-kron(eye(Nn),e')*b2, psi, s);
-        [fb6, dfba6, dfbb6, dfbs6] = obj.smoothFB((kron(psi,e) + D'*v3), b1, s);
-        [fb7, dfba7, dfbb7, dfbs7] = obj.smoothFB((kron(psi,e) + D'*v3), b2, s);
+        kin2 = obj.manip.doKinematics(q2);
+        [phi2,~,~,~,~,~,~,~,n2,D2] = obj.manip.contactConstraints(kin2, obj.multiple_contacts);
         
-        f = [r_f; exp(s)-1; fb1; fb2; fb3; fb4; fb5; fb6; fb7];
-        df = [dr_f, zeros(2*Nq, 2*Nn+1);
-              zeros(1,2*Nq+Nl+2*Nn), exp(s);
-              zeros(Nl,Nq), dfba1*kron(n',[1;1;e;e]), dfbb1, zeros(Nl,2*Nn), dfbs1;
-              zeros(Nl,2*Nq), dfbb2, dfba2*kron(eye(Nn),[1;1;e;e]), zeros(Nl,Nn), dfbs2;
-              -dfbb3*n'*dv3, zeros(Nn,Nl), dfba3+dfbb3, zeros(Nn,Nn), dfbs3;
-              zeros(Nn,2*Nq), mu*dfba4*eye(Nn), -dfba4*kron(eye(Nn),e'), zeros(Nn,Nn+Nd), zeros(Nn,Nn), dfbb4, dfbs4;
-              zeros(Nn,2*Nq+Nn+Nd), mu*dfba5*eye(Nn), -dfba5*kron(eye(Nn),e'), zeros(Nn,Nn), dfbb5, dfbs5;
-              dfba6*D'*dv3, zeros(Nd,Nn), dfbb6, zeros(Nd,2*Nn+Nd), dfba6*kron(eye(Nn),e), dfbs6;
-              dfba7*D'*dv3, zeros(Nd,2*Nn+Nd), dfbb7, zeros(Nd,Nn), dfba7*kron(eye(Nn),e), dfbs7];
+        kin3 = obj.manip.doKinematics(q3);
+        [phi3,~,~,~,~,~,~,~,n3,D3] = obj.manip.contactConstraints(kin3, obj.multiple_contacts);
+        
+        D1 = reshape(cell2mat(D1')',Nq,Np*Nd)';
+        D2 = reshape(cell2mat(D2')',Nq,Np*Nd)';
+        D3 = reshape(cell2mat(D3')',Nq,Np*Nd)';
+            
+        r_del = obj.SimpsonDEL(p1, q1, q2, q3);
+        
+        r_f = r_del + [(h/3)*(n1'*c1 + D1'*b1); (2*h/3)*(n2'*c2 + D2'*b2)];
+%         dr_f = [dr_del, [(h/3)*n1', (h/3)*D1', zeros(Nq,Np+Np*Nd); zeros(Nq,Np+Np*Nd), (2*h/3)*n2', (2*h/3)*D2'], zeros(2*Nq,2*Np+1)];
+        
+        [fb1, dfba1, dfbb1, dfbs1] = obj.smoothFB(phi3, c1, s);
+        [fb2, dfba2, dfbb2, dfbs2] = obj.smoothFB(kron(phi3,ones(Nd,1)), b1, s);
+        [fb3, dfba3, dfbb3, dfbs3] = obj.smoothFB(phi3, c2, s);
+        [fb4, dfba4, dfbb4, dfbs4] = obj.smoothFB(kron(phi3,ones(Nd,1)), b2, s);
+        
+        [fb5, dfba5, dfbb5, dfbs5] = obj.smoothFB(eta, c1, s);
+        [fb6, dfba6, dfbb6, dfbs6] = obj.smoothFB(kron(eta,ones(Nd,1)), b1, s);
+        [fb7, dfba7, dfbb7, dfbs7] = obj.smoothFB(eta, c2, s);
+        [fb8, dfba8, dfbb8, dfbs8] = obj.smoothFB(kron(eta,ones(Nd,1)), b2, s);
+        
+        [fb9, dfba9, dfbb9, dfbs9] = obj.smoothFB(eta, (eta - n3*v3), s);
+        [fb10, dfba10, dfbb10, dfbs10] = obj.smoothFB((mu*c1 - kron(eye(Np),e')*b1), psi, s);
+        [fb11, dfba11, dfbb11, dfbs11] = obj.smoothFB((mu*c2 - kron(eye(Np),e')*b2), psi, s);
+        [fb12, dfba12, dfbb12, dfbs12] = obj.smoothFB((kron(psi,e) + D3*v3), b1, s);
+        [fb13, dfba13, dfbb13, dfbs13] = obj.smoothFB((kron(psi,e) + D3*v3), b2, s);
+        
+        f = [r_f; fb1; fb2; fb3; fb4; fb5; fb6; fb7; fb8; fb9; fb10; fb11; fb12; fb13; exp(s)-1];
+%         df = [dr_f;
+%               zeros(1,2*Nq+2*Np*Nd+4*Np), exp(s);
+%               zeros(2*(Np+Np*Nd),Nq), dfba1*kron(n3,ones(2*(Nd+1),1)), dfbb1, zeros(2*(Np+Np*Nd),2*Np), dfbs1;
+%               zeros(2*(Np+Np*Nd),2*Nq), dfbb2, dfba2*kron(eye(Np),ones(2*(Nd+1),1)), zeros(2*(Np+Np*Nd),Np), dfbs2;
+%               -dfbb3*n3*dv3, zeros(Np,2*(Np+Np*Nd)), dfba3+dfbb3, zeros(Np), dfbs3;
+%               zeros(Np,2*Nq), mu*dfba4, -dfba4*kron(eye(Np),e'), zeros(Np,Np+Np*Nd), zeros(Np), dfbb4, dfbs4;
+%               zeros(Np,2*Nq), zeros(Np,Np+Np*Nd), mu*dfba5, -dfba5*kron(eye(Np),e'), zeros(Np), dfbb5, dfbs5;
+%               dfba6*D3*dv3, zeros(Np*Nd,Np), dfbb6, zeros(Np*Nd,Np+Np*Nd), zeros(Np*Nd,Np), dfba6*kron(eye(Np),e), dfbs6;
+%               dfba7*D3*dv3, zeros(Np*Nd,Np+Np*Nd), zeros(Np*Nd,Np), dfbb7, zeros(Np*Nd,Np), dfba7*kron(eye(Np),e), dfbs7];
     end
     
     function [f, dfda, dfdb, dfds] = smoothFB(obj,a,b,s)
@@ -439,7 +402,7 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         dr = (h/4)*obj.D1D1L((q2+q3)/2,(q3-q2)/h) + (1/2)*obj.D1D2L((q2+q3)/2,(q3-q2)/h) - (1/2)*obj.D1D2L((q2+q3)/2,(q3-q2)/h) - (1/h)*obj.D2D2L((q2+q3)/2,(q3-q2)/h);
     end
     
-    function [r, dr] = SimpsonDEL(obj, p1, q1, q2, q3)
+    function r = SimpsonDEL(obj, p1, q1, q2, q3)
         h = obj.timestep;
         
         %velocities at timestep k+1 knot points
@@ -447,20 +410,19 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
         v2 = (q3 - q1)/h;
         v3 = (q1 - 4*q2 + 3*q3)/h;
         
-        [d1L_1, d2L_1, d1d1L_1, d1d2L_1, d2d2L_1] = obj.SimpsonLDerivs(q1,v1);
-        [d1L_2, d2L_2, d1d1L_2, d1d2L_2, d2d2L_2] = obj.SimpsonLDerivs(q2,v2);
-        [d1L_3, d2L_3, d1d1L_3, d1d2L_3, d2d2L_3] = obj.SimpsonLDerivs(q3,v3);
+        [d1L_1, d2L_1] = obj.SimpsonLDerivs(q1,v1);
+        [d1L_2, d2L_2] = obj.SimpsonLDerivs(q2,v2);
+        [d1L_3, d2L_3] = obj.SimpsonLDerivs(q3,v3);
         
-        obj.cache_Mq3.data = q3;
-        obj.cache_M3.data = d2d2L_3;
-        obj.cache_C3.data = d1d2L_3;
-        
+%         [d1L_1, d2L_1, d1d1L_1, d1d2L_1, d2d2L_1] = obj.SimpsonLDerivs(q1,v1);
+%         [d1L_2, d2L_2, d1d1L_2, d1d2L_2, d2d2L_2] = obj.SimpsonLDerivs(q2,v2);
+%         [d1L_3, d2L_3, d1d1L_3, d1d2L_3, d2d2L_3] = obj.SimpsonLDerivs(q3,v3);
+
         r = [p1 + (h/6)*d1L_1 - (1/2)*d2L_1 - (2/3)*d2L_2 + (1/6)*d2L_3;
              (2/3)*d2L_1 + (2*h/3)*d1L_2 - (2/3)*d2L_3];
         
-          
-        dr = [(2/3)*d1d2L_1 - (2/h)*d2d2L_1 - (2/3)*d1d2L_2 - (2/(3*h))*d2d2L_3, -(1/6)*d1d2L_1 + (1/(2*h))*d2d2L_1 - (2/(3*h))*d2d2L_2 + (1/6)*d1d2L_3 + (1/(2*h))*d2d2L_3;
-              (8/(3*h))*d2d2L_1 + (2*h/3)*d1d1L_2 + (8/(3*h))*d2d2L_3, -(2/(3*h))*d2d2L_1 + (2/3)*d1d2L_2 - (2/3)*d1d2L_3 - (2/h)*d2d2L_3];
+%         dr = [(2/3)*d1d2L_1 - (2/h)*d2d2L_1 - (2/3)*d1d2L_2 - (2/(3*h))*d2d2L_3, -(1/6)*d1d2L_1 + (1/(2*h))*d2d2L_1 - (2/(3*h))*d2d2L_2 + (1/6)*d1d2L_3 + (1/(2*h))*d2d2L_3;
+%               (8/(3*h))*d2d2L_1 + (2*h/3)*d1d1L_2 + (8/(3*h))*d2d2L_3, -(2/(3*h))*d2d2L_1 + (2/3)*d1d2L_2 - (2/3)*d1d2L_3 - (2/h)*d2d2L_3];
     end
     
     function p = DLT(obj, q1, q2, q3)
@@ -474,73 +436,42 @@ classdef VariationalTimeSteppingRigidBodyManipulator < DrakeSystem
     end
     
     function dL = D1L(obj,q,v)
-        [~,Cg] = manipulatorDynamics(obj.manip, q, v);
-        [~,G] = manipulatorDynamics(obj.manip, q, zeros(size(v)));
-        
-        Cv = Cg - G;
-        dL = 0.5*Cv - G;
+        Nq = length(q);
+        Nv = length(v);
+        [~,G,~,dM] = manipulatorDynamics(obj.manip, q, zeros(Nv,1));
+        dM = reshape(dM,Nq*Nq,Nq+Nv);
+        dMdq = dM(:,1:Nq);
+        dL = 0.5*dMdq'*kron(v,v) - G;
     end
     
     function dL = D2L(obj,q,v)
-         M = manipulatorDynamics(obj.manip, q, v);
-         dL = M*v;
-    end
-    
-    function d2L = D1D1L(obj,q,v)
-        Nq = length(q);
-        Nv = length(v);
-        
-        [~,~,~,~,dCg] = manipulatorDynamics(obj.manip, q, v);
-        [~,~,~,~,dG] = manipulatorDynamics(obj.manip, q, zeros(Nv,1));
-        
-        dCgdq = dCg(:,1:Nq);
-        dGdq = dG(:,1:Nq);
-        
-        d2L = 0.5*(dCgdq - dGdq) - dGdq;
-    end
-    
-    function d2L = D1D2L(obj,q,v)
-        Nq = length(q);
-        Nv = length(v);
-        
-        [~,~,~,dM] = manipulatorDynamics(obj.manip, q, v);
-        dM = reshape(dM,Nq*Nq,Nq+Nv);
-        d2L = reshape(dM(:,1:Nq)*v,Nq,Nq); %this is just the matrix C(q,qd)
-        
-        %This should give the same answer...
-        %Nq = length(q);
-        %Nv = length(v);
-        %[~,~,~,~,dCg] = manipulatorDynamics(obj.manip, q, v);
-        %[~,~,~,~,dG] = manipulatorDynamics(obj.manip, q, zeros(Nv,1));
-        %dCv = dCg - dG;
-        %C = dCv(:,Nq+(1:Nv));
-    end
-    
-    function d2L = D2D2L(obj,q,v)
         M = manipulatorDynamics(obj.manip, q, v);
-        d2L = M;
+        dL = M*v;
     end
     
-    function [d1L, d2L, d1d1L, d1d2L, d2d2L] = SimpsonLDerivs(obj,q,v)
+    function [d1L, d2L] = SimpsonLDerivs(obj,q,v)
         Nq = length(q);
         Nv = length(v);
         
-        [M,Cg,~,dM,dCg] = manipulatorDynamics(obj.manip, q, v);
-        [~,G,~,~,dG] = manipulatorDynamics(obj.manip, q, zeros(size(v)));
+        [M,G,~,dMdqx,dG] = manipulatorDynamics(obj.manip, q, zeros(Nv,1));
         
-        Cv = Cg - G;
-        d1L = 0.5*Cv - G;
+        dMdqx = reshape(dMdqx,Nq*Nq,Nq+Nv);
+        dM = dMdqx(:,1:Nq);
+        
+        d1L = 0.5*dM'*kron(v,v) - G;
         d2L = M*v;
         
-        dCgdq = dCg(:,1:Nq);
-        dGdq = dG(:,1:Nq);
-        d1d1L = 0.5*(dCgdq - dGdq) - dGdq;
-        
-        dM = reshape(dM,Nq*Nq,Nq+Nv);
-        dMdq = dM(:,1:Nq);
-        d1d2L = reshape(dMdq*v,Nq,Nq); %this is just the matrix C(q,qd)
-        
-        d2d2L = M;
+%         d2M = zeros(Nq*Nq*Nq,Nq);
+%         dq = 5e-8*eye(Nq);
+%         for k = 1:Nq
+%             [~,~,~,dMp] = manipulatorDynamics(obj.manip, q+dq(:,k), zeros(Nv,1));
+%             [~,~,~,dMm] = manipulatorDynamics(obj.manip, q-dq(:,k), zeros(Nv,1));
+%             d2M(:,k) = vec(dMp(:,1:Nq)-dMm(:,1:Nq))/1e-7;
+%         end
+%         
+%         d1d1L = 0.5*kron(eye(Nq),kron(v',v'))*d2M - dG(:,1:Nq);
+%         d1d2L = kron(v',eye(Nq))*dM;
+%         d2d2L = M;
     end
     
     function obj = addSensor(obj,sensor)

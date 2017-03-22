@@ -9,9 +9,9 @@ options.terrain = RigidBodyFlatTerrain();
 s = 'Ball.urdf';
 
 %x0 = [0;1;0;0;0;10];
-x0 = [0;0;1;0;0;0;0;0;0;50;0;0];
+x0 = [0;0;1;0;0;0;0;2;0;0;0;0];
 
-% p1 = TimeSteppingRigidBodyManipulator(s,.02,options);
+% p1 = TimeSteppingRigidBodyManipulator(s,.05,options);
 % x01 = p1.resolveConstraints(x0);
 % v1 = p1.constructVisualizer();
 % v1.drawWrapper(0,x0);
@@ -23,7 +23,7 @@ x0 = [0;0;1;0;0;0;0;0;0;50;0;0];
 p2 = VariationalTimeSteppingRigidBodyManipulator(s,.1,options);
 x02 = p2.resolveConstraints(x0);
 tic
-xtraj2 = p2.simulate([0 2],x02);
+xtraj2 = p2.simulate([0 3],x02);
 toc
 v2 = p2.constructVisualizer();
 v2.playback(xtraj2);
