@@ -1,0 +1,34 @@
+
+cmd "1.director_ik_planner_app" {
+  exec = "build/install/bin/directorPython drake/examples/kuka_iiwa_arm/director_ik_app.py --director_config drake/examples/kuka_iiwa_arm/director_config.json";
+  host = "localhost";
+}
+
+
+group "0.sim" {
+    cmd "1.kuka_plan_runner" {
+        exec = "build/drake/examples/kuka_iiwa_arm/kuka_plan_runner";
+        host = "localhost";
+    }
+    cmd "2.kuka_control" {
+        exec = "build/drake/examples/kuka_iiwa_arm/kuka_control";
+        host = "localhost";
+    }
+    cmd "3.state_lcm_translator" {
+        exec = "DRC_BASE=/none build/install/bin/directorPython drake/examples/kuka_iiwa_arm/kuka_iiwa_state_translator.py --director_config drake/examples/kuka_iiwa_arm/director_config.json";
+        host = "localhost";
+    }
+    cmd "4.kuka_simulation" {
+        exec = "build/drake/examples/kuka_iiwa_arm/kuka_simulation";
+        host = "localhost";
+    }
+    cmd "5.robot_controller" {
+        exec = "build/drake/examples/kuka_iiwa_arm/robot_controller";
+        host = "localhost";
+    }
+}
+
+cmd "2.kuka_ik_demo" {
+    exec = "build/drake/examples/kuka_iiwa_arm/kuka_ik_demo";
+    host = "localhost";
+}
