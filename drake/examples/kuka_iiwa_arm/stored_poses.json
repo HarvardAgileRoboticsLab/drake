@@ -134,6 +134,21 @@
       },
       "name": "grasping pose 3",
       "nominal_handedness": "left"
+    },
+    {
+      "allow_mirror": true,
+      "description": "0.3 rad all joint",
+      "joints": {
+        "iiwa_joint_1": 0.2967070937156677,
+        "iiwa_joint_2": 0.29742926359176636,
+        "iiwa_joint_3": 0.296706885099411,
+        "iiwa_joint_4": 0.2973948121070862,
+        "iiwa_joint_5": 0.29670608043670654,
+        "iiwa_joint_6": 0.29740461707115173,
+        "iiwa_joint_7": 0.2993239760398865
+      },
+      "name": "0.3",
+      "nominal_handedness": "left"
     }
   ]
 }

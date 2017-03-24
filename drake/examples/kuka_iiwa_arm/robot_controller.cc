@@ -76,14 +76,18 @@ const char* const kLcmCommandChannel = "IIWA_COMMAND";
           iiwa_command.joint_torque.resize(kNumJoints_, 0.);
 
           U_ = K_.row(currentStep) * (X_) + k_.row(currentStep);
-          vector<double> command(U_.data(), U_.data() + U_.rows() * U_.cols());
-          iiwa_command.joint_torque = command;
+          // vector<double> command(U_.data(), U_.data() + U_.rows() * U_.cols());
+          for (int i = 0 ; i < kNumJoints_; i++) {
+            iiwa_command.joint_torque.push_back(U_(i));
+
+          }
 
           chrono::steady_clock::time_point end = get_time::now();
           chrono::duration<double> time_span = chrono::duration_cast<chrono::duration<double>>(end - start);
 
           if (time_span.count() > dt_) {
-            std::cout << "dt: "  << time_span.count() << std::endl;
+
+            std::cout << "dt: "  << time_span.count()  << std::endl;
             currentStep++;
             start = get_time::now();
           }

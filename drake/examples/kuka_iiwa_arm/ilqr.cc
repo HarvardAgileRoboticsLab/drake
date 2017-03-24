@@ -30,15 +30,15 @@ namespace kuka_iiwa_arm {
 namespace {
 
 const int kDof = 7;
-const int T = 25;
+const int T = 10;
 const int numStates = 14;
 const double dt = 0.001;
-const double finite_differences_epsilon = 1e-4;
-const int maxIterations = 10;
-const double converganceThreshold = 0.000000000000000000000001;
+const double finite_differences_epsilon = 1e-3;
+const int maxIterations = 5;
+const double converganceThreshold = 0.0;
 const double terminalPosWeight = 0.01;
 const double terminalVelWeight = 0.01;
-const double MIN_VALUE = 0.000000000000001;
+const double MIN_VALUE = 0.000000000000000000001;
 class iLQR {
  public:
   Eigen::MatrixXd k_;
@@ -109,10 +109,11 @@ class iLQR {
 
       MatrixXd newU = computeNewU(x0_);
       current_cost_ = computeControlSequence(X_.row(0) , newU, X_);
-      std::cout << "Current Cost: " << current_cost_ << " Optimal Cost Sum: " <<  optimal_cost_ << std::endl;
+      std::cout <<" i " << i << " Current Cost: " << current_cost_ << " Optimal Cost Sum: " <<  optimal_cost_ << std::endl;
 
       //TODO current_cost_sum_
       if (current_cost_ < optimal_cost_) {
+        std::cout << "LOWER COST FOUND " << std::endl;
         lambda_ /= lambda_factor_;
         update_rollout_ = true;
         //TODO what do I reuse / save?
@@ -120,6 +121,7 @@ class iLQR {
         optimal_cost_ = current_cost_;
 
         if ((fabs((current_cost_ - optimal_cost_))/fabs(optimal_cost_)) < converganceThreshold) {
+          std::cout << "DONE!!!! " << std::endl;
           break;
         }
 
@@ -127,6 +129,8 @@ class iLQR {
         lambda_ *= lambda_factor_;
       }
     }
+    std::cout << "METHOD DONE!!!! " << std::endl;
+
   }
 
   MatrixXd computeNewU(MatrixXd x0) {
@@ -151,8 +155,8 @@ class iLQR {
         cost += computeL(newX.row(i+1), U.row(i)) * dt;
         std::cout << "newX " << newX.row(i)  << std::endl;
         std::cout << "newX+1 " << newX.row(i+1)  << std::endl;
-        std::cout << "U " << U.row(i)  << std::endl;
-        std::cout << "c0: " << x0 << std::endl;
+        // std::cout << "U " << U.row(i)  << std::endl;
+        // std::cout << "c0: " << x0 << std::endl;
         std::cout << "c0st: " << cost << std::endl;
 
         std::cout << "-------------------------" << std::endl;
@@ -481,6 +485,7 @@ int do_main(int argc, const char* argv[]) {
   gps_run_controller cmd;
   cmd.numTimeSteps = 25;
   cmd.numStates = 14;
+  cmd.dt = 0.001;
 
   for(int i =0; i <cmd.numTimeSteps; i++ ){
     gps_controller_gains K;
@@ -488,18 +493,20 @@ int do_main(int argc, const char* argv[]) {
 
     K.numStates = cmd.numStates;
     k.numStates = cmd.numStates;
+
+
     for(int j = 0; j < cmd.numStates; j++){
-      K.values[j] = ilqr.K_(i,j);
-      k.values[j] = ilqr.k_(i,j);
+      // std::cout << "sdfsdfsdf"    << std::endl;
+
+      K.values.push_back(ilqr.K_(i,j));
+      k.values.push_back(ilqr.k_(i,j));
 
     }
-    cmd.K[i] = K;
-    cmd.k[i] = k;
+    cmd.K.push_back(K);
+    cmd.k.push_back(k);
 
   }
-  std::cout << "sdfsdfsdf";
   lcm_.publish(kLcmRunControllerChannel, &cmd);
-  std::cout << "sddfdfdfdfddddddddddddddddddddddddddddddfsdfsdf";
 
 
   // double q_in[7] = {0,-0.05,0,0,0,0,0};
