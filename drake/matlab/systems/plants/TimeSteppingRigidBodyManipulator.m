@@ -179,6 +179,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       model.LCP_cache.data.t = NaN;
       model.LCP_cache.data.x = NaN(model.getNumStates(),1);
       model.LCP_cache.data.u = NaN(model.getNumInputs(),1);
+%       model.LCP_cache.data.w = NaN(model.getNumStates(),1);
       model.LCP_cache.data.nargout = NaN;
       model.dirty = false;
     end
@@ -197,11 +198,16 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       end
     end
 
-    function [xdn,df] = update(obj,t,x,u)
+    function [xdn,df] = update(obj,t,x,u,w_idx,w)
+      if nargin < 5
+          w_idx = [];
+          w = zeros(6,0);
+      end
+      
       if (nargout>1)
-        [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u);
+        [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u,w_idx,w);
       else
-        [obj,z,Mvn,wvn] = solveLCP(obj,t,x,u);
+        [obj,z,Mvn,wvn] = solveLCP(obj,t,x,u,w_idx,w);
       end
 
       num_q = obj.manip.num_positions;
@@ -255,9 +261,13 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       end
     end
 
-    function hit = cacheHit(obj,t,x,u,num_args_out)
-      hit = (t==obj.LCP_cache.data.t && all(x==obj.LCP_cache.data.x) && ...
-             all(u==obj.LCP_cache.data.u) && num_args_out <= obj.LCP_cache.data.nargout);
+    function hit = cacheHit(obj,t,x,u,w_idx,w,num_args_out)
+      hit = (t==obj.LCP_cache.data.t && ...
+             all(x==obj.LCP_cache.data.x) && ...
+             all(u==obj.LCP_cache.data.u) && ...
+             all(w_idx==obj.LCP_cache.data.w_idx) && ...
+             all(w==obj.LCP_cache.data.w) && ...
+             num_args_out <= obj.LCP_cache.data.nargout);
     end
 
     function [obj, z, Mqdn, wqdn] = solveMexLCP(obj, t, x, u)
@@ -284,8 +294,14 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         obj.LCP_cache.data.possible_limit_indices = logical(possible_jointlimit_indices)';
     end
 
-    function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u)
-      if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
+    function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u,w_idx,w)
+       if (nargin < 5)
+           w_idx = [];
+           w = zeros(6,0);
+       end
+        
+       if 0 % don't use C++ implementation for now
+%       if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
         [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
         return;
       end
@@ -293,7 +309,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
 %       global active_set_fail_count
       % do LCP time-stepping
       % todo: implement some basic caching here
-      if cacheHit(obj,t,x,u,nargout)
+      if cacheHit(obj,t,x,u,w_idx,w,nargout)
         z = obj.LCP_cache.data.z;
         Mvn = obj.LCP_cache.data.Mqdn;
         wvn = obj.LCP_cache.data.wqdn;
@@ -308,6 +324,8 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         obj.LCP_cache.data.x = x;
         obj.LCP_cache.data.u = u;
         obj.LCP_cache.data.nargout = nargout;
+        obj.LCP_cache.data.w_idx = w_idx;
+        obj.LCP_cache.data.w = w;
 
         num_q = obj.manip.getNumPositions;
         num_v = obj.manip.getNumVelocities;
@@ -335,6 +353,13 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             tau = -C;
             dtau = [zeros(num_v,1), -dC, zeros(size(B))];
           end
+        end
+        
+        % add the disturbance to the forces
+        options = struct('rotation_type', 1);
+        for i=1:length(w_idx)
+            [~,Jw] = obj.forwardKin(kinsol,w_idx(i),zeros(3,1),options);
+            tau = tau + Jw'*w(:,i);
         end
 
         if (obj.position_control)
@@ -546,7 +571,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
 
         M = zeros(nL+nP+(mC+2)*nC)*q(1);
         w = zeros(nL+nP+(mC+2)*nC,1)*q(1);
-
+        
         Hinv = inv(H);
         wvn = v + h*Hinv*tau;
         Mvn = Hinv*vToqdot'*J';

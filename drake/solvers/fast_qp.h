@@ -12,6 +12,13 @@ int fastQPThatTakesQinv(
   // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
   std::set<int>& active, Eigen::VectorXd& x);
 
+int fastQPThatTakesQinvFactored(
+  std::vector<Eigen::MatrixXd*> QinvblkDiag, const Eigen::VectorXd& x_star,
+  const Eigen::MatrixXd& Aeq, const Eigen::VectorXd& beq,
+  const Eigen::MatrixXd& Ain, const Eigen::VectorXd& bin,
+  // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+  std::set<int>& active, Eigen::VectorXd& x);
+
 int fastQP(
   std::vector<Eigen::MatrixXd*> QblkDiag, const Eigen::VectorXd& f,
   const Eigen::MatrixXd& Aeq, const Eigen::VectorXd& beq,

@@ -14,7 +14,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
   if (nrhs < 2) {
     mexErrMsgIdAndTxt(
         "Drake:fastQP:NotEnoughInputs",
-        "Usage [x, info, active] = fastQP(Q, f[, Aeq, beq, Ain, bin, active])");
+        "Usage [x, info, active] = fastQPThatTakesQinvFactoredmex(Qinv, x_star[, Aeq, beq, Ain, bin, active])");
   }
   if (nlhs < 1) return;
 
@@ -61,9 +61,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     QblkMat.push_back(&Q[0]);
   }
 
-  Map<VectorXd> f(mxGetPr(prhs[arg]), mxGetNumberOfElements(prhs[arg]));
+  Map<VectorXd> x_star(mxGetPr(prhs[arg]), mxGetNumberOfElements(prhs[arg]));
   arg++;
-  int N = f.rows();  // support row or column vectors
+  int N = x_star.rows();  // support row or column vectors
 
   Map<MatrixXd> Aeq(NULL, 0, N);
   Map<VectorXd> beq(NULL, 0);
@@ -99,11 +99,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
   // NOTE: another copy happening down here.  TODO: fix it with templates
   // (later)
-  VectorXd x(f.rows());
-  int info = fastQP(QblkMat, f, Aeq, beq, Ain, bin, active, x);
+  VectorXd x(x_star.rows());
+  int info = fastQPThatTakesQinvFactored(QblkMat, x_star, Aeq, beq, Ain, bin, active, x);
 
-  plhs[0] = mxCreateDoubleMatrix(f.rows(), 1, mxREAL);
-  memcpy(mxGetPr(plhs[0]), x.data(), sizeof(double) * f.rows());
+  plhs[0] = mxCreateDoubleMatrix(x_star.rows(), 1, mxREAL);
+  memcpy(mxGetPr(plhs[0]), x.data(), sizeof(double) * x_star.rows());
 
   if (nlhs > 1) plhs[1] = mxCreateDoubleScalar((double)info);
   if (nlhs > 2) {

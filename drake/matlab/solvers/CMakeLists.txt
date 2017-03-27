@@ -2,6 +2,12 @@ if(gurobi_FOUND)
   drake_add_mex(fastQPmex fastQPmex.cpp)
   target_link_libraries(fastQPmex drakeQP)
 
+  drake_add_mex(fastQPThatTakesQinvmex fastQPThatTakesQinvmex.cpp)
+  target_link_libraries(fastQPThatTakesQinvmex drakeQP)
+
+  drake_add_mex(fastQPThatTakesQinvFactoredmex fastQPThatTakesQinvFactoredmex.cpp)
+  target_link_libraries(fastQPThatTakesQinvFactoredmex drakeQP)
+
   drake_add_mex(gurobiQPmex gurobiQPmex.cpp)
   target_link_libraries(gurobiQPmex drakeQP)
 endif()

@@ -14,7 +14,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
   if (nrhs < 2) {
     mexErrMsgIdAndTxt(
         "Drake:fastQP:NotEnoughInputs",
-        "Usage [x, info, active] = fastQP(Q, f[, Aeq, beq, Ain, bin, active])");
+        "Usage [x, info, active] = fastQPThatTakesQinvmex(Qinv, f[, Aeq, beq, Ain, bin, active])");
   }
   if (nlhs < 1) return;
 
@@ -100,7 +100,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
   // NOTE: another copy happening down here.  TODO: fix it with templates
   // (later)
   VectorXd x(f.rows());
-  int info = fastQP(QblkMat, f, Aeq, beq, Ain, bin, active, x);
+  int info = fastQPThatTakesQinv(QblkMat, f, Aeq, beq, Ain, bin, active, x);
 
   plhs[0] = mxCreateDoubleMatrix(f.rows(), 1, mxREAL);
   memcpy(mxGetPr(plhs[0]), x.data(), sizeof(double) * f.rows());
