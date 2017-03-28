@@ -270,12 +270,18 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
              num_args_out <= obj.LCP_cache.data.nargout);
     end
 
-    function [obj, z, Mqdn, wqdn] = solveMexLCP(obj, t, x, u)
+    function [obj, z, Mqdn, wqdn] = solveMexLCP(obj, t, x, u, w_idx, w)
         num_q = obj.manip.num_positions;
         q=x(1:num_q);
         v=x(num_q+(1:obj.manip.num_velocities));
         kinsol = doKinematics(obj, q, v);
         [H,C,B] = manipulatorDynamics(obj.manip, q, v);
+        % add external disturbances
+        options = struct('rotation_type', 1);
+        for i=1:length(w_idx)
+            [~,Jw] = obj.forwardKin(kinsol,w_idx(i),zeros(3,1),options);
+            C = C - Jw'*w(:,i);
+        end
         [phiC,normal,d,xA,xB,idxA,idxB,mu,n,D] = obj.manip.contactConstraints(kinsol, obj.multiple_contacts);
         [z, Mqdn, wqdn, possible_contact_indices, possible_jointlimit_indices] = solveLCPmex(obj.manip.mex_model_ptr, kinsol.mex_ptr, u, phiC, n, D, obj.timestep, obj.z_inactive_guess_tol, obj.LCP_cache.data.z, H, C, B, obj.enable_fastqp);
         possible_contact_indices = logical(possible_contact_indices);
@@ -300,9 +306,8 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
            w = zeros(6,0);
        end
         
-       if 0 % don't use C++ implementation for now
-%       if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
-        [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
+      if (obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
+        [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u,w_idx,w);
         return;
       end
       
