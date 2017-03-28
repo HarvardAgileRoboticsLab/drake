@@ -45,6 +45,7 @@ const double converganceThreshold = 0.0;
 const double terminalPosWeight = 1.0;
 const double terminalVelWeight = 1.0;
 const double MIN_VALUE = 0.000000000000000000001;
+const double alpha = 0.001;
 class iLQR {
  public:
 
@@ -102,7 +103,6 @@ class iLQR {
 
   void update(){
     optimal_cost_ = trajectoryCost(X_,U_);
-    std::cout << "agter init " << std::endl;
     //TODO optimal_cost_sum_
 
     for(int i = 0; i < maxIterations; i++) {
@@ -150,19 +150,20 @@ class iLQR {
     Matrix<double,1,numStates,RowMajor> x = x0;
 
     for(int i =0; i < T;i++ ){
-      U.row(i) = U_.row(i) + k_.row(i) + (K_.at(i) * (x - X_.row(i)).transpose()).transpose();
+      U.row(i) = U_.row(i) + alpha * k_.row(i) + (K_.at(i) * (x - X_.row(i)).transpose()).transpose();
+      x = forwardDynamics(x,U.row(i));
+
       std::cout << std::endl;
-      std::cout << "NEW U " << i << U.row(i) <<std::endl;
-      std::cout << "K " << K_.at(i) << std::endl;
-      std::cout << "k " << k_.row(i) << std::endl;
-      std::cout << "U " << U_.row(i) << std::endl;
-      std::cout << "X " << X_.row(i) << std::endl;
-      std::cout << "x " << x << std::endl << std::endl;
+      // std::cout << "NEW U " << i * dt << " ,"<<  U.row(i) <<std::endl;
+      // std::cout << "K " << K_.at(i) << std::endl;
+      // std::cout << "k " << k_.row(i) << std::endl;
+      // std::cout << "U " << U_.row(i) << std::endl;
+      // // std::cout << "cost " << cost << std::endl;
+      // std::cout << "x " << x << std::endl << std::endl;
       // std::cout << "1 " << U_.row(i) + k_.row(i) << std::endl << std::endl;
       // std::cout << "2 " << (x - X_.row(i)) << std::endl << std::endl;
       // std::cout << "3 " <<  K_.at(i) * (x - X_.row(i)) << std::endl << std::endl;
       //
-      x = forwardDynamics(x,U.row(i));
 
     }
     return U;
@@ -247,12 +248,12 @@ class iLQR {
       Matrix<double,numStates,kDof,RowMajor> B(numStates,kDof);
 
       // TODO Why multiply bt dt
-      // l_(i) *= dt;
-      // lx_.row(i) *= dt;
-      // lxx_.at(i) *= dt;
-      // lu_.row(i) *= dt;
-      // luu_.at(i) *= dt;
-      // lux_.at(i) *= dt;
+      l_(i) *= dt;
+      lx_.row(i) *= dt;
+      lxx_.at(i) *= dt;
+      lu_.row(i) *= dt;
+      luu_.at(i) *= dt;
+      lux_.at(i) *= dt;
 
       finiteDifferences(A, B, newX.row(i), U.row(i), i);
       fx_.at(i).noalias() = Eigen::Matrix<double,numStates,numStates,RowMajor>::Identity(numStates,numStates) + A * dt;
@@ -401,6 +402,7 @@ class iLQR {
     Matrix<double,numStates,numStates,RowMajor> Vxx;
     Vxx.noalias() = lxx_.at(T-1);
     // std::cout << "Vxx" << Vxx.rows() << "," << Vxx.cols() << std::endl;
+    double V = l_(T-1);
 
     Matrix<double,1,numStates,RowMajor> Qx(1,numStates);
     Matrix<double,1,kDof,RowMajor> Qu(1,kDof);
@@ -435,17 +437,23 @@ class iLQR {
         Vsvd.noalias() = svd.matrixV();
         Ssvd.noalias() = svd.singularValues();
 
-        for(int j = 0; j < Ssvd.rows(); j++) {
-          for(int k = 0; k < Ssvd.cols();k++ ){
-            if(Ssvd(j,k) < 0.0 ) {
-              Ssvd(j,k) = 0.0;
+        Eigen::EigenSolver<Matrix<double,kDof,kDof,RowMajor>> solver(Quu);
+        Matrix<double,Dynamic,Dynamic,RowMajor> values = solver.eigenvalues();
+        Matrix<double,Dynamic,Dynamic,RowMajor> vectors = solver.eigenvectors();
+
+        for(int j = 0; j < values.rows(); j++) {
+          for(int k = 0; k < values.cols();k++ ){
+            if(values(j,k) < 0.0 ) {
+              values(j,k) = 0.0;
             }
-            Ssvd(j,k) += lambda_;
-            Ssvd(j,k) = 1.0 / Ssvd(j,k);
+            values(j,k) += lambda_;
+            values(j,k) = 1.0 / values(j,k);
           }
         }
 
-        Quu_inv = Usvd * (Ssvd.asDiagonal() * Vsvd.transpose());
+        Quu_inv = vectors * (values.asDiagonal() * vectors.transpose());
+
+        // Quu_inv = Vsvd * (Ssvd.asDiagonal() * Vsvd.transpose());
 
         k_.row(i) = - Quu_inv * Qu.transpose();
         K_.at(i) = - Quu_inv * Qux;
@@ -455,24 +463,28 @@ class iLQR {
 
 
         // if(i < 3) {
-        // std::cout << "-------------" << i << "---------------" << std::endl;
+        std::cout << "-------------" << i << "---------------" << std::endl;
         // std::cout << "Quu "  << Quu << std::endl;
         // std::cout << "Qux "  << Qux << std::endl;
         //
-        // std::cout << "Qu "  << Qu << std::endl;
+        if(i > 0) {
+          std::cout << "V: "  << (V) << std::endl;
+          V = V + l_(i-1);
+        }
         // std::cout << "lu "  << lu_.row(i) << std::endl;
         // std::cout << "l "  << l_.row(i) << std::endl;
         // std::cout << "lx "  << lx_.row(i) << std::endl;
         // std::cout << "lxx "  << lxx_.at(i) << std::endl;
         //
-        // std::cout << "U "  << Usvd << std::endl;
+        std::cout << "delta_v "  << (-0.5 * k_.row(i) * Quu * k_.row(i).transpose()) << std::endl;
         // std::cout << "V "  << Vsvd << std::endl;
         // std::cout << "S "  << Ssvd << std::endl;
         // std::cout << "Quu_inv "  << Quu_inv << std::endl;
         // std::cout << "k_ "  << k_.row(i) << std::endl;
         // std::cout << "K_ "  << K_.at(i) << std::endl;
-        // std::cout << "Vx "  << Vx << std::endl;
-        // std::cout << "Vxx "  << Vxx << std::endl;
+        std::cout << "Vx "  << Vx << std::endl;
+        std::cout << "Vxx "  << Vxx << std::endl;
+
         // std::cout << "fu  "  << fu_.at(i) << std::endl;
         // std::cout << "luu  "  << luu_.at(i) << std::endl;
         // std::cout << "fx  "  << fx_.at(i) << std::endl;
