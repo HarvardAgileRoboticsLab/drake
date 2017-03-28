@@ -21,6 +21,10 @@ using Eigen::VectorXi;
 using drake::Vector1d;
 using Eigen::Vector2d;
 using Eigen::Vector3d;
+using Eigen::Dynamic;
+using Eigen::RowMajor;
+using Eigen::Matrix;
+using Eigen::Ref;
 
 const char* const kLcmRunControllerChannel = "GPS_RUN_CONTROLLER";
 
@@ -31,7 +35,7 @@ namespace kuka_iiwa_arm {
 namespace {
 
 const int kDof = 7;
-const int T = 25;
+const int T = 50;
 const int numStates = 14;
 const double dt = 0.1;
 
@@ -44,16 +48,12 @@ const double MIN_VALUE = 0.000000000000000000001;
 class iLQR {
  public:
 
-
-
-  Eigen::MatrixXd k_;
-  std::vector<Eigen::MatrixXd> K_;
-  Eigen::VectorXd x0_;
-  Eigen::MatrixXd X_;
-  Eigen::VectorXd xt_;
-  Eigen::MatrixXd U_;
-  Eigen::MatrixXd Fm_;
-  Eigen::MatrixXd fv_;
+  Eigen::Matrix<double,T,kDof,RowMajor> k_;
+  std::vector< Matrix<double,kDof,numStates,RowMajor> > K_;
+  Eigen::Matrix<double,numStates,RowMajor> x0_;
+  Eigen::Matrix<double,T,numStates,RowMajor> X_;
+  Eigen::Matrix<double,numStates,RowMajor> xt_;
+  Eigen::Matrix<double,T,kDof,RowMajor> U_;
   double optimal_cost_;
   double current_cost_;
 
@@ -62,14 +62,14 @@ class iLQR {
   double lambda_ = 1.0;
   double lambda_factor_ = 10.0;
 
-  std::vector<MatrixXd> fx_;
-  std::vector<MatrixXd> fu_;
-  std::vector<MatrixXd> lxx_;
-  std::vector<MatrixXd> luu_;
-  std::vector<MatrixXd> lux_;
-  MatrixXd l_;
-  MatrixXd lx_;
-  MatrixXd lu_;
+  std::vector<Matrix<double,numStates,numStates,RowMajor>> fx_;
+  std::vector<Matrix<double,numStates,kDof,RowMajor>> fu_;
+  std::vector<Matrix<double,numStates,numStates,RowMajor>> lxx_;
+  std::vector<Matrix<double,kDof,kDof,RowMajor>> luu_;
+  std::vector<Matrix<double,kDof,numStates,RowMajor>> lux_;
+  Matrix<double,T,RowMajor> l_;
+  Matrix<double,T,numStates,RowMajor> lx_;
+  Matrix<double,T,kDof,RowMajor> lu_;
 
   explicit iLQR(const RigidBodyTree<double>& tree)
       : tree_(tree)  {
@@ -78,9 +78,10 @@ class iLQR {
   }
 
   void init_deratives(){
-    l_.resize(T,1);
-    lx_.resize(T,numStates);
-    lu_.resize(T,kDof);
+    l_ = Matrix<double,T,RowMajor>(T);
+    lx_ = Matrix<double,T,numStates,RowMajor>(T,numStates);
+    lu_ = Matrix<double,T,kDof,RowMajor>(T,kDof);;
+    k_ = Matrix<double,T,kDof,RowMajor>(T,kDof);
 
     fx_.clear();
     fu_.clear();
@@ -88,15 +89,14 @@ class iLQR {
     luu_.clear();
     lux_.clear();
     K_.clear();
-    k_ = MatrixXd(T,kDof);
 
     for(int i = 0; i < T; i++) {
-      K_.push_back(MatrixXd(kDof,numStates));
-      fx_.push_back(MatrixXd(numStates,numStates));
-      fu_.push_back(MatrixXd(numStates,kDof));
-      lxx_.push_back(MatrixXd(numStates,numStates));
-      luu_.push_back(MatrixXd(kDof,kDof));
-      lux_.push_back(MatrixXd(kDof,numStates));
+      K_.push_back(Matrix<double,kDof,numStates,RowMajor>(kDof,numStates));
+      fx_.push_back(Matrix<double,numStates,numStates,RowMajor>(numStates,numStates));
+      fu_.push_back(Matrix<double,numStates,kDof,RowMajor>(numStates,kDof));
+      lxx_.push_back(Matrix<double,numStates,numStates,RowMajor>(numStates,numStates));
+      luu_.push_back(Matrix<double,kDof,kDof,RowMajor>(kDof,kDof));
+      lux_.push_back(Matrix<double,kDof,numStates,RowMajor>(kDof,numStates));
     }
   }
 
@@ -113,9 +113,13 @@ class iLQR {
       update_rollout_ = false;
 
       backwardsPass();
-      std::cout << "FINISHED!!!!!!!!!!!!!!!!!!!1" << std::endl;
-      MatrixXd newU = computeNewU(x0_);
-      Eigen::MatrixXd X_new = Eigen::MatrixXd::Zero(T,numStates);
+      std::cout << "------------------------"<< std::endl;
+      std::cout << "------------------------" <<std::endl;
+      std::cout << "------------------------" <<std::endl;
+      std::cout << "------------------------" <<std::endl;
+
+      Eigen::Matrix<double,T,kDof,RowMajor> newU = computeNewU(x0_);
+      Eigen::Matrix<double,T,numStates,RowMajor> X_new = Eigen::Matrix<double,T,numStates,RowMajor>::Zero(T,numStates);
       current_cost_ = computeControlSequence(X_.row(0) , newU, X_new);
 
       std::cout << " i " << i << " Current Cost: " << current_cost_ << " Optimal Cost Sum: " <<  optimal_cost_ << std::endl;
@@ -138,35 +142,34 @@ class iLQR {
         lambda_ *= lambda_factor_;
       }
     }
-    std::cout << "METHOD DONE!!!! " << std::endl;
-
+    std::cout << "update() METHOD DONE!!!! " << std::endl;
   }
 
-  MatrixXd computeNewU(MatrixXd x0) {
-    MatrixXd U = MatrixXd::Zero(T,kDof);
-    MatrixXd x = x0;
+  Matrix<double,T,kDof,RowMajor> computeNewU(Matrix<double,1,numStates,RowMajor> x0) {
+    Matrix<double,T,kDof,RowMajor> U = Matrix<double,T,kDof,RowMajor>::Zero(T,kDof);
+    Matrix<double,1,numStates,RowMajor> x = x0;
 
     for(int i =0; i < T;i++ ){
-      U.row(i) = U_.row(i) + k_.row(i) + K_.at(i) * (x - X_.row(i));
-      // std::cout << std::endl;
-      // std::cout << "NEW U " << i << U.row(i) <<std::endl;
-      // std::cout << "K " << K_.at(i) << std::endl;
-      // std::cout << "k " << k_.row(i) << std::endl;
-      // std::cout << "U " << U_.row(i) << std::endl;
-      // std::cout << "X " << X_.row(i) << std::endl;
-      // std::cout << "x " << x << std::endl << std::endl;
+      U.row(i) = U_.row(i) + k_.row(i) + (K_.at(i) * (x - X_.row(i)).transpose()).transpose();
+      std::cout << std::endl;
+      std::cout << "NEW U " << i << U.row(i) <<std::endl;
+      std::cout << "K " << K_.at(i) << std::endl;
+      std::cout << "k " << k_.row(i) << std::endl;
+      std::cout << "U " << U_.row(i) << std::endl;
+      std::cout << "X " << X_.row(i) << std::endl;
+      std::cout << "x " << x << std::endl << std::endl;
       // std::cout << "1 " << U_.row(i) + k_.row(i) << std::endl << std::endl;
       // std::cout << "2 " << (x - X_.row(i)) << std::endl << std::endl;
       // std::cout << "3 " <<  K_.at(i) * (x - X_.row(i)) << std::endl << std::endl;
       //
-      // x = forwardDynamics(x,U.row(i));
+      x = forwardDynamics(x,U.row(i));
 
     }
     return U;
   }
 
-  double computeControlSequence(VectorXd x0, MatrixXd U, MatrixXd &newX) {
-      newX = MatrixXd(T,numStates);
+  double computeControlSequence(VectorXd x0, Matrix<double,T,kDof,RowMajor> U, Eigen::Ref<Matrix<double,T,numStates,RowMajor>> newX) {
+      newX = Matrix<double,T,numStates,RowMajor>(T,numStates);
       newX.row(0).noalias() = x0;
 
       double cost = 0.0;
@@ -180,15 +183,15 @@ class iLQR {
         // std::cout << "c0: " << x0 << std::endl;
         // std::cout << "c0st: " << cost << std::endl;
 
-        std::cout << "-------------------------" << std::endl;
+        // std::cout << "-------------------------" << std::endl;
       }
-      std::vector<MatrixXd> tmplxx = lxx_;
-      MatrixXd tmplx = lx_;
+      std::vector<Matrix<double,numStates,numStates,RowMajor>> tmplxx = lxx_;
+      Matrix<double,T,numStates,RowMajor> tmplx = lx_;
       // std::cout << "-------------------------" << std::endl;
       // std::cout << "-------------------------" << newX.row(T-2)<<" ~~~~" << U.row(T-2) <<   std::endl;
 
       cost += computeFinalCost(newX.row(T-1), U.row(T-1), tmplx, tmplxx, T -1 );
-      std::cout << "-------------------------" << std::endl;
+      // std::cout << "-------------------------" << std::endl;
 
       // std::cout << "-------------------------" << std::endl;
       // std::cout << "-------------------------" << std::endl;
@@ -198,36 +201,36 @@ class iLQR {
       return cost;
   }
 
-  void finiteDifferences(MatrixXd &A, MatrixXd &B, VectorXd x, VectorXd u, int t) {
-      A = MatrixXd(numStates,numStates);
-      B = MatrixXd(numStates, kDof);
+  void finiteDifferences(Ref<Matrix<double,numStates,numStates,RowMajor>> A, Ref<Matrix<double,numStates,kDof,RowMajor>> B, VectorXd x, VectorXd u, int t) {
+      A = Matrix<double,numStates,numStates,RowMajor>(numStates,numStates);
+      B = Matrix<double,numStates,kDof,RowMajor>(numStates, kDof);
 
       for(int i =0; i < numStates;i++) {
-          MatrixXd xPlus = x + Eigen::VectorXd::Ones(x.size()) *  finite_differences_epsilon;
-          MatrixXd xMinus = x -  Eigen::VectorXd::Ones(x.size()) *  finite_differences_epsilon;
-          MatrixXd xPlusNew = forwardDynamics(xPlus, u);
+          Matrix<double,1,numStates,RowMajor> xPlus = x + Eigen::VectorXd::Ones(x.size()) *  finite_differences_epsilon;
+          Matrix<double,1,numStates,RowMajor> xMinus = x -  Eigen::VectorXd::Ones(x.size()) *  finite_differences_epsilon;
+          Matrix<double,1,numStates,RowMajor> xPlusNew = forwardDynamics(xPlus, u);
           // std::cout << "OLD X " << xPlus << " NEW X " << xPlusNew << " u " << u << std::endl;
-          MatrixXd xMinusNew = forwardDynamics(xMinus, u);
-          MatrixXd diff = (xPlusNew - xMinusNew) / (2 * finite_differences_epsilon);
+          Matrix<double,1,numStates,RowMajor> xMinusNew = forwardDynamics(xMinus, u);
+          Matrix<double,1,numStates,RowMajor> diff = (xPlusNew - xMinusNew) / (2 * finite_differences_epsilon);
           A.col(i).noalias() = diff;
       }
       for(int i =0; i < kDof;i++) {
-          MatrixXd uPlus = u + Eigen::VectorXd::Ones(u.size()) *  finite_differences_epsilon;
-          MatrixXd uMinus = u -  Eigen::VectorXd::Ones(u.size()) *  finite_differences_epsilon;
-          MatrixXd xPlusNew = forwardDynamics(x, uPlus);
-          MatrixXd xMinusNew = forwardDynamics(x, uMinus);
-          MatrixXd diff = (xPlusNew - xMinusNew) / (2 * finite_differences_epsilon);
+          Matrix<double,1,kDof,RowMajor> uPlus = u + Eigen::VectorXd::Ones(u.size()) *  finite_differences_epsilon;
+          Matrix<double,1,kDof,RowMajor> uMinus = u -  Eigen::VectorXd::Ones(u.size()) *  finite_differences_epsilon;
+          Matrix<double,1,numStates,RowMajor> xPlusNew = forwardDynamics(x, uPlus);
+          Matrix<double,1,numStates,RowMajor> xMinusNew = forwardDynamics(x, uMinus);
+          Matrix<double,1,numStates,RowMajor> diff = (xPlusNew - xMinusNew) / (2 * finite_differences_epsilon);
           B.col(i).noalias() = diff;
       }
   }
 
 
-  void forwardPass(VectorXd x0, MatrixXd U) {
+  void forwardPass(VectorXd x0, Matrix<double,T,kDof,RowMajor> U) {
     update_rollout_ = false;
 
-    MatrixXd X(T, kDof);
-    MatrixXd newX(T, kDof);
-    VectorXd cost(kDof);
+    // Matrix<double,T,kDof,RowMajor> X(T, kDof);
+    Matrix<double,T,numStates,RowMajor> newX(T, numStates);
+    // VectorXd cost(kDof);
     std::cout << "forward pass A" << std::endl;
     computeControlSequence(x0 , U , newX);
     std::cout << "forward pass B" << std::endl;
@@ -240,8 +243,8 @@ class iLQR {
 
       l_(i) = computeCost( newX.row(i) , U.row(i), lx_, lxx_, lu_, luu_, lux_, i);
 
-      MatrixXd A(numStates,numStates);
-      MatrixXd B(numStates,kDof);
+      Matrix<double,numStates,numStates,RowMajor> A(numStates,numStates);
+      Matrix<double,numStates,kDof,RowMajor> B(numStates,kDof);
 
       // TODO Why multiply bt dt
       // l_(i) *= dt;
@@ -252,7 +255,7 @@ class iLQR {
       // lux_.at(i) *= dt;
 
       finiteDifferences(A, B, newX.row(i), U.row(i), i);
-      fx_.at(i).noalias() = Eigen::MatrixXd::Identity(numStates,numStates) + A * dt;
+      fx_.at(i).noalias() = Eigen::Matrix<double,numStates,numStates,RowMajor>::Identity(numStates,numStates) + A * dt;
       fu_.at(i).noalias() = B * dt;
 
       // std::cout << i << " lx" << lx.row(i) << std::endl;
@@ -267,21 +270,21 @@ class iLQR {
 
 
     lu_.row(T-1).noalias()  = 0.0 * U.row(T-1);
-    luu_.at(T-1).noalias() = 0.0 * Eigen::MatrixXd::Identity(kDof,kDof);
-    lux_.at(T-1).noalias() = Eigen::MatrixXd::Identity(kDof, numStates);
+    luu_.at(T-1).noalias() = 0.0 * Eigen::Matrix<double,kDof,kDof,RowMajor>::Identity(kDof,kDof);
+    lux_.at(T-1).noalias() = Eigen::Matrix<double,kDof,numStates,RowMajor>::Identity(kDof, numStates);
 
     l_(T - 1)= computeFinalCost(newX.row(T-1), U.row(T-1), lx_, lxx_, T-1);
     // std::cout << "lxx" << lxx.at(T-1) << " , " << l(T-1)  << std::endl;
-    fx_.at(T-1).noalias() = Eigen::MatrixXd::Zero(numStates,numStates);
-    fu_.at(T-1).noalias() = Eigen::MatrixXd::Zero(numStates, kDof);
+    fx_.at(T-1).noalias() = Eigen::Matrix<double,numStates,numStates,RowMajor>::Zero(numStates,numStates);
+    fu_.at(T-1).noalias() = Eigen::Matrix<double,numStates,kDof,RowMajor>::Zero(numStates, kDof);
 
     // exit(0);
   }
 
-   VectorXd forwardDynamics(VectorXd x, MatrixXd u) {
-     MatrixXd M;
-     MatrixXd C;
-     MatrixXd G;
+   VectorXd forwardDynamics(VectorXd x, Matrix<double,1,kDof,RowMajor> u) {
+     Matrix<double,Dynamic,Dynamic,RowMajor> M;
+     Matrix<double,Dynamic,Dynamic,RowMajor> C;
+     Matrix<double,Dynamic,Dynamic,RowMajor> G;
      VectorXd qd_0(kDof);
      VectorXd q_0(kDof);
      double q_in[kDof];
@@ -299,12 +302,12 @@ class iLQR {
 
     //  std::cout << "---------------- C " << C << " G " << G << " M " << M << std::endl;
 
-     MatrixXd qdd;
+     Matrix<double,1,kDof,RowMajor> qdd;
      qdd.noalias() = M.inverse() * (u - C + G);
-     VectorXd qd;
-     qd.noalias() = qd_0 + qdd * dt;
-     VectorXd q;
-     q.noalias() = q_0 + qd * dt + 0.5 * qdd * pow(dt,2);
+     VectorXd qd(kDof);
+     qd.noalias() = qd_0 + qdd.transpose() * dt;
+     VectorXd q(kDof);
+     q.noalias() = q_0 + qd * dt + 0.5 * qdd.transpose() * pow(dt,2);
     //  std::cout << " Minv " << M.inverse() << " ,u " << u << " ,C " << C << std::endl;
     //  std::cout << " qd_0 " << qd_0 << " q_0 " << q_0 << "  x, " << x << std::endl;
     //  std::cout << " qdd " << qdd << " ,qd " << qd << " ,q " << q <<  "--------------" <<std::endl;
@@ -320,17 +323,17 @@ class iLQR {
   }
 
 
-  double computeCost(VectorXd x, VectorXd u, MatrixXd &lx, std::vector<MatrixXd> &lxx, MatrixXd &lu, std::vector<MatrixXd> &luu, std::vector<MatrixXd> &lux, int i ) {
+  double computeCost(VectorXd x, VectorXd u, Ref<Matrix<double,T,numStates,RowMajor>>lx, std::vector<Matrix<double,numStates,numStates,RowMajor>> &lxx, Ref<Matrix<double,T,kDof,RowMajor>> lu, std::vector<Matrix<double,kDof,kDof,RowMajor>> &luu, std::vector<Matrix<double,kDof,numStates,RowMajor>> &lux, int i ) {
     double l = u.squaredNorm();
     lx.row(i).noalias() = Eigen::VectorXd::Zero(numStates);
-    lxx.at(i).noalias() = Eigen::MatrixXd::Zero(numStates,numStates);
+    lxx.at(i).noalias() = Eigen::Matrix<double,numStates,numStates,RowMajor>::Zero(numStates,numStates);
     lu.row(i).noalias()  = 2.0 * u;
-    luu.at(i).noalias() = 2.0 * Eigen::MatrixXd::Identity(kDof,kDof);
-    lux.at(i).noalias() = Eigen::MatrixXd::Zero(kDof, numStates);
+    luu.at(i).noalias() = 2.0 * Eigen::Matrix<double,kDof,kDof,RowMajor>::Identity(kDof,kDof);
+    lux.at(i).noalias() = Eigen::Matrix<double,kDof,numStates,RowMajor>::Zero(kDof, numStates);
     return l;
   }
 
-  double computeFinalCost(MatrixXd x, MatrixXd u, MatrixXd &lx, std::vector<MatrixXd> &lxx, int t) {
+  double computeFinalCost(Matrix<double,1,numStates,RowMajor> x, Matrix<double,1,kDof,RowMajor> u, Matrix<double,T,numStates,RowMajor> &lx, std::vector<Matrix<double,numStates,numStates,RowMajor>> &lxx, int t) {
     VectorXd q = x.block<1,kDof>(0,0);
     VectorXd qd = x.block<1,kDof>(0,kDof);
     VectorXd dis = q - xt_;
@@ -343,21 +346,26 @@ class iLQR {
       dis(i) = dis(i) - (M_PI/ 2.0);
     }
 
-    lxx.at(t) = Eigen::MatrixXd::Ones(numStates,numStates);
+    lxx.at(t) = Eigen::Matrix<double,numStates,numStates,RowMajor>::Ones(numStates,numStates);
     double l = terminalPosWeight * dis.squaredNorm() + terminalVelWeight * qd.squaredNorm();
-    VectorXd v(kDof * 2);
+    Eigen::Matrix<double,2*kDof,RowMajor> v(kDof * 2);
     std::cout << "HERE" << std::endl ;
-    v << (2 * terminalPosWeight * dis) , (terminalVelWeight * qd);
-    std::cout << "DISTANCE " << dis << " Q " << q << " QD " << qd << " v " << v <<  std::endl;
+
+    for(int i =0; i < kDof; i++) {
+      v(i) = 2 * terminalPosWeight * dis(i);
+      v(kDof + i) = terminalVelWeight * qd(i);
+    }
+    // v << (2 * terminalPosWeight * dis) , (terminalVelWeight * qd);
+    // std::cout << "DISTANCE " << dis << " Q " << q << " QD " << qd << " v " << v <<  std::endl;
 
     lx.row(t) = v;
-    lxx.at(t) = 2 * terminalPosWeight * Eigen::MatrixXd::Ones(numStates,numStates) + 2 * terminalVelWeight * Eigen::MatrixXd::Ones(numStates,numStates);
+    lxx.at(t) = 2 * terminalPosWeight * Eigen::Matrix<double,numStates,numStates,RowMajor>::Ones(numStates,numStates) + 2 * terminalVelWeight * Eigen::Matrix<double,numStates,numStates,RowMajor>::Ones(numStates,numStates);
 
     return l;
   }
 
 
-  void computeMCG(double * q_in, double * qd_in, MatrixXd &M, MatrixXd &C, MatrixXd &G) {
+  void computeMCG(double * q_in, double * qd_in, Matrix<double,Dynamic,Dynamic,RowMajor> &M, Matrix<double,Dynamic,Dynamic,RowMajor> &C, Matrix<double,Dynamic,Dynamic,RowMajor> &G) {
     // for (int i = 0; i < kDof; i++){
     //   std::cout << " qin " << q_in[i] << " qd_in " << qd_in[i] << std::endl;
     //
@@ -388,71 +396,44 @@ class iLQR {
   void backwardsPass(){
     // MatrixXd V = l_.row(T-1);
 
-    MatrixXd Vx;
+    Matrix<double,1,numStates,RowMajor> Vx;
     Vx.noalias() = lx_.row(T-1);
-    MatrixXd Vxx;
+    Matrix<double,numStates,numStates,RowMajor> Vxx;
     Vxx.noalias() = lxx_.at(T-1);
     // std::cout << "Vxx" << Vxx.rows() << "," << Vxx.cols() << std::endl;
 
-    VectorXd Qx(numStates);
-    VectorXd Qu(kDof);
-    MatrixXd Qxx(numStates,numStates);
-    MatrixXd Qux(kDof,numStates);
-    MatrixXd Quu(kDof,kDof);
-    MatrixXd Quu_inv(kDof,kDof);
+    Matrix<double,1,numStates,RowMajor> Qx(1,numStates);
+    Matrix<double,1,kDof,RowMajor> Qu(1,kDof);
+    Matrix<double,numStates,numStates,RowMajor> Qxx(numStates,numStates);
+    Matrix<double,kDof,numStates,RowMajor> Qux(kDof,numStates);
+    Matrix<double,kDof,kDof,RowMajor> Quu(kDof,kDof);
+    Matrix<double,kDof,kDof,RowMajor> Quu_inv(kDof,kDof);
 
-    MatrixXd Usvd(kDof,kDof);
-    MatrixXd Vsvd(kDof,kDof);
-    MatrixXd Ssvd(1,kDof);
-    Eigen::JacobiSVD<MatrixXd> svd;
+    Matrix<double,kDof,kDof,RowMajor> Usvd(kDof,kDof);
+    Matrix<double,kDof,kDof,RowMajor> Vsvd(kDof,kDof);
+    Matrix<double,1,kDof,RowMajor> Ssvd(1,kDof);
+    Eigen::JacobiSVD<Matrix<double,kDof,kDof,RowMajor>> svd;
 
     for (int i = T -1; i >= 0 ; i--) {
       // std::cout <<i << "," << lux_.size() << "," << Vxx.size() << " , " << fu_.size() << "," << fx_.size() << ":" << lux_.at(i) << std::endl << Vxx<< std::endl;
-      std::cout << "-------------MADE IT---------------" << std::endl;
 
-        Qx.resize(numStates);
-        Qu.resize(kDof);
-        Qxx.resize(numStates,numStates);
-        Qux.resize(kDof,numStates);
-        Quu.resize(kDof,kDof);
-        Quu_inv.resize(kDof,kDof);
-        Usvd.resize(kDof,kDof);
-        Vsvd.resize(kDof,kDof);
-        Ssvd.resize(1,kDof);
-        std::cout << "-------------MADE IT---------------" << std::endl;
+        Qx.noalias() = lx_.row(i) + (fx_.at(i).transpose() * Vx.transpose()).transpose();
 
-        Qx.noalias() = lx_.row(i) + fx_.at(i).transpose() * Vx;
-        std::cout << "-------------MADE IT---------------" << std::endl;
-
-        std::cout << lu_.row(i).size() << "--"  << Qu.size() << "--"  <<fu_.at(i).transpose().rows() << "--" <<fu_.at(i).transpose().cols() << "--" <<Vx.rows() << "--"  <<   std::endl;
-        std::cout << "lu_ " << lu_.row(0) << std::endl;
-        std::cout << "fu_ " << fu_.at(i)<< std::endl;
-        std::cout << "Vx " << Vx<< std::endl;
+        // std::cout << lu_.row(i).size() << "--"  << Qu.size() << "--"  <<fu_.at(i).transpose().rows() << "--" <<fu_.at(i).transpose().cols() << "--" <<Vx.rows() << "--"  <<   std::endl;
+        // std::cout << "lu_ " << lu_.row(0) << std::endl;
+        // std::cout << "fu_ " << fu_.at(i)<< std::endl;
+        // std::cout << "Vx " << Vx<< std::endl;
 
 
-        Qu.noalias() = lu_.row(i) + fu_.at(i).transpose() * Vx;
-        std::cout << "-------------MADE IT---------------" << std::endl;
-        std::cout << "lu_1 " << lu_.row(0) << std::endl;
-
+        Qu.noalias() = lu_.row(i) + (fu_.at(i).transpose() * Vx.transpose()).transpose();
         Qxx.noalias() = lxx_.at(i) + fx_.at(i).transpose() * (Vxx * fx_.at(i));
         Qux.noalias() = lux_.at(i) + fu_.at(i).transpose() * (Vxx * fx_.at(i));
-        std::cout << "-------------MADE IT---------------" << std::endl;
-        std::cout << "lu_2 " << lu_.row(0) << std::endl;
-
         Quu.noalias() = luu_.at(i) + fu_.at(i).transpose() * (Vxx * fu_.at(i));
-        std::cout << "-------------MADE IT---------------" << std::endl;
-        std::cout << "lu_3 " << lu_.row(0) << std::endl;
 
-        // Eigen::EigenSolver<MatrixXd> solver(Quu);
-        // MatrixXd values = solver.eigenvalues();
-        // MatrixXd vectors = solver.eigenvectors();
-
-        svd = Eigen::JacobiSVD<MatrixXd>(Quu, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        svd = Eigen::JacobiSVD<Matrix<double,kDof,kDof,RowMajor>>(Quu, Eigen::ComputeThinU | Eigen::ComputeThinV);
         Usvd.noalias() = svd.matrixU();
         Vsvd.noalias() = svd.matrixV();
         Ssvd.noalias() = svd.singularValues();
-        std::cout << "-------------MADE IT---------------" << std::endl;
-        std::cout << "lu_4 " << lu_.row(0) << std::endl;
 
         for(int j = 0; j < Ssvd.rows(); j++) {
           for(int k = 0; k < Ssvd.cols();k++ ){
@@ -463,37 +444,18 @@ class iLQR {
             Ssvd(j,k) = 1.0 / Ssvd(j,k);
           }
         }
-        std::cout << "-------------MADE IT---------------" << std::endl;
-        std::cout << "lu5_ " << lu_.row(0) << std::endl;
 
-        //
-        //
-        // Quu_inv = vectors * (values.asDiagonal() * vectors.transpose());
-        // std::cout << "quu inv"  << Quu_inv << std::endl;
+        Quu_inv = Usvd * (Ssvd.asDiagonal() * Vsvd.transpose());
 
-        // S += lambda_ * MatrixXd::Ones(S.rows(),S.cols());
-        // std::cout << "S2"  << S << std::endl;
-        //
-        // S = S.inverse();
-        // std::cout << "S3"  << S << std::endl;
-        //
-
-        Quu_inv = Ssvd * (Ssvd.asDiagonal() * Ssvd.transpose());
-        // std::cout << K_.at(i).cols() << "," << (Quu_inv * Qux).cols() << std::endl;
-        k_.row(i) = - Quu_inv * Qu;
+        k_.row(i) = - Quu_inv * Qu.transpose();
         K_.at(i) = - Quu_inv * Qux;
-        std::cout << "lu_6 " << lu_.row(0) << std::endl;
-        std::cout << "lu_6.1 " << lu_.row(0) << std::endl;
 
-        Vx = Qx - K_.at(i).transpose() * (Quu * k_.row(i));
-        std::cout << "lu_6.5 " << lu_.row(0) << std::endl;
-
+        Vx = Qx - (K_.at(i).transpose() * (Quu * k_.row(i).transpose())).transpose();
         Vxx = Qxx - K_.at(i).transpose() * (Quu * K_.at(i));
-        // std::cout << "Vxx" << Vxx.rows() << "," << Vxx.cols() << std::endl;
-        std::cout << "lu_7 " << lu_.row(0) << std::endl;
+
 
         // if(i < 3) {
-        std::cout << "-------------" << i << "---------------" << std::endl;
+        // std::cout << "-------------" << i << "---------------" << std::endl;
         // std::cout << "Quu "  << Quu << std::endl;
         // std::cout << "Qux "  << Qux << std::endl;
         //
@@ -517,26 +479,21 @@ class iLQR {
 
       // }
 
-
-
-
-
-
     }
-    std::cout << "I AM DONE WITH THIS METHOD"<< std::endl;
+    // std::cout << "I AM DONE WITH THIS METHOD"<< std::endl;
 
   }
 
  private:
 
-   double trajectoryCost(MatrixXd X, MatrixXd U) {
+   double trajectoryCost(Matrix<double,T,numStates,RowMajor> X, Matrix<double,T,kDof,RowMajor> U) {
      double cost = 0.0;
 
      for(int i =0; i < T -1 ;i++) {
        cost += computeL(X.row(i), U.row(i)) * dt;
      }
-     std::vector<MatrixXd> tmplxx = lxx_;
-     MatrixXd tmplx = lx_;
+     std::vector<Matrix<double,numStates,numStates,RowMajor>> tmplxx = lxx_;
+     Matrix<double,T,numStates,RowMajor> tmplx = lx_;
      cost += computeFinalCost(X.row(T-1), U.row(T-1), tmplx, tmplxx, T -1 );
      return cost;
    }
@@ -555,10 +512,10 @@ int do_main(int argc, const char* argv[]) {
 
 
   iLQR ilqr(*tree);
-  ilqr.X_ = Eigen::MatrixXd::Zero(T,numStates);
-  ilqr.U_ = Eigen::MatrixXd::Zero(T,kDof);
-  ilqr.X_ += 0.3 * Eigen::MatrixXd::Ones(T,numStates);
-  ilqr.U_ += 0.00000 * Eigen::MatrixXd::Ones(T,kDof);
+  ilqr.X_ = Eigen::Matrix<double,T,numStates,RowMajor>::Zero(T,numStates);
+  ilqr.U_ = Eigen::Matrix<double,T,kDof,RowMajor>::Zero(T,kDof);
+  ilqr.X_ += 0.3 * Eigen::Matrix<double,T,numStates,RowMajor>::Ones(T,numStates);
+  ilqr.U_ += 0.00000 * Eigen::Matrix<double,T,kDof,RowMajor>::Ones(T,kDof);
 
   ilqr.x0_ = Eigen::VectorXd(numStates) + 0.1 * Eigen::VectorXd::Ones(numStates);
   for(int i = kDof; i < 2* kDof; i ++) {
@@ -597,28 +554,28 @@ int do_main(int argc, const char* argv[]) {
   lcm_.publish(kLcmRunControllerChannel, &cmd);
 
 
-  // double q_in[7] = {0,-0.05,0,0,0,0,0};
-  // double qd_in[7] = {0,0,0,0,0,0,0};
-  // MatrixXd M;
-  // MatrixXd C;
-  // MatrixXd G;
-  // MatrixXd G_old;
-  //
-  // for (int i = 0; i < 10; i ++) {
-  //   ilqr.computeMCG(q_in,qd_in,M,C,G);
-  //   q_in[1] += 0.01;
-  //   if(i>=1){
-  //     std::cout << "G " << G(1) - G_old(1) << std::endl;
-  //   }
-  //   G_old = G;
-  // }
-  // ilqr.computeMCG(q_in,qd_in,M,C,G);
-  //
+  double q_in[7] = {0,-0.05,0,0,0,0,0};
+  double qd_in[7] = {0,0,0,0,0,0,0};
+  Eigen::Matrix<double,Dynamic,Dynamic,RowMajor> M;
+  Eigen::Matrix<double,Dynamic,Dynamic,RowMajor> C;
+  Eigen::Matrix<double,Dynamic,Dynamic,RowMajor> G;
+  Eigen::Matrix<double,Dynamic,Dynamic,RowMajor> G_old;
+
+  for (int i = 0; i < 10; i ++) {
+    ilqr.computeMCG(q_in,qd_in,M,C,G);
+    q_in[1] += 0.01;
+    if(i>=1){
+      std::cout << "G " << G(1) - G_old(1) << std::endl;
+    }
+    G_old = G;
+  }
+  ilqr.computeMCG(q_in,qd_in,M,C,G);
+
   // std::cout << "C " << C << std::endl;
   // std::cout << "G " << G << std::endl;
   // std::cout << "M " << M << std::endl;
-  //
-  // ilqr.update();
+
+  ilqr.update();
   // RobotPlanRunner runner(*tree);
   // runner.Run();
 
