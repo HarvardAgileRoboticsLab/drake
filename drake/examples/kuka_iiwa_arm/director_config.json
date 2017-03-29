@@ -1,12 +1,12 @@
 {
   "modelName" : "kuka_iiwa",
   "urdfConfig": {
-    "default": "urdf/iiwa14_fixed_gripper.urdf",
-    "robotState": "urdf/iiwa14_fixed_gripper.urdf",
-    "ik":         "urdf/iiwa14_fixed_gripper.urdf",
-    "chull":      "urdf/iiwa14_fixed_gripper.urdf",
-    "playback":   "urdf/iiwa14_fixed_gripper.urdf",
-    "teleop":     "urdf/iiwa14_fixed_gripper.urdf"
+    "default": "urdf/iiwa14_estimated_params.urdf",
+    "robotState": "urdf/iiwa14_estimated_params.urdf",
+    "ik":         "urdf/iiwa14_estimated_params.urdf",
+    "chull":      "urdf/iiwa14_estimated_params.urdf",
+    "playback":   "urdf/iiwa14_estimated_params.urdf",
+    "teleop":     "urdf/iiwa14_estimated_params.urdf"
   },
 
   "teleopJointGroups" : [
