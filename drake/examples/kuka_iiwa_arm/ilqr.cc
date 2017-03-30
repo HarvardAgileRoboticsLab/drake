@@ -18,6 +18,7 @@
 #include "robotlocomotion/robot_plan_t.hpp"
 #include <boost/range/irange.hpp>
 #include <chrono>
+#include "drake/lcmt_iiwa_command.hpp"
 
 
 using boost::irange;
@@ -46,16 +47,16 @@ namespace kuka_iiwa_arm {
 namespace {
 
 const int kDof = 7;
-const int T = 500;
+const int T = 200;
 const int numStates = 14;
-const double dt = 0.01;
+const double dt = 0.1;
 
 const double finite_differences_epsilon = 1e-4;
-const int maxIterations = 50;
+const int maxIterations = 100;
 const double converganceThreshold = 0.0;
 const double terminalPosWeight = 1.0;
 const double terminalVelWeight = 1.0;
-const double min_energy_cost_weight = 1.000000000;
+const double min_energy_cost_weight = 1.0;
 const double alpha = 1.0;
 class iLQR {
  public:
@@ -71,7 +72,7 @@ class iLQR {
 
 
   bool update_rollout_ = true;
-  double lambda_ = 1000.0;
+  double lambda_ = 1.0;
   double lambda_factor_ = 10.0;
 
   std::vector<Matrix<double,numStates,numStates,RowMajor>> fx_;
@@ -87,7 +88,8 @@ class iLQR {
       : tree_(tree)  {
     VerifyIiwaTree(tree);
     init_deratives();
-
+    lcm_.subscribe(kLcmCommandChannel,
+                    &iLQR::HandleCommand, this);
     lcm_.subscribe(kLcmStatusChannel,
                     &iLQR::HandleStatus, this);
   }
@@ -120,6 +122,9 @@ class iLQR {
     computeControlSequence(X_.row(0) , U_, X_init);
     X_ = X_init;
 
+    std::cout << "U " << U_  << ", X " << X_ <<std::endl;
+
+    exit(0);
     optimal_cost_ = trajectoryCost(X_,U_);
     //TODO optimal_cost_sum_
 
@@ -162,8 +167,8 @@ class iLQR {
     }
     Eigen::Matrix<double,T,numStates,RowMajor> X_new = Eigen::Matrix<double,T,numStates,RowMajor>::Zero(T,numStates);
     current_cost_ = computeControlSequence(X_.row(0) , U_, X_new);
-    std::cout << "k " << k_   <<std::endl;
-    std::cout << "k " << K_.at(T-1)   <<std::endl;
+    // std::cout << "k " << k_   <<std::endl;
+    // std::cout << "k " << K_.at(T-1)   <<std::endl;
 
     std::cout << "U " << U_  << ", X " << X_new <<std::endl;
     std::cout << "update() METHOD DONE!!!! " << std::endl;
@@ -287,13 +292,13 @@ class iLQR {
       fx_.at(i).noalias() = Eigen::Matrix<double,numStates,numStates,RowMajor>::Identity(numStates,numStates) + A * dt;
       fu_.at(i).noalias() = B * dt;
 
-      // std::cout << i << " lx" << lx.row(i) << std::endl;
-      // std::cout << i << " lxx" << lxx.at(i) << std::endl;
-      // std::cout << i << " lu" << lu.row(i) << std::endl;
-      // std::cout << i << " luu" << luu.at(i) << std::endl;
-      // std::cout << i << " lux" << lux.at(i) << std::endl;
-      // std::cout << i << " fx" << fx.at(i) << std::endl;
-      // std::cout << i << " fu" << fu.at(i) << std::endl;
+      // std::cout << i << " lx" << lx_.row(i) << std::endl;
+      // std::cout << i << " lxx" << lxx_.at(i) << std::endl;
+      // std::cout << i << " lu" << lu_.row(i) << std::endl;
+      // std::cout << i << " luu" << luu_.at(i) << std::endl;
+      // std::cout << i << " lux" << lux_.at(i) << std::endl;
+      // std::cout << i << " fx" << fx_.at(i) << std::endl;
+      // std::cout << i << " fu" << fu_.at(i) << std::endl;
 
     }
 
@@ -321,16 +326,16 @@ class iLQR {
      double qd_in[kDof];
 
      for(int i = 0; i < kDof; i++) {
-       q_in[i] = x(i);
-       qd_in[i] = x(i+kDof);
-       qd_0(i) = qd_in[i];
-       q_0(i) = q_in[i];
+       q_in[i] = X_(T-2,i);
+       qd_in[i] = X_(T-2,i+kDof);
+       qd_0(i) = x(i+kDof);
+       q_0(i) = x(i);
       //  std::cout << q_in[i] << " , " << q_0(i) << ": " << qd_in[i] << " , " << qd_0(i) << std::endl;
      }
 
      computeMCG(q_in, qd_in, M, C, G);
 
-    //  std::cout << "---------------- C " << C << " G " << G << " M " << M << std::endl;
+    //  std::cout << "---------------- C " << C << " G " << G.determinant() << " M " << M.determinant() << std::endl;
 
      Matrix<double,1,kDof,RowMajor> qdd;
      qdd.noalias() = M.inverse() * (u - C + G);
@@ -421,6 +426,12 @@ class iLQR {
     C = tree_.dynamicsBiasTerm(cache, no_external_wrenches, true);
     G = tree_.dynamicsBiasTerm(cache, no_external_wrenches, false);
     M = tree_.massMatrix(cache);
+
+    // C = Matrix<double, 1 , kDof,RowMajor>::Ones(1,kDof);
+    // M = Matrix<double, kDof , kDof,RowMajor>::Identity(kDof,kDof);
+    // G = Matrix<double, 1 , kDof,RowMajor>::Ones(1,kDof);
+
+
     // std::cout << "+++++++++++++++++++ C " << C << " G " << G << " M " << M << " Minv: " << M.inverse() << "------------------" << std::endl;
   }
 
@@ -468,13 +479,15 @@ class iLQR {
 
         for(int j = 0; j < Ssvd.rows(); j++) {
           for(int k = 0; k < Ssvd.cols();k++ ){
-            Ssvd(j,k) += lambda_;
 
             if(Ssvd(j,k) < 0.0 ) {
               Ssvd(j,k) = 0.0;
             }else {
-              Ssvd(j,k) = 1.0 / Ssvd(j,k);
             }
+            Ssvd(j,k) += lambda_;
+
+            Ssvd(j,k) = 1.0 / Ssvd(j,k);
+
           }
         }
 
@@ -511,7 +524,7 @@ class iLQR {
         // // std::cout << "K_ "  << K_.at(i) << std::endl;
         // // std::cout << "Vx "  << Vx << std::endl;
         // std::cout << "Vxx "  << Vxx << std::endl;
-        std::cout << "Quu "  << Quu << std::endl;
+        // std::cout << "Quu "  << Quu << std::endl;
         // std::cout << "Lux "  << lux_.at(i) << std::endl;
         //
         // std::cout << "fu  "  << fu_.at(i) << std::endl;
@@ -528,23 +541,22 @@ class iLQR {
 
   void generate_init_data() {
      VectorXd cmd(7);
-     send_reset(cmd);
-     std::cout << "I AM HERE NOW" << std::endl;
-
+    //  send_reset(cmd);
     //  wait_for_convergance(cmd);
-     std::cout << "I AM HERE NOW" << std::endl;
-
      VectorXd cmd2(7);
      for(int i = 0 ; i < 7; i++ ){
-       cmd2(i) = 1.0;
+       cmd2(i) = 0.2;
      }
-     std::cout << "I AM ------------------ NOW" << std::endl;
 
      send_reset(cmd2);
-     std::cout << "I AM HEREghjkgkjhgkjhgkjhg NOW" << std::endl;
 
      chrono::steady_clock::time_point start = get_time::now();
      int currentStep = 0;
+
+     while(!command_valid_ || !status_valid_) {
+       lcm_.handle();
+     }
+
      while (currentStep < T) {
        lcm_.handle();
        chrono::steady_clock::time_point end = get_time::now();
@@ -555,8 +567,14 @@ class iLQR {
 
          for(int i = 0; i < kDof; i++) {
            X_(currentStep,i) = iiwa_status_.joint_position_measured.at(i);
-           X_(currentStep,i+kDof) = iiwa_status_.joint_velocity_estimated.at(i);
-           U_(currentStep,i) = iiwa_status_.joint_torque_commanded.at(i);
+           if(currentStep != 0) {
+             X_(currentStep,i+kDof) = (X_(currentStep,i) - X_((currentStep -1),i)) / time_span.count();
+             if (X_(currentStep,i+kDof) == 0.0) {
+               X_(currentStep,i+kDof) = X_(currentStep-1,i+kDof);
+             }
+           }
+           U_(currentStep,i) = iiwa_command_.joint_torque.at(i);
+          //  std::cout << iiwa_command_.joint_torque.at(i) << "," << iiwa_status_.joint_position_commanded.at(i) << std::endl;
          }
 
          currentStep++;
@@ -564,9 +582,14 @@ class iLQR {
        }
      }
 
+     std::cout << "X_ : " << X_ << std::endl;
+     std::cout << "U_ : " << U_ << std::endl;
+
   }
 
  private:
+   bool command_valid_ = false;
+   bool status_valid_ = false;
 
    double trajectoryCost(Matrix<double,T,numStates,RowMajor> X, Matrix<double,T,kDof,RowMajor> U) {
      double cost = 0.0;
@@ -582,6 +605,12 @@ class iLQR {
    void HandleStatus(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
                      const lcmt_iiwa_status* status) {
      iiwa_status_ = *status;
+     status_valid_= true;
+   }
+   void HandleCommand(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
+                     const lcmt_iiwa_command* command) {
+     iiwa_command_ = *command;
+     command_valid_ = true;
    }
 
 
@@ -612,7 +641,6 @@ class iLQR {
        plan.num_states = 2;
        plan.plan_info.push_back(1);
        plan.plan_info.push_back(1);
-       std::cout << "I AM HERE NOW" << plan.utime << std::endl;
 
        bot_core::robot_state_t start;
        bot_core::robot_state_t goal;
@@ -620,7 +648,6 @@ class iLQR {
        goal.utime = (T * dt * 1e6);
        start.num_joints = 7;
        goal.num_joints = 7;
-       std::cout << "I AM HERE NOW" << std::endl;
 
        start.joint_name.push_back("iiwa_joint_1");
        start.joint_name.push_back("iiwa_joint_2");
@@ -637,31 +664,28 @@ class iLQR {
        goal.joint_name.push_back("iiwa_joint_6");
        goal.joint_name.push_back("iiwa_joint_7");
 
-
       for (int i = 0; i < 7; i++) {
         start.joint_velocity.push_back(0.0);
         goal.joint_velocity.push_back(0.0);
         start.joint_effort.push_back(0.0);
         goal.joint_effort.push_back(0.0);
         goal.joint_position.push_back(goal_pos(i));
-        start.joint_position.push_back(0.0);
-        std::cout << "EEEE" << iiwa_status_.joint_position_measured.at(i) << "," << goal_pos(i)<< std::endl;
+        start.joint_position.push_back(iiwa_status_.joint_position_measured.at(i));
+        // std::cout << "EEEE" << iiwa_status_.joint_position_measured.at(i) << "," << goal_pos(i)<< std::endl;
       }
-      std::cout << "I AM HERE NOW" << std::endl;
 
       plan.plan.push_back(start);
       plan.plan.push_back(goal);
-      std::cout << "I AM HERE NOW" << goal_pos<< start.joint_position.at(0) << std::endl;
 
       lcm_.publish(kLcmPlanChannel, &plan);
-      std::cout << "I AM HERE NOW" << std::endl;
 
    }
-
+   lcmt_iiwa_command iiwa_command_;
    lcmt_iiwa_status iiwa_status_;
    lcm::LCM lcm_;
    const char* const kLcmStatusChannel = "IIWA_STATUS";
    const char* const kLcmPlanChannel = "COMMITTED_ROBOT_PLAN";
+   const char* const kLcmCommandChannel = "IIWA_COMMAND";
 
    const RigidBodyTree<double>& tree_;
 };
@@ -678,7 +702,7 @@ int do_main(int argc, const char* argv[]) {
   ilqr.X_ = Eigen::Matrix<double,T,numStates,RowMajor>::Zero(T,numStates);
   ilqr.U_ = Eigen::Matrix<double,T,kDof,RowMajor>::Zero(T,kDof);
   ilqr.X_ += 0.0 * Eigen::Matrix<double,T,numStates,RowMajor>::Ones(T,numStates);
-  ilqr.U_ += 0.2 * Eigen::Matrix<double,T,kDof,RowMajor>::Ones(T,kDof);
+  ilqr.U_ += 0.0 * Eigen::Matrix<double,T,kDof,RowMajor>::Ones(T,kDof);
 
   ilqr.x0_ = Eigen::VectorXd(numStates) + 0.0 * Eigen::VectorXd::Ones(numStates);
   for(int i = kDof; i < 2* kDof; i ++) {
@@ -687,7 +711,7 @@ int do_main(int argc, const char* argv[]) {
   ilqr.xt_.resize(14);
 
   for(int j = 0;j <kDof;j++){
-    ilqr.xt_(j) = 0.5;
+    ilqr.xt_(j) = 0.25;
     ilqr.xt_(j+kDof) = 0.0;
 
   }
