@@ -511,7 +511,7 @@ class iLQR {
         // // std::cout << "K_ "  << K_.at(i) << std::endl;
         // // std::cout << "Vx "  << Vx << std::endl;
         // std::cout << "Vxx "  << Vxx << std::endl;
-        // std::cout << "Qux "  << Qux << std::endl;
+        std::cout << "Quu "  << Quu << std::endl;
         // std::cout << "Lux "  << lux_.at(i) << std::endl;
         //
         // std::cout << "fu  "  << fu_.at(i) << std::endl;
@@ -531,13 +531,13 @@ class iLQR {
      send_reset(cmd);
      std::cout << "I AM HERE NOW" << std::endl;
 
-     wait_for_convergance(cmd);
+    //  wait_for_convergance(cmd);
      std::cout << "I AM HERE NOW" << std::endl;
 
      VectorXd cmd2(7);
-    //  for(int i = 0 ; i < 7; i++ ){
-    //    cmd2(i) = 1.0;
-    //  }
+     for(int i = 0 ; i < 7; i++ ){
+       cmd2(i) = 1.0;
+     }
      std::cout << "I AM ------------------ NOW" << std::endl;
 
      send_reset(cmd2);
@@ -551,7 +551,7 @@ class iLQR {
        chrono::duration<double> time_span = chrono::duration_cast<chrono::duration<double>>(end - start);
 
        if (time_span.count() > dt) {
-         std::cout << "dt: "  << time_span.count()  << std::endl;
+        //  std::cout << "dt: "  s<< time_span.count()  << std::endl;
 
          for(int i = 0; i < kDof; i++) {
            X_(currentStep,i) = iiwa_status_.joint_position_measured.at(i);
@@ -629,7 +629,6 @@ class iLQR {
        start.joint_name.push_back("iiwa_joint_5");
        start.joint_name.push_back("iiwa_joint_6");
        start.joint_name.push_back("iiwa_joint_7");
-       start.joint_name.push_back("iiwa_joint_ee");
        goal.joint_name.push_back("iiwa_joint_1");
        goal.joint_name.push_back("iiwa_joint_2");
        goal.joint_name.push_back("iiwa_joint_3");
@@ -637,7 +636,6 @@ class iLQR {
        goal.joint_name.push_back("iiwa_joint_5");
        goal.joint_name.push_back("iiwa_joint_6");
        goal.joint_name.push_back("iiwa_joint_7");
-       goal.joint_name.push_back("iiwa_joint_ee");
 
 
       for (int i = 0; i < 7; i++) {
@@ -646,8 +644,8 @@ class iLQR {
         start.joint_effort.push_back(0.0);
         goal.joint_effort.push_back(0.0);
         goal.joint_position.push_back(goal_pos(i));
-        start.joint_position.push_back(iiwa_status_.joint_position_measured.at(i));
-        std::cout << start.joint_position.at(i) << std::endl;
+        start.joint_position.push_back(0.0);
+        std::cout << "EEEE" << iiwa_status_.joint_position_measured.at(i) << "," << goal_pos(i)<< std::endl;
       }
       std::cout << "I AM HERE NOW" << std::endl;
 
@@ -672,7 +670,7 @@ int do_main(int argc, const char* argv[]) {
 
   auto tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-      GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_estimated_params.urdf",
+      GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_simplified_collision.urdf",
       multibody::joints::kFixed, tree.get());
 
 
@@ -693,7 +691,7 @@ int do_main(int argc, const char* argv[]) {
     ilqr.xt_(j+kDof) = 0.0;
 
   }
-  // ilqr.generate_init_data();
+  ilqr.generate_init_data();
   ilqr.update();
 
   //

@@ -223,7 +223,7 @@ class RobotController {
           torque_command -= gravity_torque;
 
         }
-
+        std::cout << "TORQUE:" << torque_command << std::endl;
         //debugging for feedforward and feedback torque components
         /*if (fabs(iiwa_status_.joint_velocity_estimated[5]) > 0.1 || fabs(iiwa_status_.joint_velocity_estimated[3]) > 0.1 || fabs(iiwa_status_.joint_velocity_estimated[1]) > 0.1){
           saveVector(position_ctrl_torque_command, "PD_impedance_ctrl_command");
@@ -391,7 +391,7 @@ int DoMain(int argc, const char* argv[]) {
 
   auto tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-    GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_estimated_params_fixed_gripper.urdf",
+    GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_simplified_collision.urdf",
       multibody::joints::kFixed, tree.get());
 
   RobotController runner(*tree);

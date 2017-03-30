@@ -178,7 +178,7 @@ int do_main(int argc, const char* argv[]) {
 
   auto tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-      GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_estimated_params_fixed_gripper.urdf",
+      GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_simplified_collision.urdf",
       multibody::joints::kFixed, tree.get());
 
   RobotPlanRunner runner(*tree);
