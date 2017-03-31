@@ -326,8 +326,8 @@ class iLQR {
      double qd_in[kDof];
 
      for(int i = 0; i < kDof; i++) {
-       q_in[i] = X_(T-2,i);
-       qd_in[i] = X_(T-2,i+kDof);
+       q_in[i] =  x(i);
+       qd_in[i] = x(i+kDof);
        qd_0(i) = x(i+kDof);
        q_0(i) = x(i);
       //  std::cout << q_in[i] << " , " << q_0(i) << ": " << qd_in[i] << " , " << qd_0(i) << std::endl;
@@ -405,8 +405,8 @@ class iLQR {
   void computeMCG(double * q_in, double * qd_in, Matrix<double,Dynamic,Dynamic,RowMajor> &M, Matrix<double,Dynamic,Dynamic,RowMajor> &C, Matrix<double,Dynamic,Dynamic,RowMajor> &G) {
     // for (int i = 0; i < kDof; i++){
     //   std::cout << " qin " << q_in[i] << " qd_in " << qd_in[i] << std::endl;
-    //
     // }
+    
     double *qptr = &q_in[0];
     Eigen::Map<Eigen::VectorXd> q(qptr, kDof);
     double *qdptr = &qd_in[0];
@@ -423,7 +423,7 @@ class iLQR {
     * Alternatively, one can pass in a KinematicsCache created with \f$ v = 0\f$
     *or without specifying the velocity vector.
     */
-    C = tree_.dynamicsBiasTerm(cache, no_external_wrenches, true);
+    C = tree_.dynamicsBiasTerm(cache, no_external_wrenches);
     G = tree_.dynamicsBiasTerm(cache, no_external_wrenches, false);
     M = tree_.massMatrix(cache);
 
