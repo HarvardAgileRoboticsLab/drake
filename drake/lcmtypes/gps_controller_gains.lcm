@@ -1,7 +1,0 @@
-package drake;
-
-struct gps_controller_gains
-{
-  int32_t  numStates;
-  int64_t values[numStates];     
-}

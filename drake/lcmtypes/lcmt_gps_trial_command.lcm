@@ -1,0 +1,30 @@
+package drake;
+
+struct lcmt_gps_trial_command {
+  // An ID to return in result data that can be used as a check
+  int32_t trialID;
+
+  // The timestamp in microseconds.
+  int64_t timestamp;
+
+  int64_t  dt; // Time inbetween each command
+  int32_t dX;
+  int32_t dObs;
+  int32_t dU;
+  int32_t  T; // Length of trajectory
+
+  lcmt_gps_controller_gains K[T];
+  lcmt_gps_controller_gains  k[T];
+
+
+  int32_t num_state_types;
+  int32_t num_obs_types;
+  int32_t num_ee_points;
+
+  int32_t state_datatypes[num_state_types];  // Which data types to include in state
+  int32_t obs_datatypes[num_obs_types]; // Which data types to include in observation
+  int64_t ee_points[num_ee_points]; // A 3*n_points array containing offsets
+  int64_t ee_points_tgt[num_ee_points]; // A 3*n_points array containing the desired ee_points for this trial
+
+
+}

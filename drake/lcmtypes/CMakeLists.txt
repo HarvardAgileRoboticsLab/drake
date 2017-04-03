@@ -69,8 +69,10 @@ lcm_wrap_types(
   lcmt_whole_body_data.lcm
   lcmt_zmp_com_observer_state.lcm
   lcmt_zmp_data.lcm
-  gps_run_controller.lcm
-  gps_controller_gains.lcm
+  lcmt_gps_controller_gains.lcm
+  lcmt_gps_data.lcm
+  lcmt_gps_trial_command.lcm
+  lcmt_gps_sample_result.lcm
 )
 
 lcm_add_library(drake_lcmtypes C ${c_sources} ${c_install_headers})

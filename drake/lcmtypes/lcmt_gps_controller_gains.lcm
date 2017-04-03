@@ -1,0 +1,7 @@
+package drake;
+
+struct lcmt_gps_controller_gains
+{
+  int32_t  T;
+  int64_t gains[T];
+}
