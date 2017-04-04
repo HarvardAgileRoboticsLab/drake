@@ -19,7 +19,6 @@
 #include "drake/lcmt_gps_controller_gains.hpp"
 #include "drake/lcmt_gps_sample_result.hpp"
 #include "drake/lcmt_gps_data.hpp"
-#include <kdl_parser/kdl_parser.hpp>
 #include "drake/multibody/parsers/urdf_parser.h"
 
 
@@ -52,6 +51,7 @@ enum SampleType { //IF PROTOBUF CHANGES, THIS NEEDS TO CHANGE. NEED TO INVESTIGA
   END_EFFECTOR_POINTS_NO_TARGET = 17,
   END_EFFECTOR_POINT_VELOCITIES_NO_TARGET = 18,
   TOTAL_DATA_TYPES = 19,
+  JOINT_TORQUES = 20,
 };
 
 
@@ -376,12 +376,12 @@ const char* const EE_FRAME = "iiwa_link_ee";
         state_idx_.resize(cmd->state_datatypes.size(),2);
 
 
-        for(int i = 0; i < T_; i++) {
-          for(int j = 0; i < dX_; i++) {
-            K_(i,j) = cmd->K.at(i).gains.at(j);
-            k_(i,j) = cmd->k.at(i).gains.at(j);
-          }
-        }
+        // for(int i = 0; i < T_; i++) {
+        //   for(int j = 0; i < dX_; i++) {
+        //     // K_(i,j) = cmd->K.at(i).gains.at(j);
+        //     // k_(i,j) = cmd->k.at(i).gains.at(j);
+        //   }
+        // }
 
 
         kNumJoints_ = 7; //TODO FIX! Pass via message. 7 is for iiwa
