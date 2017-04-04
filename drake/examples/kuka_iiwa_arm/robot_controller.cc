@@ -108,7 +108,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
 
           compute_state(currentStep);
 
-          U_ = K_.row(currentStep) * (X_.row(currentStep)) + k_.row(currentStep);
+          U_ = K_.at(currentStep) * (X_.row(currentStep)) + k_.row(currentStep);
 
           for (int i = 0 ; i < kNumJoints_; i++) {
             iiwa_command.joint_torque.push_back(U_(i));
@@ -353,21 +353,26 @@ const char* const EE_FRAME = "iiwa_link_ee";
         dU_ = cmd->dU;
         dObs_ = cmd->dObs;
         kNumEEPoints_ = cmd->num_ee_points;
-        ee_point_offsets_.resize(kNumEEPoints_,3);
-        for(int i = 0; i < kNumEEPoints_; i++) {
-          ee_point_offsets_(i,0) = cmd->ee_points.at(i);
-          ee_point_offsets_(i,1) = cmd->ee_points.at(i+1);
-          ee_point_offsets_(i,2) = cmd->ee_points.at(i+2);
+        ee_point_offsets_.resize(kNumEEPoints_ ,3);
+
+        for(int i = 0; i < kNumEEPoints_ / 3.0; i++) {
+          // std::cout << i << ", " << cmd->ee_points.size()  << ", " <<  kNumEEPoints_ / 3.0<<  std::endl;
+          ee_point_offsets_(i,0) = cmd->ee_points.at((i*3));
+          ee_point_offsets_(i,1) = cmd->ee_points.at((i*3)+1);
+          ee_point_offsets_(i,2) = cmd->ee_points.at((i*3)+2);
         }
 
         ee_targets_.resize(kNumEEPoints_,3);
-        for(int i = 0; i < kNumEEPoints_; i++) {
-          ee_point_offsets_(i,0) = cmd->ee_points_tgt.at(i);
-          ee_point_offsets_(i,1) = cmd->ee_points_tgt.at(i+1);
-          ee_point_offsets_(i,2) = cmd->ee_points_tgt.at(i+2);
+        for(int i = 0; i < kNumEEPoints_ / 3.0; i++) {
+          ee_point_offsets_(i,0) = cmd->ee_points_tgt.at((i*3));
+          ee_point_offsets_(i,1) = cmd->ee_points_tgt.at((i*3)+1);
+          ee_point_offsets_(i,2) = cmd->ee_points_tgt.at((i*3)+2);
         }
 
-        K_.resize(T_, dX_);
+        for(int i = 0; i < T_; i++) {
+          K_.push_back(Eigen::MatrixXd(dU_,dX_));
+        }
+
         k_.resize(T_, dX_);
         X_.resize(T_,dX_);
         obs_.resize(T_, dObs_);
@@ -376,12 +381,19 @@ const char* const EE_FRAME = "iiwa_link_ee";
         state_idx_.resize(cmd->state_datatypes.size(),2);
 
 
-        // for(int i = 0; i < T_; i++) {
-        //   for(int j = 0; i < dX_; i++) {
-        //     // K_(i,j) = cmd->K.at(i).gains.at(j);
-        //     // k_(i,j) = cmd->k.at(i).gains.at(j);
-        //   }
-        // }
+        for(int i = 0; i < T_; i++) {
+          for(int j = 0; j < dU_; j++) {
+            k_(i,j) = cmd->k.at(i).k.at(j);
+          }
+        }
+
+        for(int i = 0; i < T_; i++) {
+          for(int j = 0; j < dU_; j++) {
+            for(int k = 0; k < dX_; k++) {
+              K_.at(i)(j,k) = cmd->K.at(i).K.at(j).at(k);
+            }
+          }
+        }
 
 
         kNumJoints_ = 7; //TODO FIX! Pass via message. 7 is for iiwa
@@ -402,7 +414,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
     MatrixXd state_idx_;
 
     VectorXd U_;
-    MatrixXd K_;
+    std::vector<MatrixXd> K_;
     MatrixXd k_;
     MatrixXd ee_point_offsets_;
     MatrixXd ee_targets_;
