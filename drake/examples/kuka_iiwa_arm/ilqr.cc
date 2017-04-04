@@ -11,8 +11,8 @@
 #include "drake/examples/kuka_iiwa_arm/iiwa_common.h"
 #include "drake/multibody/parsers/urdf_parser.h"
 #include "drake/multibody/rigid_body_tree.h"
-#include "drake/gps_run_controller.hpp"
-#include "drake/gps_controller_gains.hpp"
+// #include "drake/gps_run_controller.hpp"
+#include "drake/lcmt_gps_controller_gains.hpp"
 #include "drake/lcmt_iiwa_status.hpp"
 #include "bot_core/robot_state_t.hpp"
 #include "robotlocomotion/robot_plan_t.hpp"
@@ -406,7 +406,7 @@ class iLQR {
     // for (int i = 0; i < kDof; i++){
     //   std::cout << " qin " << q_in[i] << " qd_in " << qd_in[i] << std::endl;
     // }
-    
+
     double *qptr = &q_in[0];
     Eigen::Map<Eigen::VectorXd> q(qptr, kDof);
     double *qdptr = &qd_in[0];

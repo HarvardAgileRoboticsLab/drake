@@ -109,7 +109,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
           compute_state(currentStep);
 
           U_ = K_.row(currentStep) * (X_.row(currentStep)) + k_.row(currentStep);
-          // vector<double> command(U_.data(), U_.data() + U_.rows() * U_.cols());
+
           for (int i = 0 ; i < kNumJoints_; i++) {
             iiwa_command.joint_torque.push_back(U_(i));
           }
@@ -121,7 +121,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
             std::cout << "dt: "  << time_span.count()  << std::endl;
             currentStep++;
             start = get_time::now();
-            // store_data();
+            compute_obs(currentStep);
           }
 
           iiwa_command.utime = iiwa_status_.utime;
@@ -130,7 +130,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
 
         if(running_ == true) {
           running_ = false;
-          // TODO PUBLISH DATA
+          publish_sample();
         }
       }
     }
@@ -141,66 +141,95 @@ const char* const EE_FRAME = "iiwa_link_ee";
         int type = controller_command_.obs_datatypes.at(i);
         switch (type) {
           case JOINT_ANGLES: {
+              obs_idx_(i,0) = idx;
               for(int j = 0; j < kNumJoints_; j++) {
                 X_(t, idx) = iiwa_status_.joint_position_measured[j];
+                obs_idx_(i,1) = idx;
                 idx++;
               }
           } case JOINT_VELOCITIES:{
+              obs_idx_(i,0) = idx;
               for(int j = 0; j < kNumJoints_; j++) {
                 X_(t, idx) = iiwa_status_.joint_velocity_estimated[j];
+                obs_idx_(i,1) = idx;
                 idx++;
               }
           } case END_EFFECTOR_POINTS: {
+              obs_idx_(i,0) = idx;
               VectorXd pos;
               VectorXd vel;
               get_points_and_vels(pos,vel);
               for(int j = 0; j < pos.size(); j++) {
                 X_(t,idx) = pos(j);
+                obs_idx_(i,1) = idx;
                 idx++;
               }
           } case END_EFFECTOR_POINT_VELOCITIES: {
+              obs_idx_(i,0) = idx;
               VectorXd pos;
               VectorXd vel;
               get_points_and_vels(pos,vel);
               for(int j = 0; j < vel.size(); j++) {
                 X_(t,idx) = vel(j);
+                obs_idx_(i,1) = idx;
                 idx++;
               }
             }
           }
         }
-        // if (type == JOINT_ANGLES) {
-        //
-        // } else if (type == JOINT_VELOCITIES) {
-        //   for(int j = 0; j < kNumJoints_; j++) {
-        //     X_(t, idx) = iiwa_status_.joint_velocity_estimated[j];
-        //     idx++;
-        //   }
-        // } else if (type == END_EFFECTOR_POINTS) {
-        //     VectorXd pos;
-        //     VectorXd vel;
-        //     get_points_and_vels(pos,vel);
-        //     for(int j = 0; j < pos.size(); j++) {
-        //       X_(t,idx) = pos(j);
-        //       idx++;
-        //     }
-        // } else if (type == END_EFFECTOR_POINT_VELOCITIES) {
-        //     VectorXd pos;
-        //     VectorXd vel;
-        //     get_points_and_vels(pos,vel);
-        //     for(int j = 0; j < vel.size(); j++) {
-        //       X_(t,idx) = vel(j);
-        //       idx++;
-        //   }
-      //   }
-      // }
     }
     void publish_sample(){
       lcmt_gps_sample_result res;
       res.trialID = controller_command_.trialID;
-      res.num_data_types =
+      res.num_data_types = controller_command_.obs_datatypes.size();
 
-      for(int i = 0 )
+
+      for(unsigned int i = 0; i < controller_command_.obs_datatypes.size(); i++) {
+        lcmt_gps_data data;
+        data.data_type = controller_command_.obs_datatypes.at(i);
+        data.T = T_;
+        for(int k = 0; k < T_; k++) {
+          for(int j = obs_idx_(i,0); j <= obs_idx_(i,1); j++){
+            data.data.at(k).push_back(obs_(k,j));
+          }
+        }
+        res.data_samples.push_back(data);
+      }
+
+      lcmt_gps_data data;
+      data.data_type = ACTION;
+      for(int k = 0; k < T_; k++) {
+        for(int j =0; j < kNumJoints_; k++) {
+            data.data.at(k).push_back(U_(k,j));
+        }
+      }
+      res.data_samples.push_back(data);
+
+
+      for(unsigned int i = 0; i < controller_command_.state_datatypes.size(); i++) {
+        lcmt_gps_data data;
+        data.data_type = controller_command_.state_datatypes.at(i);
+
+        bool already_exists = false;
+        for(unsigned int a = 0; a < res.data_samples.size(); a++) {
+          if(res.data_samples.at(a).data_type == data.data_type){
+
+          }
+        }
+        if (already_exists) {
+          continue;
+        }
+
+        data.T = T_;
+        for(int k = 0; k < T_; k++) {
+          for(int j = state_idx_(i,0); j <= state_idx_(i,1); j++){
+            data.data.at(k).push_back(X_(k,j));
+          }
+        }
+        res.data_samples.push_back(data);
+      }
+
+      lcm_.publish(kLcmControllerData, &res);
     }
 
     void compute_state(int t) {
@@ -209,29 +238,37 @@ const char* const EE_FRAME = "iiwa_link_ee";
         int type = controller_command_.state_datatypes.at(i);
         switch (type) {
           case JOINT_ANGLES: {
+              state_idx_(i,0) = idx;
               for(int j = 0; j < kNumJoints_; j++) {
                 X_(t, idx) = iiwa_status_.joint_position_measured[j];
+                state_idx_(i,1) = idx;
                 idx++;
               }
           } case JOINT_VELOCITIES:{
+            state_idx_(i,0) = idx;
               for(int j = 0; j < kNumJoints_; j++) {
                 X_(t, idx) = iiwa_status_.joint_velocity_estimated[j];
+                state_idx_(i,1) = idx;
                 idx++;
               }
           } case END_EFFECTOR_POINTS: {
+            state_idx_(i,0) = idx;
               VectorXd pos;
               VectorXd vel;
               get_points_and_vels(pos,vel);
               for(int j = 0; j < pos.size(); j++) {
                 X_(t,idx) = pos(j);
+                state_idx_(i,1) = idx;
                 idx++;
               }
           } case END_EFFECTOR_POINT_VELOCITIES: {
+            state_idx_(i,0) = idx;
               VectorXd pos;
               VectorXd vel;
               get_points_and_vels(pos,vel);
               for(int j = 0; j < vel.size(); j++) {
                 X_(t,idx) = vel(j);
+                state_idx_(i,1) = idx;
                 idx++;
               }
             }
@@ -335,6 +372,10 @@ const char* const EE_FRAME = "iiwa_link_ee";
         X_.resize(T_,dX_);
         obs_.resize(T_, dObs_);
         U_.resize(T_,dU_);
+        obs_idx_.resize(cmd->obs_datatypes.size(),2);
+        state_idx_.resize(cmd->state_datatypes.size(),2);
+
+
         for(int i = 0; i < T_; i++) {
           for(int j = 0; i < dX_; i++) {
             K_(i,j) = cmd->K.at(i).gains.at(j);
@@ -357,6 +398,9 @@ const char* const EE_FRAME = "iiwa_link_ee";
 
     MatrixXd X_;
     MatrixXd obs_;
+    MatrixXd obs_idx_;
+    MatrixXd state_idx_;
+
     VectorXd U_;
     MatrixXd K_;
     MatrixXd k_;
