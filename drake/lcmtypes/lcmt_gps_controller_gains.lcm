@@ -4,6 +4,6 @@ struct lcmt_gps_controller_gains
 {
   int32_t  dU;
   int32_t  dX;
-  int64_t k[dU];
-  int64_t K[dU][dX];
+  double k[dU];
+  double K[dU][dX];
 }

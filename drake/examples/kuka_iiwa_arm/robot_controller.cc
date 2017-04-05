@@ -99,6 +99,8 @@ const char* const EE_FRAME = "iiwa_link_ee";
         chrono::steady_clock::time_point start = get_time::now();
 
         while(currentStep < T_) {
+          lcm_.handle();
+
 
           lcmt_iiwa_command iiwa_command;
           iiwa_command.num_joints = kNumJoints_;
@@ -108,17 +110,22 @@ const char* const EE_FRAME = "iiwa_link_ee";
 
           compute_state(currentStep);
 
-          U_ = K_.at(currentStep) * (X_.row(currentStep)) + k_.row(currentStep);
+          U_.row(currentStep) = K_.at(currentStep) * (X_.row(currentStep)) + k_.row(currentStep);
+          std::cout << "U-----"  << U_.rows() <<","<< U_.cols() << " , " << K_.at(currentStep) * (X_.row(currentStep)) + k_.row(currentStep)<< std::endl;
+          std::cout << "X_-----"  << X_.rows() <<","<<  X_.cols() << std::endl;
+          std::cout << "k_-----"  << k_.rows() <<","<<  k_.cols() << std::endl;
+          std::cout << "K_-----"  << K_.at(currentStep).rows() <<","<<   K_.at(currentStep).cols() << std::endl;
+
 
           for (int i = 0 ; i < kNumJoints_; i++) {
-            iiwa_command.joint_torque.push_back(U_(i));
+            iiwa_command.joint_position[i] = U_(i);
           }
 
           chrono::steady_clock::time_point end = get_time::now();
           chrono::duration<double> time_span = chrono::duration_cast<chrono::duration<double>>(end - start);
 
           if (time_span.count() > dt_) {
-            std::cout << "dt: "  << time_span.count()  << std::endl;
+            std::cout << "dt: "  << time_span.count()  << " , " <<dt_ << " T_ " << T_ <<  std::endl;
             currentStep++;
             start = get_time::now();
             compute_obs(currentStep);
@@ -147,6 +154,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
                 obs_idx_(i,1) = idx;
                 idx++;
               }
+              break;
           } case JOINT_VELOCITIES:{
               obs_idx_(i,0) = idx;
               for(int j = 0; j < kNumJoints_; j++) {
@@ -154,6 +162,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
                 obs_idx_(i,1) = idx;
                 idx++;
               }
+              break;
           } case END_EFFECTOR_POINTS: {
               obs_idx_(i,0) = idx;
               VectorXd pos;
@@ -164,6 +173,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
                 obs_idx_(i,1) = idx;
                 idx++;
               }
+              break;
           } case END_EFFECTOR_POINT_VELOCITIES: {
               obs_idx_(i,0) = idx;
               VectorXd pos;
@@ -174,6 +184,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
                 obs_idx_(i,1) = idx;
                 idx++;
               }
+              break;
             }
           }
         }
@@ -238,30 +249,40 @@ const char* const EE_FRAME = "iiwa_link_ee";
         int type = controller_command_.state_datatypes.at(i);
         switch (type) {
           case JOINT_ANGLES: {
+
               state_idx_(i,0) = idx;
               for(int j = 0; j < kNumJoints_; j++) {
                 X_(t, idx) = iiwa_status_.joint_position_measured[j];
                 state_idx_(i,1) = idx;
                 idx++;
               }
+              break;
           } case JOINT_VELOCITIES:{
+
             state_idx_(i,0) = idx;
               for(int j = 0; j < kNumJoints_; j++) {
                 X_(t, idx) = iiwa_status_.joint_velocity_estimated[j];
                 state_idx_(i,1) = idx;
                 idx++;
               }
+              break;
           } case END_EFFECTOR_POINTS: {
+
             state_idx_(i,0) = idx;
               VectorXd pos;
               VectorXd vel;
+
               get_points_and_vels(pos,vel);
+
               for(int j = 0; j < pos.size(); j++) {
                 X_(t,idx) = pos(j);
                 state_idx_(i,1) = idx;
                 idx++;
               }
+
+              break;
           } case END_EFFECTOR_POINT_VELOCITIES: {
+
             state_idx_(i,0) = idx;
               VectorXd pos;
               VectorXd vel;
@@ -271,13 +292,14 @@ const char* const EE_FRAME = "iiwa_link_ee";
                 state_idx_(i,1) = idx;
                 idx++;
               }
+              break;
             }
           }
         }
       // sample_
     }
 
-    MatrixXd get_ee_points_in_base_frame(VectorXd ee_pos,  MatrixXd ee_rot){
+    MatrixXd get_ee_points_in_base_frame(Eigen::Ref<VectorXd> ee_pos,  Eigen::Ref<MatrixXd> ee_rot){
       MatrixXd ee_points(kNumEEPoints_,3);
 
       for(int i = 0; i < ee_point_offsets_.rows(); i++) {
@@ -287,7 +309,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
       return ee_points;
     }
 
-    void get_ee_pos_and_rot(double * q_in, VectorXd translation, VectorXd quat, MatrixXd rotation){
+    void get_ee_pos_and_rot(double * q_in, Eigen::Ref<VectorXd> translation, Eigen::Ref<VectorXd> quat, Eigen::Ref<MatrixXd> rotation){
       Eigen::Map<Eigen::VectorXd> q(&q_in[0], kNumJoints_); //TODO IS q the right size???? I don't think it is.
       KinematicsCache<double> cache = tree_.doKinematics(q);
 
@@ -298,6 +320,13 @@ const char* const EE_FRAME = "iiwa_link_ee";
       rotation = transform.rotation();
       translation = transform.translation();
       quat = drake::math::rotmat2quat(transform.linear());
+
+      // for (int i = 0 ; i < kNumJoints_; i++) {
+      //   std::cout << q(i) << " , ";
+      // }
+
+
+
     }
 
     void get_points_and_vels(VectorXd postions, VectorXd velocities){
@@ -305,8 +334,8 @@ const char* const EE_FRAME = "iiwa_link_ee";
       VectorXd posLast(3);
       VectorXd quatNow(4);
       VectorXd quatLast(4);
-      MatrixXd rotNow;
-      MatrixXd rotLast;
+      MatrixXd rotNow(4,4);
+      MatrixXd rotLast(4,4);
 
       double qNow[kNumJoints_];
       double qLast[kNumJoints_];
@@ -315,7 +344,6 @@ const char* const EE_FRAME = "iiwa_link_ee";
         qNow[i] = iiwa_status_.joint_position_measured.at(i);
         qLast[i] = iiwa_status_old_.joint_position_measured.at(i); //Todo make this is set somewhere
       }
-
       get_ee_pos_and_rot(qNow, posNow, quatNow, rotNow);
       get_ee_pos_and_rot(qLast, posLast, quatLast, rotLast);
 
@@ -333,6 +361,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
   private:
     void HandleStatus(const lcm::ReceiveBuffer* rbuf, const std::string& chan,
                       const lcmt_iiwa_status* status) {
+      iiwa_status_old_ = iiwa_status_;
       iiwa_status_ = *status;
       for(int i = 0; i < kNumJoints_;i++ ) {
         // X_(i) = iiwa_status_.joint_position_measured[i];
@@ -364,16 +393,16 @@ const char* const EE_FRAME = "iiwa_link_ee";
 
         ee_targets_.resize(kNumEEPoints_,3);
         for(int i = 0; i < kNumEEPoints_ / 3.0; i++) {
-          ee_point_offsets_(i,0) = cmd->ee_points_tgt.at((i*3));
-          ee_point_offsets_(i,1) = cmd->ee_points_tgt.at((i*3)+1);
-          ee_point_offsets_(i,2) = cmd->ee_points_tgt.at((i*3)+2);
+          ee_targets_(i,0) = cmd->ee_points_tgt.at((i*3));
+          ee_targets_(i,1) = cmd->ee_points_tgt.at((i*3)+1);
+          ee_targets_(i,2) = cmd->ee_points_tgt.at((i*3)+2);
         }
 
         for(int i = 0; i < T_; i++) {
           K_.push_back(Eigen::MatrixXd(dU_,dX_));
         }
 
-        k_.resize(T_, dX_);
+        k_.resize(T_, dU_);
         X_.resize(T_,dX_);
         obs_.resize(T_, dObs_);
         U_.resize(T_,dU_);
@@ -395,6 +424,19 @@ const char* const EE_FRAME = "iiwa_link_ee";
           }
         }
 
+        std::cout << "--------------NEW PLAN ----------------" << std::endl;
+        std::cout << "dt_ " << dt_ << std::endl;
+        std::cout << "dU_ " << dU_ << std::endl;
+        std::cout << "dX_ " << dX_ << std::endl;
+        std::cout << "T_ " << T_ << std::endl;
+        std::cout << "dObs_ " << dObs_ << std::endl;
+        std::cout << "kNumEEPoints_ " << kNumEEPoints_ << std::endl;
+        std::cout << "ee_point_offsets_ " << ee_point_offsets_ << std::endl;
+        std::cout << "ee_targets_ " << ee_targets_ << std::endl;
+        std::cout << "k_ " << k_ << std::endl;
+        std::cout << "U-----"  << U_.rows() <<","<< U_.cols() <<  std::endl;
+
+        // exit(0);
 
         kNumJoints_ = 7; //TODO FIX! Pass via message. 7 is for iiwa
         // X_.resize(dX_);
@@ -413,7 +455,7 @@ const char* const EE_FRAME = "iiwa_link_ee";
     MatrixXd obs_idx_;
     MatrixXd state_idx_;
 
-    VectorXd U_;
+    MatrixXd U_;
     std::vector<MatrixXd> K_;
     MatrixXd k_;
     MatrixXd ee_point_offsets_;
