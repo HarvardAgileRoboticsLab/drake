@@ -1,6 +1,6 @@
 package drake;
 
-struct lcmt_quadrotor_output_t {
+struct lcmt_uav_output_t {
   // The timestamp in milliseconds.
   int64_t timestamp;
 
