@@ -1,0 +1,415 @@
+<?xml version="1.0"?>
+<robot
+  name="SL_assemFull2">
+  <link
+    name="Chassis">
+    <inertial>
+      <origin
+        xyz="-1.7085E-06 -0.00016805 -6.005E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.00015782" />
+      <inertia
+        ixx="3.148E-09"
+        ixy="-5.1759E-14"
+        ixz="-2.6324E-13"
+        iyy="1.9031E-08"
+        iyz="-1.8192E-12"
+        izz="1.5888E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/Chassis.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/Chassis.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="FLS1">
+    <inertial>
+      <origin
+        xyz="-4.4235E-17 0.0040837 0.0013542"
+        rpy="0 0 0" />
+      <mass
+        value="8.1633E-06" />
+      <inertia
+        ixx="5.8035E-11"
+        ixy="5.1465E-25"
+        ixz="1.6138E-25"
+        iyy="1.0937E-11"
+        iyz="-1.4734E-11"
+        izz="4.7177E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLS1.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLS1.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FLqsact"
+    type="prismatic">
+    <origin
+      xyz="0.0132846598152907 -0.00845331587342392 -0.000498260011089042"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="FLS1" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="FLS2">
+    <inertial>
+      <origin
+        xyz="0.0007029 -8.6307E-05 0.00010229"
+        rpy="0 0 0" />
+      <mass
+        value="3.8895E-06" />
+      <inertia
+        ixx="2.6164E-12"
+        ixy="-5.7753E-13"
+        ixz="-3.2639E-13"
+        iyy="4.7814E-12"
+        iyz="-8.2081E-14"
+        izz="3.1898E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLS2.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLS2.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FLqs1"
+    type="revolute">
+    <origin
+      xyz="0 0.00821331587342393 0.00218825042921003"
+      rpy="0 0 0" />
+    <parent
+      link="FLS1" />
+    <child
+      link="FLS2" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="FLS3">
+    <inertial>
+      <origin
+        xyz="0.0014285 0.0018717 0.0030615"
+        rpy="0 0 0" />
+      <mass
+        value="1.4069E-05" />
+      <inertia
+        ixx="1.1687E-10"
+        ixy="3.1475E-11"
+        ixz="-2.8715E-11"
+        iyy="8.1333E-11"
+        iyz="2.0086E-11"
+        izz="9.5112E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLS3.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLS3.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FLqfb1"
+    type="revolute">
+    <origin
+      xyz="0.00152118243243258 0.000119999999999992 -0.00125"
+      rpy="0 0 0" />
+    <parent
+      link="FLS2" />
+    <child
+      link="FLS3" />
+    <axis
+      xyz="-1 0 0" />
+  </joint>
+  <link
+    name="FLL1">
+    <inertial>
+      <origin
+        xyz="-0.00015469 0.0033385 5.8575E-05"
+        rpy="0 0 0" />
+      <mass
+        value="6.1384E-06" />
+      <inertia
+        ixx="2.2433E-11"
+        ixy="1.9915E-13"
+        ixz="3.0682E-13"
+        iyy="5.3665E-12"
+        iyz="-1.829E-12"
+        izz="2.4839E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLL1.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLL1.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FLqlact"
+    type="prismatic">
+    <origin
+      xyz="0.0105046598152907 -0.00699822017852313 -0.000521698113120575"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="FLL1" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="FLL2">
+    <inertial>
+      <origin
+        xyz="0.00011652 0.0001137 -0.0005651"
+        rpy="0 0 0" />
+      <mass
+        value="4.2308E-06" />
+      <inertia
+        ixx="2.753E-12"
+        ixy="-1.2143E-13"
+        ixz="3.1854E-13"
+        iyy="5.8098E-12"
+        iyz="6.062E-13"
+        izz="4.7043E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLL2.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLL2.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FLql1"
+    type="revolute">
+    <origin
+      xyz="0 0.00651822017852312 0.000381688531241596"
+      rpy="0 0 0" />
+    <parent
+      link="FLL1" />
+    <child
+      link="FLL2" />
+    <axis
+      xyz="-1 0 0" />
+  </joint>
+  <link
+    name="FLL3">
+    <inertial>
+      <origin
+        xyz="-0.0024909 0.0014997 -0.0015092"
+        rpy="0 0 0" />
+      <mass
+        value="1.4039E-05" />
+      <inertia
+        ixx="9.2029E-11"
+        ixy="-1.3135E-11"
+        ixz="-2.5531E-11"
+        iyy="8.4043E-11"
+        iyz="-2.7723E-11"
+        izz="1.244E-10" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLL3.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/FLL3.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FLqfb3"
+    type="revolute">
+    <origin
+      xyz="0.00224999999999995 0.000360000000000009 -0.0010700000000001"
+      rpy="0 0 0" />
+    <parent
+      link="FLL2" />
+    <child
+      link="FLL3" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="Leg">
+    <inertial>
+      <origin
+        xyz="-8.6736E-19 8.6736E-19 1.7347E-18"
+        rpy="0 0 0" />
+      <mass
+        value="1.6993E-05" />
+      <inertia
+        ixx="2.0653E-10"
+        ixy="1.9578E-12"
+        ixz="-1.8701E-12"
+        iyy="1.0898E-10"
+        iyz="9.3105E-11"
+        izz="9.8198E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/Leg.stl" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assemFull2/meshes/Leg.stl" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LegJoint"
+    type="fixed">
+    <origin
+      xyz="-3.18858878331019E-05 0.00460395461237099 -0.00480326038677678"
+      rpy="0 0 0" />
+    <parent
+      link="FLL3" />
+    <child
+      link="Leg" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+</robot>

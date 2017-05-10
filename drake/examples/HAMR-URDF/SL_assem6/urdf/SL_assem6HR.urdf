@@ -1,0 +1,1043 @@
+<?xml version="1.0"?>
+<robot
+  name="SL_assem6">
+  <link
+    name="Chassis">
+    <inertial>
+      <origin
+        xyz="-9.39733204324347E-05 -5.48845250802898E-07 -0.000379657560961688"
+        rpy="0 0 0" />
+      <mass
+        value="0.00115747214880841" />
+      <inertia
+        ixx="4.70744342698378E-08"
+        ixy="8.36468113557807E-13"
+        ixz="2.27539055367251E-10"
+        iyy="6.53313432247492E-08"
+        iyz="-3.07162872620023E-12"
+        izz="9.56926443015291E-08" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/Chassis.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <link
+    name="FLS1">
+    <inertial>
+      <origin
+        xyz="-9.9948E-14 -3.4694E-18 -2.0817E-17"
+        rpy="0 0 0" />
+      <mass
+        value="8.9854E-07" />
+      <inertia
+        ixx="4.0531E-13"
+        ixy="2.3358E-27"
+        ixz="1.1815E-28"
+        iyy="1.8583E-13"
+        iyz="-1.1771E-14"
+        izz="2.281E-13" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLS1.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLqsact"
+    type="prismatic">
+    <origin
+      xyz="0.01328300579825 0.00145668412658 -0.00047824913511"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="FLS1" />
+    <axis
+      xyz="0 1 0" />
+    <limit lower="-0.0003" upper="0.0003" />
+  </joint>
+  <link
+    name="FLS2">
+    <inertial>
+      <origin
+        xyz="-9.999E-14 0.0038176 0.0013953"
+        rpy="0 0 0" />
+      <mass
+        value="7.2648E-06" />
+      <inertia
+        ixx="3.894E-11"
+        ixy="3.2416E-25"
+        ixz="9.8987E-26"
+        iyy="8.899E-12"
+        iyz="-9.1382E-12"
+        izz="3.0111E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLS2.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLqs1"
+    type="revolute">
+    <origin
+      xyz="0 0.00077116874934 0.00012648211488"
+      rpy="0 0 0" />
+    <parent
+      link="FLS1" />
+    <child
+      link="FLS2" />
+    <axis
+      xyz="0 0 1" />
+    <limit lower="-pi/3" upper="pi/3" />
+    <dynamics damping="2.804E-8" />
+   </joint>
+  <link
+    name="FLS3">
+    <inertial>
+      <origin
+        xyz="0.00070289 -8.6332E-05 0.00010242"
+        rpy="0 0 0" />
+      <mass
+        value="3.889E-06" />
+      <inertia
+        ixx="2.6158E-12"
+        ixy="-5.7753E-13"
+        ixz="-3.2642E-13"
+        iyy="4.7809E-12"
+        iyz="-8.2188E-14"
+        izz="3.1897E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLS3.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLqs2"
+    type="revolute">
+    <origin
+      xyz="0 0.00744214712409 0.00206176831433"
+      rpy="0 0 0" />
+    <parent
+      link="FLS2" />
+    <child
+      link="FLS3" />
+    <axis
+      xyz="0 0 1" />
+    <limit lower="-pi/3" upper="pi/3" />
+    <dynamics damping="1.657E-8" />
+  </joint>
+ <link
+    name="FLS4">
+    <inertial>
+      <origin
+        xyz="0.0014605 0.0018371 0.0030882"
+        rpy="0 0 0" />
+      <mass
+        value="1.4269E-05" />
+      <inertia
+        ixx="1.206E-10"
+        ixy="3.2785E-11"
+        ixz="-2.9892E-11"
+        iyy="8.3598E-11"
+        iyz="2.1738E-11"
+        izz="9.8829E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLS4.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLqfb1"
+    type="revolute">
+    <origin
+      xyz="0.00152236486487 0.00012000000000 -0.00125000115025"
+      rpy="0 0 0" />
+    <parent
+      link="FLS3" />
+    <child
+      link="FLS4" />
+    <axis
+      xyz="1 0 0" />
+    <limit lower="-pi/3" upper="pi/3" />
+    <dynamics damping="1.914E-8" />
+  </joint> 
+  <link
+    name="FLL1">
+    <inertial>
+      <origin
+        xyz="-0.0002102 0.0025512 -5.7375E-05"
+        rpy="0 0 0" />
+      <mass
+        value="4.5174E-06" />
+      <inertia
+        ixx="1.0604E-11"
+        ixy="9.467E-13"
+        ixz="4.1692E-13"
+        iyy="2.5227E-12"
+        iyz="-2.6756E-13"
+        izz="1.0642E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLL1.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLqlact"
+    type="prismatic">
+    <origin
+      xyz="0.01050300579835 0.00315177982148 -0.00050168853124"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="FLL1" />
+    <axis
+      xyz="0 1 0" />
+    <limit lower="-0.0003" upper="0.0003" />
+   </joint>
+  <link
+    name="FLL2">
+    <inertial>
+      <origin
+        xyz="-9.993E-14 0.00095907 3.4694E-18"
+        rpy="0 0 0" />
+      <mass
+        value="1.6211E-06" />
+      <inertia
+        ixx="9.976E-13"
+        ixy="-2.272E-27"
+        ixz="5.4629E-29"
+        iyy="2.561E-12"
+        iyz="-3.5234E-27"
+        izz="3.5431E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLL2.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLql1"
+    type="revolute">
+    <origin
+      xyz="0 0.00457322017852 0.00038168853124"
+      rpy="0 0 0" />
+    <parent
+      link="FLL1" />
+    <child
+      link="FLL2" />
+    <axis
+      xyz="1 0 0" />
+    <limit lower="-pi/3" upper="pi/3" />
+    <dynamics damping="6.366E-8" />
+  </joint>
+  <link
+    name="FLL3">
+    <inertial>
+      <origin
+        xyz="0.00011652 -7.2167E-05 -0.0005651"
+        rpy="0 0 0" />
+      <mass
+        value="4.2308E-06" />
+      <inertia
+        ixx="2.4566E-12"
+        ixy="-9.4738E-14"
+        ixz="3.1854E-13"
+        iyy="5.8098E-12"
+        iyz="4.7676E-13"
+        izz="4.4079E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLL3.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLql2"
+    type="revolute">
+    <origin
+      xyz="0 0.001945 0"
+      rpy="0 0 0" />
+    <parent
+      link="FLL2" />
+    <child
+      link="FLL3" />
+    <axis
+      xyz="1 0 0" />
+    <limit lower="-pi/3" upper="pi/3" />
+    <dynamics damping="1.657E-8" />
+  </joint>
+  <link
+    name="FLL4">
+    <inertial>
+      <origin
+        xyz="-0.0024877 0.0015376 -0.001509"
+        rpy="0 0 0" />
+      <mass
+        value="1.3954E-05" />
+      <inertia
+        ixx="9.0239E-11"
+        ixy="-1.1755E-11"
+        ixz="-2.5436E-11"
+        iyy="8.3778E-11"
+        iyz="-2.6868E-11"
+        izz="1.2261E-10" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/FLL4.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="FLqfb3"
+    type="revolute">
+    <origin
+      xyz="0.00225000014375 0.00012 -0.00107"
+      rpy="0 0 0" />
+    <parent
+      link="FLL3" />
+    <child
+      link="FLL4" />
+    <axis
+      xyz="0 0 1" />
+    <limit lower="-pi/3" upper="pi/3" />
+    <dynamics damping="1.657E-8" />
+  </joint>
+  <link
+    name="FLLeg">
+    <inertial>
+      <origin
+        xyz="1.4375E-10 5.2042E-18 -1.4385E-10"
+        rpy="0 0 0" />
+      <mass
+        value="1.6993E-05" />
+      <inertia
+        ixx="2.0657E-10"
+        ixy="9.954E-15"
+        ixz="-1.1711E-14"
+        iyy="1.0894E-10"
+        iyz="9.3123E-11"
+        izz="9.8198E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/Leg.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    </link>
+  <joint
+    name="FLLegJoint"
+    type="fixed">
+    <origin
+      xyz="6E-05 0.00464367405164 -0.00480326038678"
+      rpy="0 0 0" />
+    <parent
+      link="FLL4" />
+    <child
+      link="FLLeg" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+
+  <link
+    name="RLS1">
+    <inertial>
+      <origin
+        xyz="-6.9389E-18 5.2042E-18 8.6736E-19"
+        rpy="0 0 0" />
+      <mass
+        value="8.9854E-07" />
+      <inertia
+        ixx="4.0531E-13"
+        ixy="-1.4198E-27"
+        ixz="-7.8672E-29"
+        iyy="1.8583E-13"
+        iyz="-1.1771E-14"
+        izz="2.281E-13" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLS1.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint
+    name="RLqsact"
+    type="prismatic">
+    <origin
+      xyz="-0.01328300579825 0.00145668412658 -0.00047824913511"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="RLS1" />
+    <axis
+      xyz="0 1 0" />
+    <limit lower="-0.0003" upper="0.0003" />
+  </joint>
+  <link
+    name="RLS2">
+    <inertial>
+      <origin
+        xyz="2.0817E-17 0.0038176 0.0013953"
+        rpy="0 0 0" />
+      <mass
+        value="7.2648E-06" />
+      <inertia
+        ixx="3.894E-11"
+        ixy="-1.8189E-25"
+        ixz="-5.4806E-26"
+        iyy="8.899E-12"
+        iyz="-9.1382E-12"
+        izz="3.0111E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLS2.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint
+    name="RLqs1"
+
+    type="revolute">
+    <origin
+      xyz="0 0.00077116874934 0.00012648211488"
+      rpy="0 0 0" />
+    <parent
+      link="RLS1" />
+    <child
+      link="RLS2" />
+    <axis
+      xyz="0 0 1" />
+    <limit lower="-pi/3" upper="pi/3" />
+  </joint>
+  <link
+    name="RLS3">
+    <inertial>
+      <origin
+        xyz="-0.00070289 -8.6332E-05 0.00010242"
+        rpy="0 0 0" />
+      <mass
+        value="3.889E-06" />
+      <inertia
+        ixx="2.6158E-12"
+        ixy="5.7753E-13"
+        ixz="3.2642E-13"
+        iyy="4.7809E-12"
+        iyz="-8.2188E-14"
+        izz="3.1897E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLS3.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="RLqs2"
+    type="revolute">
+    <origin
+      xyz="0 0.00744214712409 0.00206176831433"
+      rpy="0 0 0" />
+    <parent
+      link="RLS2" />
+    <child
+      link="RLS3" />
+    <axis
+      xyz="0 0 1" />
+    <limit lower="-pi/3" upper="pi/3" />
+  </joint>
+  <link
+    name="RLS4">
+    <inertial>
+      <origin
+        xyz="-0.0014605 0.0018371 0.0030882"
+        rpy="0 0 0" />
+      <mass
+        value="1.4269E-05" />
+      <inertia
+        ixx="1.206E-10"
+        ixy="-3.2785E-11"
+        ixz="2.9892E-11"
+        iyy="8.3598E-11"
+        iyz="2.1738E-11"
+        izz="9.8829E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLS4.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="RLqfb1"
+    type="revolute">
+    <origin
+      xyz="-0.00152236486487 0.00012 -0.00125000115025"
+      rpy="0 0 0" />
+    <parent
+      link="RLS3" />
+    <child
+      link="RLS4" />
+    <axis
+      xyz="1 0 0" />
+    <limit lower="-pi/3" upper="pi/3" />
+  </joint>
+
+  <link
+    name="RLL1">
+    <inertial>
+      <origin
+        xyz="0.00027638 0.001552 1.3427E-05"
+        rpy="0 0 0" />
+      <mass
+        value="3.4357E-06" />
+      <inertia
+        ixx="3.8161E-12"
+        ixy="-3.3823E-13"
+        ixz="-3.5123E-13"
+        iyy="2.1069E-12"
+        iyz="-1.4678E-13"
+        izz="4.1339E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLL1.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="RLqlact"
+    type="prismatic">
+    <origin
+      xyz="-0.01050300594210 0.00479177982148 -0.00050331146876"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="RLL1" />
+    <axis
+      xyz="0 1 0" />
+    <limit lower="-0.0003" upper="0.0003" />
+  </joint>
+  <link
+    name="RLL2">
+    <inertial>
+      <origin
+        xyz="-6.9389E-18 0.00095907 3.4694E-18"
+        rpy="0 0 0" />
+      <mass
+        value="1.6211E-06" />
+      <inertia
+        ixx="9.976E-13"
+        ixy="-3.4016E-27"
+        ixz="-4.3878E-29"
+        iyy="2.561E-12"
+        iyz="-1.5875E-27"
+        izz="3.5431E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLL2.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="RLql1"
+    type="revolute">
+    <origin
+      xyz="0 0.00293322017852 0.00038331146876"
+      rpy="0 0 0" />
+    <parent
+      link="RLL1" />
+    <child
+      link="RLL2" />
+    <axis
+      xyz="1 0 0" />
+    <limit lower="-pi/3" upper="pi/3" />
+  </joint>
+  <link
+    name="RLL3">
+    <inertial>
+      <origin
+        xyz="-0.00011652 -7.2167E-05 -0.0005651"
+        rpy="0 0 0" />
+      <mass
+        value="4.2308E-06" />
+      <inertia
+        ixx="2.4566E-12"
+        ixy="9.4738E-14"
+        ixz="-3.1854E-13"
+        iyy="5.8098E-12"
+        iyz="4.7676E-13"
+        izz="4.4079E-12" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLL3.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="RLql2"
+    type="revolute">
+    <origin
+      xyz="0 0.001945 0"
+      rpy="0 0 0" />
+    <parent
+      link="RLL2" />
+    <child
+      link="RLL3" />
+    <axis
+      xyz="1 0 0" />
+    <limit lower="-pi/3" upper="pi/3" />
+  </joint>
+  <link
+    name="RLL4">
+    <inertial>
+      <origin
+        xyz="0.0024877 0.0015376 -0.001509"
+        rpy="0 0 0" />
+      <mass
+        value="1.3954E-05" />
+      <inertia
+        ixx="9.0239E-11"
+        ixy="1.1755E-11"
+        ixz="2.5436E-11"
+        iyy="8.3778E-11"
+        iyz="-2.6868E-11"
+        izz="1.2261E-10" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/RLL4.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="RLqfb3"
+    type="revolute">
+    <origin
+      xyz="-0.00225000000000 0.0001200000000000 -0.0010700000000000"
+      rpy="0 0 0" />
+    <parent
+      link="RLL3" />
+    <child
+      link="RLL4" />
+    <axis
+      xyz="0 0 1" />
+    <limit lower="-pi/3" upper="pi/3" />
+  </joint>
+  <link
+    name="RLLeg">
+    <inertial>
+      <origin
+        xyz="0 -2.6021E-18 3.4694E-18"
+        rpy="0 0 0" />
+      <mass
+        value="1.6993E-05" />
+      <inertia
+        ixx="2.0657E-10"
+        ixy="9.954E-15"
+        ixz="-1.1711E-14"
+        iyy="1.0894E-10"
+        iyz="9.3123E-11"
+        izz="9.8198E-11" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SL_assem6/meshes/Leg.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="RLLegJoint"
+    type="fixed">
+    <origin
+      xyz="-6E-05 0.0046037 -0.0053033"
+      rpy="0 0 0" />
+    <parent
+      link="RLL4" />
+    <child
+      link="RLLeg" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+<!-- Loop Joints -->
+
+  <loop_joint name="FLqs3" type="continuous">
+    <axis xyz="0 0 1" />
+    <link1 link="Chassis" rpy="0 0 0" 
+    xyz="0.01275300579825 0.00979000000000 0.00171000014385" />
+    <link2 link="FLS3" rpy="0 0 0" xyz= "-0.00053, 0.00012, 0.0" />
+    <!---    <dynamics stiffness="3.4e-5"  damping="1.657E-8" /> -->
+  </loop_joint>
+
+  <loop_joint name="FLql3" type="continuous">
+    <axis xyz="1 0 0" />
+    <link1 link="Chassis" rpy="0 0 0"
+	 xyz="0.01050300594210 0.00979000000000 0.00046000000000"/>
+    <link2 link="FLL3"  rpy="0 0 0" xyz= "0.0, 0.00012, 0.00058"/>
+  <!---    <dynamics stiffness="6.03e-5"  damping="1.914E-8" />-->
+  </loop_joint>
+
+  <loop_joint  name="FLqfb2"  type="continuous">
+    <axis xyz="0 1 0" />
+    <link1 link="FLS4" rpy="0 0 0" 
+      xyz="-0.00205236472101 0.00598079552649 0.0"/> 
+    <link2 link="FLL4" rpy="0 0 0"
+      xyz="0.0 0.00598079552649 0.00165000000000" />
+  <!---    <dynamics stiffness="1.08e-5"  damping="4.34E-8" />-->
+  </loop_joint>
+   
+  <loop_joint name="RLqs3" type="continuous">
+    <axis xyz="0 0 1" />
+    <link1 link="Chassis" rpy="0 0 0" 
+	xyz="-0.01275300579825 0.00979000000000 0.00171000014385" />
+    <link2 link="RLS3" rpy="0 0 0" xyz= "0.00053, 0.00012, 0.0" />
+  <!---    <dynamics stiffness="3.4e-5"  damping="1.657E-8" />-->
+  </loop_joint>
+ 
+  <loop_joint name="RLql3" type="continuous">
+    <axis xyz="1 0 0" />
+    <link1 link="Chassis" rpy="0 0 0"
+	 xyz="-0.01050300594210 0.00979000000000 0.00046000000000"/>
+    <link2 link="RLL3"  rpy="0 0 0" xyz= "0.0, 0.00012, 0.00058"/>
+   <!---   <dynamics stiffness="6.03e-5"  damping="1.914E-8" />-->
+  </loop_joint>
+
+  <loop_joint  name="RLqfb2"  type="continuous">
+    <axis xyz="0 1 0" />
+    <link1 link="RLS4" rpy="0 0 0" 
+      xyz="0.00205236472101 0.00598079552649 0.0"/> 
+    <link2 link="RLL4" rpy="0 0 0"
+      xyz="0.0 0.00598079552649 0.00165000000000"/>
+  <!---    <dynamics stiffness="3.4e-5"  damping="1.657E-8" />-->
+  </loop_joint>
+
+<!-- Front Swing Springs -->
+
+<!--<force_element name="FL_ksact">
+    <linear_spring_damper stiffness="1492" damping="0">
+      <link1 link="chassis" xyz="0.01328465981539 -0.00845331587342 -0.00049826001109"/>
+	  <link2 link="FLS1" xyz="0 0 0"/>
+    </linear_spring_damper>
+ </force_element>--> 
+
+<force_element name="FL_ks1">
+  <torsional_spring stiffness="9.2E-5" rest_angle="0">
+  	<joint name="FLqs1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="FL_ks2">
+  <torsional_spring stiffness="3.4E-5" rest_angle="0">
+  	<joint name="FLqs2" />
+   </torsional_spring>
+ </force_element>
+
+<!--Front Lift Springs -->
+
+<!--<force_element name="FL_klact">
+    <linear_spring_damper stiffness="1492" damping="0">
+      <link1 link="chassis" xyz="0.01050465981539 -0.00675822017852 -0.00052169811312" />
+	  <link2 link="FLL1" xyz="0 0 0"/>
+    </linear_spring_damper>
+ </force_element> --> 
+
+<force_element name="FL_kl1">
+  <torsional_spring stiffness="2E-4" rest_angle="0">
+  	<joint name="FLql1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="FL_kl2">
+  <torsional_spring stiffness="3.4E-5" rest_angle="0">
+  	<joint name="FLql2" />
+   </torsional_spring>
+ </force_element>
+
+<!--Front SFB Springs -->
+
+ <force_element name="FL_kfb1">
+  <torsional_spring stiffness="6E-5" rest_angle="0">
+  	<joint name="FLqfb1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="FL_kfb3">
+  <torsional_spring stiffness="3.4E-5" rest_angle="0">
+  	<joint name="FLqfb3" />
+</torsional_spring>
+ </force_element>
+ 
+ <!-- Rear Swing Springs -->
+
+ <!--<force_element name="RL_ksact">
+    <linear_spring_damper stiffness="1492" damping="0">
+      <link1 link="chassis" xyz="-0.01328135178121 -0.00845331587342 -0.00049825986724"/>
+	  <link2 link="RLS1" xyz="0 0 0"/>
+    </linear_spring_damper>
+ </force_element>--> 
+
+<force_element name="RL_ks1">
+  <torsional_spring stiffness="9.2E-5" rest_angle="0">
+  	<joint name="RLqs1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RL_ks2">
+  <torsional_spring stiffness="3.4E-5" rest_angle="0">
+  	<joint name="RLqs2" />
+   </torsional_spring>
+ </force_element>
+
+<!-- Rear Lift Springs -->
+
+ <!-- <force_element name="RL_klact">
+    <linear_spring_damper stiffness="1492" damping="0">
+      <link1 link="chassis" xyz="-0.01050135192506 -0.00511822017852 -0.00052332105064" />
+	  <link2 link="RLL1" xyz="0 0 0"/>
+    </linear_spring_damper>
+ </force_element>--> 
+
+<force_element name="RL_kl1">
+  <torsional_spring stiffness="2E-4" rest_angle="0">
+  	<joint name="RLql1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RL_kl2">
+  <torsional_spring stiffness="3.4E-5" rest_angle="0">
+  	<joint name="RLql2" />
+   </torsional_spring>
+ </force_element>
+
+<!--Rear SFB Springs -->
+
+ <force_element name="RL_kfb1">
+  <torsional_spring stiffness="6E-5" rest_angle="0">
+  	<joint name="RLqfb1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RL_kfb3">
+  <torsional_spring stiffness="3.4E-5" rest_angle="0">
+  	<joint name="RLqfb3" />
+</torsional_spring>
+ </force_element>
+
+<!--Actuated DOF -->
+
+<transmission type="SimpleTransmission" name="FLSwing">
+    <actuator name="FLsact" />
+    <joint name="FLqsact" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="FLLift">
+    <actuator name="FLlact" />
+    <joint name="FLqlact" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="RLSwing">
+    <actuator name="RLsact" />
+    <joint name="RLqsact" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="RLLift">
+    <actuator name="RLlact" />
+    <joint name="RLqlact" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+</robot>
