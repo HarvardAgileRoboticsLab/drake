@@ -28,7 +28,7 @@
 #include "drake/lcmt_iiwa_status.hpp"
 #include "drake/lcmt_iiwa_command.hpp"
 #include "drake/lcmt_polynomial.hpp" // temporarily abuse one lcm channel
-#define KUKA_DATA_DIR "/home/yezhao/kuka-dev-estimation/drake/drake/examples/kuka_iiwa_arm/experiment_data/torque_command_analysis/"
+#define KUKA_DATA_DIR "/home/mhebert/kuka-dev-estimation/drake/drake/examples/kuka_iiwa_arm/experiment_data/torque_command_analysis/"
 
 #include "drake/util/drakeGeometryUtil.h"
 
@@ -52,6 +52,7 @@ const char* const kLcmControlRefChannel = "CONTROLLER_REFERENCE";
 const char* const kLcmCommandChannel = "IIWA_COMMAND";
 const char* const kLcmParamChannel = "IIWA_PARAM";
 const char* const kCancelPlanRunning = "CANCEL_PLAN";
+const char* const kLcmTorqueCommandChannel = "IIWA_TORQUE_CHANNEL";
 
 
 const int kNumJoints = 7;
@@ -122,10 +123,15 @@ class RobotController {
         iiwa_command.joint_position.resize(kNumJoints, 0.);
         iiwa_command.num_torques = kNumJoints;
         iiwa_command.joint_torque.resize(kNumJoints, 0.);
+        old_command_ = iiwa_command;
       }
 
       DRAKE_ASSERT(iiwa_status_.utime != -1);
       cur_time_us = iiwa_status_.utime;
+
+      if( old_command_.utime == 0) {
+        old_command_.utime = iiwa_status_.utime;
+      }
 
       if (controller_trigger_) {
         const int kNumDof = 7;
@@ -147,6 +153,7 @@ class RobotController {
         Eigen::VectorXd torque_command(kNumDof);
         Eigen::VectorXd position_ctrl_torque_command(kNumDof);
         Eigen::VectorXd gravity_torque(kNumDof);
+        // integral_error_.resize(kNumDof);
         // Inverse dynamics Controller, first choose controller type.
         if (inverseDynamicsCtrlType == 1){
           // ------- torque control version 1: qddot_des + PD impedance control --> qddot_ff --> inverse dynamics
@@ -154,8 +161,10 @@ class RobotController {
           // PD position control
           Eigen::VectorXd Kp_pos_ctrl(kNumDof); // 7 joints
           Kp_pos_ctrl << 160, 200, 70, 60, 45, 20, 10;// Mitchell's gains for GPS
+
           Eigen::VectorXd Kd_pos_ctrl(kNumDof); // 7 joints
           Kd_pos_ctrl << 20, 33, 20, 15, 3, 5, 1; // Mitchell's gains for GPS
+
           // (TODOs) Add integral control (anti-windup)
 
           // Set desired joint position, velocity and acceleration
@@ -182,6 +191,10 @@ class RobotController {
           gravity_torque = gravity_comp_no_gripper(cache, z, false, tree_);
           torque_command -= gravity_torque;
 
+
+          publishGravityTorque(gravity_torque + torque_command);
+
+
         }else if (inverseDynamicsCtrlType == 2){
           // ------- torque control version 2: feedforward inverse dynamics + PD impedance control
           // Computing inverse dynamics torque command
@@ -197,23 +210,32 @@ class RobotController {
           Eigen::VectorXd Kp_pos_ctrl(kNumDof); // 7 joints
           //Kp_pos_ctrl << 225, 361, 144, 150, 100, 20, 20;// very large gains after system id
           // Kp_pos_ctrl << 225, 361, 144, 81, 80, 36, 20;// best gains (in terms of position accuracy) after system id harvard
-          Kp_pos_ctrl << 225, 361, 154, 81, 89, 36, 20;// best gains (in terms of position accuracy) after system id draper
+          // Kp_pos_ctrl << 225, 361, 154, 81, 89, 36, 20;// 4/25 GAINS BEFORE TUNING
+           Kp_pos_ctrl << 490, 450, 224, 181, 139, 76, 50;// 4/25 GAINS AFTER TUNING
 
-          //Kp_pos_ctrl << 120, 120, 60, 60, 60, 30, 20;// medium gains
-          //Kp_pos_ctrl << 80, 80, 30, 30, 20, 20, 10;// reduce the gains as much as possible while maintaining the position tracking performance
-          Eigen::VectorXd Kd_pos_ctrl(kNumDof); // 7 joints
-          //Kd_pos_ctrl << 30, 35, 14, 15, 10, 3, 3;// very large gains after system id
-          // Kd_pos_ctrl << 25, 33, 20, 15, 3, 2, 3;// best gains (in terms of position accuracy) after system id harvard
-          Kd_pos_ctrl << 25, 33, 18, 13, 2, 2, 3;// best gains (in terms of position accuracy) after system id draper
+           //Kp_pos_ctrl << 120, 120, 60, 60, 60, 30, 20;// medium gains
+           //Kp_pos_ctrl << 80, 80, 30, 30, 20, 20, 10;// reduce the gains as much as possible while maintaining the position tracking performance
+           Eigen::VectorXd Kd_pos_ctrl(kNumDof); // 7 joints
+           //Kd_pos_ctrl << 30, 35, 14, 15, 10, 3, 3;// very large gains after system id
+           // Kd_pos_ctrl << 25, 33, 20, 15, 3, 2, 3;// best gains (in terms of position accuracy) after system id harvard
+           // Kd_pos_ctrl << 25, 33, 18, 13, 2, 2, 3;// 4/25 GAINS BEFORE TUNING
+           Kd_pos_ctrl << 5, 10, 6, 4, 0.5, 0.5, 1;// 4/25 GAINS AFTER TUNING
 
           //Kd_pos_ctrl << 15, 15, 6, 6, 6, 4, 4;// medium gains after system id
           //Kd_pos_ctrl << 10, 10, 3, 3, 3, 2, 3;// reduce the gains as much as possible while maintaining the position tracking performance
           // (TODOs) Add integral control (anti-windup)
+          dt_ = (iiwa_command.utime - old_command_.utime) / 1e6;
           for (int joint = 0; joint < kNumJoints; joint++) {
+            // integral_error_(joint) += (joint_position_desired(joint) - iiwa_status_.joint_position_measured[joint]) * dt_;
+            // integral_error_(joint) = 0.0;
+
             position_ctrl_torque_command(joint) = Kp_pos_ctrl(joint)*(joint_position_desired(joint) - iiwa_status_.joint_position_measured[joint])
+                                                // + Ki_pos_ctrl(joint)* integral_error_(joint)
                                                 + Kd_pos_ctrl(joint)*(joint_velocity_desired(joint) - iiwa_status_.joint_velocity_estimated[joint]);
             // position_ctrl_torque_command(joint) = 0.0;
           }
+          // std::cout << "INEGRAL ERROR" << integral_error_ << std::endl;
+
           //Combination of ID torque control and IK position control
           torque_command += position_ctrl_torque_command;
 
@@ -221,9 +243,9 @@ class RobotController {
           Eigen::VectorXd z = Eigen::VectorXd::Zero(kNumDof);
           gravity_torque = gravity_comp_no_gripper(cache, z, false, tree_);
           torque_command -= gravity_torque;
-
+          publishGravityTorque(gravity_torque + torque_command);
         }
-        std::cout << "TORQUE:" << torque_command << std::endl;
+        // std::cout << "TORQUE:" << torque_command << std::endl;
         //debugging for feedforward and feedback torque components
         /*if (fabs(iiwa_status_.joint_velocity_estimated[5]) > 0.1 || fabs(iiwa_status_.joint_velocity_estimated[3]) > 0.1 || fabs(iiwa_status_.joint_velocity_estimated[1]) > 0.1){
           saveVector(position_ctrl_torque_command, "PD_impedance_ctrl_command");
@@ -239,8 +261,12 @@ class RobotController {
         for (int joint = 0; joint < kNumJoints; joint++) {
           iiwa_command.joint_torque[joint] = torque_command(joint);
           iiwa_command.joint_torque[joint] = std::max(-150.0, std::min(150.0, iiwa_command.joint_torque[joint]));
+          // iiwa_command.joint_torque[joint] =0.0;
+
           iiwa_param.coefficients[joint] = robot_controller_reference_.joint_position_desired[joint];
         }
+
+        old_command_ = iiwa_command;
 
         if (half_servo_rate_flag_ && controller_trigger_){
           half_servo_rate_flag_ = false;
@@ -252,6 +278,22 @@ class RobotController {
         }
       }
     }
+  }
+
+  void publishGravityTorque(VectorXd torque) {
+
+    lcmt_iiwa_command cmd;
+    cmd.num_joints = kNumJoints;
+    cmd.joint_position.resize(kNumJoints, 0.);
+    cmd.num_torques = kNumJoints;
+    cmd.joint_torque.resize(kNumJoints, 0.);
+
+    for (int joint = 0; joint < kNumJoints; joint++) {
+      cmd.joint_torque.at(joint) = torque(joint);
+    }
+
+    lcm_.publish(kLcmTorqueCommandChannel, &cmd);
+
   }
 
   void saveVector(const Eigen::VectorXd & _vec, const char * _name){
@@ -307,6 +349,8 @@ class RobotController {
     robot_controller_reference_ = *input;
     controller_trigger_ = true;
     run_ = true;
+
+    // integral_error_ = Eigen::VectorXd::Zero(7);
 
   }
 
@@ -385,13 +429,16 @@ class RobotController {
   bool controller_trigger_;// control runner wait for the first message from plan runner
   lcmt_iiwa_status iiwa_status_;
   lcmt_robot_controller_reference robot_controller_reference_;
+  // Eigen::VectorXd integral_error_; // 7 joints
+  lcmt_iiwa_command old_command_;
+  double dt_;
 };
 
 int DoMain(int argc, const char* argv[]) {
 
   auto tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
-    GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_simplified_collision.urdf",
+    GetDrakePath() + "/examples/kuka_iiwa_arm/urdf/iiwa14_estimated_params_fixed_gripper.urdf",
       multibody::joints::kFixed, tree.get());
 
   RobotController runner(*tree);
