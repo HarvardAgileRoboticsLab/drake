@@ -5,9 +5,9 @@ struct lcmt_gps_trial_command {
   int32_t trialID;
 
   // The timestamp in microseconds.
-  int64_t timestamp;
+  double timestamp;
 
-  int64_t  dt; // Time inbetween each command
+  double  dt; // Time inbetween each command
   int32_t dX;
   int32_t dObs;
   int32_t dU;
@@ -23,8 +23,8 @@ struct lcmt_gps_trial_command {
 
   int32_t state_datatypes[num_state_types];  // Which data types to include in state
   int32_t obs_datatypes[num_obs_types]; // Which data types to include in observation
-  int64_t ee_points[num_ee_points]; // A 3*n_points array containing offsets
-  int64_t ee_points_tgt[num_ee_points]; // A 3*n_points array containing the desired ee_points for this trial
+  double ee_points[num_ee_points]; // A 3*n_points array containing offsets
+  double ee_points_tgt[num_ee_points]; // A 3*n_points array containing the desired ee_points for this trial
 
 
 }
