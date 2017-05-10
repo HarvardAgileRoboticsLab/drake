@@ -17,7 +17,8 @@ classdef RigidBodyTorsionalSpring < RigidBodyForceElement
       f_ext = q(1)*sparse(6,getNumBodies(manip));
       
       if (nargout>1)
-         dthetadq = zeros(1,size(q,1)); dthetadq(manip.body(obj.child_body).position_num) = 1;
+         dthetadq = zeros(1,size(q,1)); 
+         dthetadq(manip.body(obj.child_body).position_num) = 1;
          dtorquedq = -obj.k*dthetadq;
          df_ext = sparse(6*getNumBodies(manip),size(q,1)+size(qd,1));
       end
@@ -33,7 +34,8 @@ classdef RigidBodyTorsionalSpring < RigidBodyForceElement
       if (nargout>1)
         df_ext((obj.child_body-1)*6+1:obj.child_body*6,1:size(q,1)) = [manip.body(obj.child_body).joint_axis * dtorquedq; zeros(3,size(q,1))];
          if obj.parent_body ~= 0
-           df_ext((obj.parent_body-1)*6+1:obj.parent_body*6,1:size(q,1)) = -AdT_parent_to_child_joint_predecessor' * dwrench_on_child_in_child_joint_frame;
+           df_ext((obj.parent_body-1)*6+1:obj.parent_body*6,1:size(q,1)) = -AdT_parent_to_child_joint_predecessor' * ...
+               [manip.body(obj.child_body).joint_axis * dtorquedq; zeros(3,size(q,1))];
          end
       end
     end
