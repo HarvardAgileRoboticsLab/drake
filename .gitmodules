@@ -96,6 +96,3 @@
 [submodule "externals/snopt"]
 	path = externals/snopt
 	url = git@github.com:HarvardAgileRoboticsLab/snopt.git
-[submodule "ros/hsrb_description"]
-	path = ros/hsrb_description
-	url = https://github.com/ToyotaResearchInstitute/hsrb_description.git
