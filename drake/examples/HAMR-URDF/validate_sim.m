@@ -1,6 +1,6 @@
 % clear; clc; close all;
 load Mets.mat
-load Trot_1Hz_175V.mat
+load Trot_1Hz_175V_2.mat
 te = Mets.Time + 0.228;
 t0 = xtraj_scaled.getBreaks();
 x0 = xtraj_scaled.eval(t0);

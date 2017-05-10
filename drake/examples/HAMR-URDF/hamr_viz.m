@@ -20,7 +20,7 @@ ISFLOAT = true;
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    x0 = zeros(76,1); x0(3) = 15; % x0(4) = pi/18; x0(5) = pi/18;  %x0(3 + 76/2) = -0.001; 
+    x0 = zeros(76,1); x0(3) = 20; % x0(4) = pi/18; x0(5) = pi/18;  %x0(3 + 76/2) = -0.001; 
     options.terrain = RigidBodyFlatTerrain();
     
 else
@@ -32,15 +32,20 @@ end
 
 % Build robot + visualizer
 hamr = Hamr(urdf, options);
-% hamr = TimeSteppingRigidBodyManipulator(urdf, options.dt, options); 
 hamr = compile(hamr);
+
+% change gravity
+hamr = compile(hamr); 
+
+% hamr = TimeSteppingRigidBodyManipulator(urdf, options.dt, options); 
+
 v = hamr.constructVisualizer();
 % v.display_dt = 1e-3; 
 % v.inspector(x0);
 
 
 %% Build Actuators
-dp.Vb = 100;
+dp.Vb = 175;
 dp.Vg = 0;
 % 
 nact = 8;
@@ -83,7 +88,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 6.0e3; 
+tsim = 8.0e3; 
 
 t = 0:options.dt:tsim;
 

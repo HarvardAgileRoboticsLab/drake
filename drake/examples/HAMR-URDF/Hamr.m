@@ -1,7 +1,8 @@
 classdef Hamr < TimeSteppingRigidBodyManipulator
     
     properties (SetAccess = protected, GetAccess = public)
-        x0        
+        x0
+        grav = [0; 0; -9.81e-3];
     end
     
     methods
@@ -23,30 +24,34 @@ classdef Hamr < TimeSteppingRigidBodyManipulator
                 options.terrain = RigidBodyFlatTerrain;
             end
             
-            obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);            
-            obj.x0 = zeros(obj.getNumDiscStates(), 1);            
+            obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
+            obj.x0 = zeros(obj.getNumDiscStates(), 1);
         end
         
         
-        function [y, Jy] = output(obj, t, x, u)     
+        function [y, Jy] = output(obj, t, x, u)
             
-            nx = numel(x); 
+            nx = numel(x);
             actuated_dof = obj.getActuatedJoints();
             y = [x; x(actuated_dof); x(actuated_dof + nx/2)];
             
             if nargout > 1
-                ny = numel(y); nu = numel(u);                 
+                ny = numel(y); nu = numel(u);
                 Jy1 = [zeros(nx, 1), eye(nx), zeros(nx, nu)];       % derivative of state
                 Jy2 = zeros(ny - nx, 1 + nx + nu);                  % derivative of actuated dof q and qd
-                r_ind = (1:ny-nx)'; 
+                r_ind = (1:ny-nx)';
                 c_ind = 1+[actuated_dof; actuated_dof + nx/2];
-                Jy2(sub2ind([ny-nx, 1 + nx + nu], r_ind, c_ind)) = 1; 
-                Jy = [Jy1; Jy2]; 
+                Jy2(sub2ind([ny-nx, 1 + nx + nu], r_ind, c_ind)) = 1;
+                Jy = [Jy1; Jy2];
             end
         end
         
         function obj = compile(obj)
             obj = compile@TimeSteppingRigidBodyManipulator(obj);
+            
+            %set gravity
+            obj.manip = obj.manip.setGravity(obj.grav); 
+            obj.manip = compile(obj.manip); 
             
             %Add Ouputs
             joint_names = obj.getJointNames();
@@ -54,10 +59,10 @@ classdef Hamr < TimeSteppingRigidBodyManipulator
             obj = obj.setNumOutputs(obj.getNumStates()+ 2*numel(actuated_dof));
             state_frame = obj.getStateFrame();
             
-            if obj.getManipulator().getBody(2).floating               
+            if obj.getManipulator().getBody(2).floating
                 act_jt_names = [joint_names(actuated_dof - 4); ...
                     joint_names(actuated_dof - 4)];
-%                 act_jt_names = 
+                %                 act_jt_names =
             else
                 act_jt_names = [joint_names(actuated_dof + 1); ...
                     joint_names(actuated_dof +1 )];
@@ -74,6 +79,8 @@ classdef Hamr < TimeSteppingRigidBodyManipulator
             
         end
         
+        
+        
         function nActuatedDOF = getNumActuatedDOF(obj)
             nActuatedDOF = numel(obj.getActuatedJoints());
         end
@@ -87,6 +94,13 @@ classdef Hamr < TimeSteppingRigidBodyManipulator
         function x0 = getInitialState(obj)
             x0 = obj.x0;
         end
+        
+%         % Added by Neel to change gravity
+%         function obj = setGravity(obj, grav)
+%             obj.manip = setGravity(obj.manip, grav);
+%             obj = compile(obj);
+%         end
+%         
     end
     
     

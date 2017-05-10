@@ -18,7 +18,7 @@ classdef PZTBender < DrakeSystem
         GF;         % geometry factor
         df;         % free deflection
         kact;       % stiffness
-        bact = 0.01; %0.00263; % damping (TODO: GET GOOD VALUE)
+        bact = 0.02; %0.00263; % damping (TODO: GET GOOD VALUE)
         
         % Hamr deflection joints
         %         obj.

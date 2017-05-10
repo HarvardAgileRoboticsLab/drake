@@ -1,6 +1,0 @@
-<?xml version"1.0" ?>
-<loop_joint name="4-bar_left" type="continuous">
-    <axis xyz="0 1 0"/>
-    <link1 link="cassie_tarsus_left" rpy="0 0 0" xyz="-.11877 .027 0.0059"/>
-    <link2 link="cassie_achilles_left" rpy="0 0 0" xyz=".5 0 0"/>
-</loop_joint>
