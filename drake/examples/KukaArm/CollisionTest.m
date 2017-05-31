@@ -15,16 +15,17 @@ Q = diag([100*ones(Nq,1);10*ones(Nq,1)]);
 R = 0.01*eye(Nu);
 Qf = 5*Q;
 
-N = 4000;
-tsamp1 = linspace(0,xtraj1.tspan(2),N);
-tsamp2 = linspace(0,xtraj2.tspan(2),N);
+N = length(tsamp1);
+% N = 4000;
+% tsamp1 = linspace(0,xtraj1.tspan(2),N);
+% tsamp2 = linspace(0,xtraj2.tspan(2),N);
 dt1 = tsamp1(2)-tsamp1(1);
 dt2 = tsamp2(2)-tsamp2(1);
 
-xsamp1 = xtraj1.eval(tsamp1);
-usamp1 = utraj1.eval(tsamp1);
-xsamp2 = xtraj2.eval(tsamp2);
-usamp2 = utraj2.eval(tsamp2);
+% xsamp1 = xtraj1.eval(tsamp1);
+% usamp1 = utraj1.eval(tsamp1);
+% xsamp2 = xtraj2.eval(tsamp2);
+% usamp2 = utraj2.eval(tsamp2);
 
 A1 = zeros(14,14,N);
 B1 = zeros(14,7,N);
@@ -151,11 +152,33 @@ v.playback(xcltraj2,struct('slider',true));
 end
 
 %Control deviation:
+disp('Control Deviation:');
 (1/N)*sum(((ucl1(:)-vec(usamp1(:,1:end-1)))).^2)
 (1/N)*sum(((ucl2(:)-vec(usamp2(:,1:end-1)))).^2)
 
+%State deviation:
+disp('State Deviation:');
 (1/N)*sum((xcl1(:)-xsamp1(:)).^2)
 (1/N)*sum((xcl2(:)-xsamp2(:)).^2)
+
+%End effector deviation:
+for k = 1:N
+    kin1 = doKinematics(p,xsamp1(1:7,k));
+    ee1(:,k) = p.forwardKin(kin1,findLinkId(p,p.hand_name),[0;0;0]);
+    kin1 = doKinematics(p,xcl1(1:7,k));
+    eecl1(:,k) = p.forwardKin(kin1,findLinkId(p,p.hand_name),[0;0;0]);
+    kin2 = doKinematics(p,xsamp2(1:7,k));
+    ee2(:,k) = p.forwardKin(kin2,findLinkId(p,p.hand_name),[0;0;0]);
+    kin2 = doKinematics(p,xcl2(1:7,k));
+    eecl2(:,k) = p.forwardKin(kin2,findLinkId(p,p.hand_name),[0;0;0]);
+end
+disp('End Effector Deviation:');
+sqrt((1/N)*sum((ee1(:)-eecl1(:)).^2))
+sqrt((1/N)*sum((ee2(:)-eecl2(:)).^2))
+
+disp('Final End Effector:');
+norm(ee1(:,end)-eecl1(:,end))
+norm(ee2(:,end)-eecl2(:,end))
 
 g1 = 0;
 g2 = 0;
