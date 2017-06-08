@@ -7,7 +7,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     manip  % the CT manipulator
     sensor % additional TimeSteppingRigidBodySensors (beyond the sensors attached to manip)
     dirty=true;
-    LCP_solution = {};
   end
 
   properties (SetAccess=protected)
@@ -199,7 +198,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       end
     end
 
-    function [xdn,df,z,active_set] = update(obj,t,x,u,w_idx,w,compute_gradients)
+    function [xdn,df,z] = update(obj,t,x,u,w_idx,w,compute_gradients)
         
       if nargin < 7
           compute_gradients = nargin > 1;
@@ -218,7 +217,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       else
         [obj,z,Mvn,wvn] = solveLCP(obj,t,x,u,w_idx,w);
       end
-      active_set = obj.LCP_solution.active_set;
 
       num_q = obj.manip.num_positions;
       q=x(1:num_q); v=x((num_q+1):end);
@@ -293,8 +291,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             C = C - Jw'*w(:,i);
         end
         [phiC, normal, d, xA, xB, idxA, idxB, mu, n, D] = obj.manip.contactConstraints(kinsol, obj.multiple_contacts);
-        [z, Mqdn, wqdn, possible_contact_indices, possible_jointlimit_indices, full_active_set] = solveLCPmex(obj.manip.mex_model_ptr, kinsol.mex_ptr, u, phiC, n, D, obj.timestep, obj.z_inactive_guess_tol, obj.LCP_cache.data.z, H, C, B, obj.enable_fastqp);
-        obj.LCP_solution.active_set = full_active_set;
+        [z, Mqdn, wqdn, possible_contact_indices, possible_jointlimit_indices] = solveLCPmex(obj.manip.mex_model_ptr, kinsol.mex_ptr, u, phiC, n, D, obj.timestep, obj.z_inactive_guess_tol, obj.LCP_cache.data.z, H, C, B, obj.enable_fastqp);
         possible_contact_indices = logical(possible_contact_indices);
         contact_data.normal = normal(:,possible_contact_indices);
         
@@ -749,7 +746,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             obj.LCP_cache.data.fastqp_active_set = [];
         end
         
-        obj.LCP_solution.active_set = abs(M*z+w) <= path_convergence_tolerance;
         
         % for debugging
         %cN = z(nL+nP+(1:nC))

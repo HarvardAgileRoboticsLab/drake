@@ -199,9 +199,9 @@ bool callFastQP(MatrixBase<DerivedM> const& M, MatrixBase<Derivedw> const& w,
 //   z_inactive_guess_tol)
 DLL_EXPORT_SYM
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
-  if (nlhs != 6 || nrhs != 13) {
+  if (nlhs != 5 || nrhs != 13) {
     mexErrMsgIdAndTxt("Drake:setupLCPmex:InvalidUsage",
-                      "Usage: [z, Mvn, wqdn, possible_contact_indices, possible_jointlimit_indices, full_active_set] = solveLCPmex("
+                      "Usage: [z, Mvn, wqdn, possible_contact_indices, possible_jointlimit_indices] = solveLCPmex("
                       "mex_model_ptr, cache_ptr, u, phiC, n, D, h, z_inactive_guess_tol, "
                       "z_cached, H, C, B, enable_fastqp)");
   }
@@ -397,15 +397,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
       mxDestroyArray(lhs[1]);
     }
 
-    // Matrix<bool,Dynamic,1> active_set =  (M * z + w).array() <= 1e-6;
-    // mxArray* mx_active_set = eigenToMatlab(active_set);
-    // auto mxActiveSet = eigenToMatlab(active_set);
-    // std::cout << active_set << std::endl;
-    // std::cout << mx_active_set << std::endl;
-    // std::cout << constraint_vals << std::endl;
-    // std::cout << mxActiveSet << std::endl;
-    // std::cout << ((M * z + w) <= 0.000001).all() << std::endl;
-
     mxDestroyArray(mxz);
     mxDestroyArray(mxn);
     mxDestroyArray(mxnnzJ);
@@ -451,8 +442,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
       continue;
     }
     // our initial guess was correct. we're done
-    Map<VectorXd> active_set(mxGetPrSafe(plhs[5]), lcp_size);
-    active_set = ((M * z + w).array() <= 1e-6).cast<double>();
     break;
   }
 
