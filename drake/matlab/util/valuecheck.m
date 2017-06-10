@@ -1,11 +1,9 @@
 function [tf,errstr] = valuecheck(val,desired_val,tol)
-
-% VALUECHECK
-%   Usage:  valuecheck(val,desired_val,tol)
+% [success, message] = VALUECHECK(val, desired_val, tol)
 %
-%   If no output is specified valuecheck throws an error if the values are
-%   unequal, otherwise it returns a boolean and a message describing what,
-%   if anything is unequal
+%   Returns a boolean and a message describing which values are unequal. If
+%   no output is specified valuecheck will succeed silently or throw an
+%   error.
 
 if (nargin<3 || isempty(tol))
     tol=1e-8;
