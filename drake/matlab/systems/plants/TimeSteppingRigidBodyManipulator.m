@@ -198,6 +198,32 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       end
     end
 
+    function [active_contact, active_sliding, lambda, eta] = getActiveContactFromLCP(obj,z)
+        % TODO: get the normal vector some other way
+        normal = [0;0;1];
+        d = obj.manip.surfaceTangents(normal);
+        N_lambda = obj.getNumContactPairs;
+
+        % tease apart the contact forces and tangential velocity
+        lambda_normal = normal*z(1:N_lambda)';
+        lambda_tan1 = d{1}*(z(N_lambda+1:2*N_lambda) - z(3*N_lambda+1:4*N_lambda))';
+        lambda_tan2 = d{2}*(z(2*N_lambda+1:3*N_lambda) - z(4*N_lambda+1:5*N_lambda))';
+        lambda = lambda_normal + lambda_tan1 + lambda_tan2;
+        lambda = reshape(lambda,[],1);
+        eta = z(end-N_lambda+1:end);
+
+        % get active contact boolean vectors
+        active_contact = kron(speye(N_lambda),normal')*lambda > 1e-4;
+        active_sliding = active_contact & (eta > 1e-4);
+    end
+    
+    function x_full = update_full(obj,varargin)
+        % wrapper function to concatentate the state and the contact forces
+        [x,~,z] = obj.update(varargin{:});
+        [~, ~, lambda, eta] = obj.getActiveContactFromLCP(z);
+        x_full = [x; lambda; eta];
+    end
+    
     function [xdn,df,z] = update(obj,t,x,u,w_idx,w,compute_gradients)
         
       if nargin < 7
