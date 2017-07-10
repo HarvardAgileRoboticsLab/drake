@@ -59,3 +59,7 @@ Pendulum.pmd
 drake/doc/_build
 bazel-*
 xcode
+drake/examples/HAMR-URDF/old_urdfs
+drake/examples/HAMR-URDF/gait_studies
+drake/examples/HAMR-URDF/hamr-preload
+drake/examples/HAMR-URDF/Maneuverability
