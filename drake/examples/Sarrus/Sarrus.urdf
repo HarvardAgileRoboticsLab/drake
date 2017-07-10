@@ -1,0 +1,342 @@
+<?xml version="1.0"?>
+<robot
+  name="Sarrus">
+  
+  <link name="Base">
+    <inertial>
+     <origin xyz="0,0,0" rpy="0 0 0" />
+     <mass value="0"/>
+     <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="10, 10, 0"/>
+      </geometry>
+      <material>
+        <color rgba=".6353 .6353 .6353 1"/>
+      </material>
+    </visual>
+  </link>  
+
+  <link name="BotLink1">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0.21875" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 0" />
+      <geometry>
+        <box size="0, 5, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="1 0 0 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="BotLink2">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0.21875" ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 pi/2" />
+      <geometry>
+        <box size="0, 5, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="1 0 0 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="BotLink3">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0.21875" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 0" />
+      <geometry>
+        <box size="0, 5, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="1 0 0 1" />
+      </material>
+    </visual>
+  </link>  
+
+  <link name="BotLink4">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0.21875"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 pi/2" />
+      <geometry>
+        <box size="0, 5, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="1 0 0 1" />
+      </material>
+    </visual>
+  </link>
+
+    <link name="TopLink1">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0.21875" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 0" />
+      <geometry>
+        <box size="0, 5, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="0 0 1 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="TopLink2">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0.21875"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 0" />
+      <geometry>
+        <box size="5, 0, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="0 0 1 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="TopLink3">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0"  ixy="0"  ixz="0" iyy="0.21875" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 0" />
+      <geometry>
+        <box size="0, 5, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="0 0 1 1" />
+      </material>
+    </visual>
+  </link>
+
+    <link name="TopLink4">
+    <inertial>
+      <origin xyz="0,0,5" rpy="0 0 0" />
+      <mass value="0.021"/>
+      <inertia ixx="0.21875"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 5" rpy="0 0 0" />
+      <geometry>
+        <box size="5, 0, 10"/>        
+      </geometry>
+      <material>
+        <color rgba="0 0 1 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="Output">
+    <inertial>
+     <origin xyz="2.5,0,0" rpy="0 0 0" />
+     <mass value="0.547"/>
+     <inertia ixx="0"  ixy="0"  ixz="0" iyy="0" iyz="0" izz="9.117" />
+    </inertial>
+    <visual>
+      <origin xyz="2.5 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="10, 10, 0"/>
+      </geometry>
+      <material>
+        <color rgba="0, 0, 0, 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="Bot1" type="revolute">
+    <origin xyz="-2.5 0, 0" rpy="0 0 0" />
+    <parent link="Base" />
+    <child link="BotLink1" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/2" upper="0" />
+    <dynamics damping="0.23" />
+  </joint>
+
+  <joint name="Bot2" type="revolute">
+    <origin xyz="0 -2.5 0" rpy="0 0 0" />
+    <parent link="Base" />
+    <child link="BotLink2" />
+    <axis xyz="1 0 0" />
+    <limit lower="0" upper="pi/2" />
+    <dynamics damping="0.23" />
+  </joint>
+
+  <joint name="Bot3" type="revolute">
+    <origin xyz="2.5 0, 0" rpy="0 0 0" />
+    <parent link="Base" />
+    <child link="BotLink3" />
+    <axis xyz="0 1 0" />
+    <limit lower="0" upper="pi/2" />
+    <dynamics damping="0.23" />
+  </joint>
+
+  <joint name="Bot4" type="revolute">
+    <origin xyz="0, 2.5, 0" rpy="0 0 0" />
+    <parent link="Base" />
+    <child link="BotLink4" />
+    <axis xyz="1 0 0" />
+    <limit lower="-pi/2" upper="0" />
+    <dynamics damping="0.23" />
+  </joint>
+
+  <joint name="Top1" type="revolute">
+    <origin xyz="0 0,10" rpy="0 0 0" />
+    <parent link="BotLink1" />
+    <child link="TopLink1" />
+    <axis xyz="0 1 0" />
+    <limit lower="0" upper="2*pi" /> 
+    <dynamics damping="0.23" />
+  </joint>
+
+  <joint name="Top2" type="revolute">
+    <origin xyz="0 0,10" rpy="0 0 0" />
+    <parent link="BotLink2" />
+    <child link="TopLink2" />
+    <axis xyz="1 0 0" />
+    <limit lower="-2*pi" upper="0" />
+    <dynamics damping="0.23" />
+  </joint>
+
+  <joint name="Top3" type="revolute">
+    <origin xyz="0 0,10" rpy="0 0 0" />
+    <parent link="BotLink3" />
+    <child link="TopLink3" />
+    <axis xyz="0 1 0" />
+    <limit lower="-2*pi" upper="0" />
+    <dynamics damping="0.23" />
+  </joint>
+
+  <joint name="Top4" type="revolute">
+    <origin xyz="0 0,10" rpy="0 0 0" />
+    <parent link="BotLink4" />
+    <child link="TopLink4" />
+    <axis xyz="1 0 0" />
+    <limit lower="0" upper="2*pi" />
+    <dynamics damping="0.023" />
+  </joint>
+
+  <joint name="Output1" type="revolute">
+    <origin xyz="0 0,10" rpy="0 0 0" />
+    <parent link="TopLink1" />
+    <child link="Output" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi" upper="pi" />
+    <dynamics damping="0.023" />
+  </joint>
+
+  <loop_joint name="Output2" type="continuous">
+    <axis xyz="1 0 0" />
+    <link1 link="TopLink2" rpy="0 0 0" xyz="0, 0, 10" />
+    <link2 link="Output" rpy="0 0 0" xyz= "2.5, -2.5, 0" />
+   <!--<dynamics stiffness="0.0102" damping="0.023" />-->
+  </loop_joint>
+
+  <loop_joint name="Output3" type="continuous">
+    <axis xyz="0 1 0" />
+    <link1 link="TopLink3" rpy="0 0 0" xyz="0, 0, 10" />
+    <link2 link="Output" rpy="0 0 0" xyz= "5, 0, 0" />
+    <!--<dynamics stiffness="0.0102" damping="0.023" />-->
+  </loop_joint>
+
+  <loop_joint name="Output4" type="continuous">
+    <axis xyz="1 0 0" />
+    <link1 link="TopLink4" rpy="0 0 0" xyz="0, 0, 10" />
+    <link2 link="Output" rpy="0 0 0" xyz= "2.5, 2.5, 0" />
+    <!--<dynamics stiffness="0.0102" damping="0.023" />-->
+  </loop_joint>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <force_element name="kBot1">
+  <torsional_spring stiffness="0.3" rest_angle="-pi/4">
+    <joint name="Bot1" />
+  </torsional_spring>
+  </force_element>
+
+  <force_element name="kBot2">
+  <torsional_spring stiffness="0.3" rest_angle="pi/4">
+    <joint name="Bot2" />
+  </torsional_spring>
+  </force_element>
+
+  <force_element name="kBot3">
+  <torsional_spring stiffness="0.3" rest_angle="pi/4">
+    <joint name="Bot3" />
+  </torsional_spring>
+  </force_element>
+
+  <force_element name="kBot4">
+  <torsional_spring stiffness="0.3" rest_angle="-pi/4">
+    <joint name="Bot4" />
+  </torsional_spring>
+  </force_element>
+
+  <force_element name="kTop1">
+  <torsional_spring stiffness="0.15" rest_angle="pi/2">
+    <joint name="Top1" />
+  </torsional_spring>
+  </force_element>
+
+  <force_element name="kTop2">
+  <torsional_spring stiffness="0.15" rest_angle="-pi/2">
+    <joint name="Top2" />
+  </torsional_spring>
+  </force_element>
+
+  <force_element name="kBot3">
+  <torsional_spring stiffness="0.15" rest_angle="-pi/2">
+    <joint name="Top3" />
+  </torsional_spring>
+  </force_element>
+
+  <force_element name="kTop4">
+  <torsional_spring stiffness="0.15" rest_angle="pi/2">
+    <joint name="Top4" />
+  </torsional_spring>
+  </force_element>
+</robot>
+
