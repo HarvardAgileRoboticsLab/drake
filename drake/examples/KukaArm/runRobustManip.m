@@ -33,10 +33,11 @@ traj_init.u = ConstantTrajectory(zeros(nu,1));
   
 options.integration_method = DirtranTrajectoryOptimization.FORWARD_EULER;
 prog1 = DirtranTrajectoryOptimization(r,N,tf0*[1-0.5 1+0.5],options);
+prog1 = prog1.setSolver('snopt');
 prog1 = prog1.addStateConstraint(ConstantConstraint(x0),1);
 prog1 = prog1.addRunningCost(@cost);
 prog1 = prog1.addFinalCost(@finalCost);
-% prog1 = addTrajectoryDisplayFunction(prog1,@displayStateTrajectory);
+prog1 = addTrajectoryDisplayFunction(prog1,@displayStateTrajectory);
 
 [jlmin,jlmax] = r.getJointLimits;
 xmin = [jlmin;-inf(nq,1)];
@@ -50,9 +51,9 @@ constraint = constraint.setName('left_hand_constraint');
 prog1 = prog1.addConstraint(constraint, {prog1.x_inds(:,N)});
 
 prog1 = prog1.setSolverOptions('snopt','majoroptimalitytolerance',1e-3);
-prog1 = prog1.setSolverOptions('snopt','minoroptimalitytolerance',1e-4);
+prog1 = prog1.setSolverOptions('snopt','minoroptimalitytolerance',1e-3);
 prog1 = prog1.setSolverOptions('snopt','majorfeasibilitytolerance',1e-3);
-prog1 = prog1.setSolverOptions('snopt','minorfeasibilitytolerance',1e-4);
+prog1 = prog1.setSolverOptions('snopt','minorfeasibilitytolerance',1e-3);
 prog1 = prog1.setSolverOptions('snopt','iterationslimit',100000);
 
 %Solve without contact constraints to get feasible initial guess
@@ -87,7 +88,7 @@ prog2 = RobustDirtranTrajectoryOptimization(r,N,D,E0,Q,R,Qf,tf0*[1-0.5 1+0.5],op
 prog2 = prog2.addStateConstraint(ConstantConstraint(x0),1);
 prog2 = prog2.addRunningCost(@cost);
 prog2 = prog2.addFinalCost(@finalCost);
-% prog2 = addTrajectoryDisplayFunction(prog2,@displayStateTrajectory);
+prog2 = addTrajectoryDisplayFunction(prog2,@displayStateTrajectory);
 
 [jlmin,jlmax] = r.getJointLimits;
 xmin = [jlmin;-inf(nq,1)];
@@ -101,9 +102,9 @@ constraint = constraint.setName('left_hand_constraint');
 prog2 = prog2.addConstraint(constraint, {prog2.x_inds(:,N)});
 
 prog2 = prog2.setSolverOptions('snopt','majoroptimalitytolerance',1e-3);
-prog2 = prog2.setSolverOptions('snopt','minoroptimalitytolerance',1e-4);
+prog2 = prog2.setSolverOptions('snopt','minoroptimalitytolerance',1e-3);
 prog2 = prog2.setSolverOptions('snopt','majorfeasibilitytolerance',1e-3);
-prog2 = prog2.setSolverOptions('snopt','minorfeasibilitytolerance',1e-4);
+prog2 = prog2.setSolverOptions('snopt','minorfeasibilitytolerance',1e-3);
 prog2 = prog2.setSolverOptions('snopt','iterationslimit',100000);
 
 %Add contact constraints
@@ -130,7 +131,7 @@ options.integration_method = DirtranTrajectoryOptimization.MIDPOINT;
 prog2 = RobustDirtranTrajectoryOptimization(r,N,D,E0,Q,R,Qf,tf0*[1-0.5 1+0.5],options);
 prog2 = prog2.addStateConstraint(ConstantConstraint(x0),1);
 prog2 = prog2.addFinalCost(@finalCost);
-% prog2 = addTrajectoryDisplayFunction(prog2,@displayStateTrajectory);
+prog2 = addTrajectoryDisplayFunction(prog2,@displayStateTrajectory);
 
 [jlmin,jlmax] = r.getJointLimits;
 xmin = [jlmin;-inf(nq,1)];
@@ -144,9 +145,9 @@ constraint = constraint.setName('left_hand_constraint');
 prog2 = prog2.addConstraint(constraint, {prog2.x_inds(:,N)});
 
 prog2 = prog2.setSolverOptions('snopt','majoroptimalitytolerance',1e-3);
-prog2 = prog2.setSolverOptions('snopt','minoroptimalitytolerance',1e-4);
+prog2 = prog2.setSolverOptions('snopt','minoroptimalitytolerance',1e-3);
 prog2 = prog2.setSolverOptions('snopt','majorfeasibilitytolerance',1e-3);
-prog2 = prog2.setSolverOptions('snopt','minorfeasibilitytolerance',1e-4);
+prog2 = prog2.setSolverOptions('snopt','minorfeasibilitytolerance',1e-3);
 prog2 = prog2.setSolverOptions('snopt','iterationslimit',100000);
 
 %Add contact constraints
