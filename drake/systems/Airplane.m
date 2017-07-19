@@ -4,14 +4,20 @@ classdef Airplane < DrakeSystem
     %   forces and torques.
     
     properties
-        mass = 1; %aircraft mass (kg)
         g = 9.81; %gravitational acceleration (m/s^2)
-        rho = 1.2; %Air density (kg/m^3)
-        J = eye(3); %Inertia (kg*m^2)
-        Jinv = eye(3); %Inverse Inertia (1/kg*m^2)
+        rho = 1.225; %Air density (kg/m^3)
     end
     
     methods
+        function obj = Airplane()
+            obj = obj@DrakeSystem(13,0,4,13,0,1);
+            obj = obj.setStateFrame(CoordinateFrame('AirplaneState',13,'x',{'x1','x2','x3','q0','q1','q2','q3','v1','v2','v3','w1','w2','w3'}));
+            obj = obj.setInputFrame(CoordinateFrame('AirplaneInput',4,'u',{'thr','ail','elev','rud'}));
+            obj = obj.setOutputFrame(obj.getStateFrame); %full state feedback
+            %quaternion unit-norm constraint
+            obj = obj.addStateConstraint(QuadraticConstraint(.5,.5,blkdiag(zeros(3),eye(4),zeros(6)),zeros(13,1)));
+        end
+        
         function [xdot,dxdot] = dynamics(obj,t,x,u)
             %States
             %pos = x(1:3); %position in world frame
