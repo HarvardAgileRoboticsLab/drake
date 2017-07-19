@@ -3,7 +3,10 @@ classdef McFoamy < Airplane
     %   Detailed explanation goes here
     
     properties
-        m = 1.0;
+        m = 0.484;
+        J = [0.003922 0.000303 0.000441;
+             0.000303 0.015940 -0.000030;
+             0.000441 -0.000030 0.019340];
         geom; %Holds a geometry struct that describes the airplane
     end
     
