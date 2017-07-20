@@ -83,7 +83,7 @@ classdef McFoamy < Airplane
             x0 = 1.528*rp; %eq. 11
             R0 = 0.74*rp;  %eq. 12
             D0 = 2*R0;
-            Rm0 = 0.67*(rp-rh);
+            rmax0 = 0.67*(rp-rh);
             v0 = 2*vi0*(1.46/1.59); %efflux velocity
             
             
@@ -107,27 +107,40 @@ classdef McFoamy < Airplane
                 vstream.body(k) = vfit(obj.geom.body.pos{k});
             end
             
-            %TODO: replace this with a smooth interpolant
+            %Smooth fit to data in Khan and Nahon (2015)
             function vs = vfit(pos)
-                x = -pos(1);
-                if x < x0
-                    vs = vi0*(1+x/rp)/sqrt(1 + (x*x/(rp*rp))); %eq. 1
-                elseif x < 1.7*D0
-                    r = norm(pos(2:3));
-                    vmax = v0*(1.24 - 0.0765*(x-x0)/D0); %eq. 13
-                    Rm = Rm0*(1 - 0.1294*(x-x0)/D0);     %eq. 14
-                    vs = vmax*exp(-((r-Rm)/(0.8839*Rm0 + 0.1326*(x-x0-R0)))^2); %eq. 15
-                elseif x < 4.25*D0
-                    r = norm(pos(2:3));
-                    vmax = v0*(1.37 - 0.1529*(x-x0)/D0);  %eq. 16
-                    Rm = Rm0*(1.3 - 0.3059*(x - x0)/D0);  %eq. 17
-                    vs = vmax*exp(-((r-Rm)/(0.5176*Rm0 + 0.2295*(x-x0-R0)))^2); %eq. 18
-                else
-                    r = norm(pos(2:3));
-                    vmax = v0*(0.89 - 0.04*(x-x0)/D0);    %eq. 19
-                    vs = vmax*exp(-(r/(0.2411*(x-x0)))^2);%eq. 21
-                end
+                x = (-pos(1)-x0)/D0;
+                r = norm(pos(2:3));
+                
+                vs = vmax(x)*exp(-(r-rmax(x))/(a3(x)*rmax0 + b3(x)*(x*D0-R0)));
             end
+            
+            function vm = vmax(x)
+                a = 0.3197;
+                b = -0.527;
+                c = -1.413;
+                d =  0.9509;
+                
+                vm = v0*a*tanh(b*x-c)+d;
+            end
+            
+            function rm = rmax(x)
+                a = -0.5138;
+                b = 0.7461;
+                c = 1.956;
+                d = 0.4809;
+                
+                rm = rmax0*a*tanh(b*x-c)+d;
+            end
+            
+            function a = a3(x)
+                a = -0.1546*x + 0.9285;
+            end
+            
+            function b = b3(x)
+                b = -0.002997*x^2 + 0.03692*x + 0.1298;
+            end
+            
         end
         
         
