@@ -18,7 +18,31 @@ classdef Airplane < DrakeSystem
             obj = obj.addStateConstraint(QuadraticConstraint(.5,.5,blkdiag(zeros(3),eye(4),zeros(6)),zeros(13,1)));
         end
         
-        function [xdot,dxdot] = dynamics(obj,t,x,u)
+        function [xdot, dxdot] = dynamics(obj,t,x,u)
+            
+            xdot = dynamics_fd(obj,t,x,u);
+            dxdot = zeros(13,18);
+            
+            dx = diag(max(sqrt(eps(x)), 5e-7));
+            for k = 1:13
+                dxdot(:,1+k) = (dynamics_fd(obj,t,x+dx(:,k),u) - dynamics_fd(obj,t,x-dx(:,k),u))/(2*dx(k,k));
+            end
+            
+            du = diag(max(sqrt(eps(u)), 5e-7));
+            for k = 1:4
+                dxdot(:,14+k) = (dynamics_fd(obj,t,x,u+du(:,k)) - dynamics_fd(obj,t,x,u-du(:,k)))/(2*du(k,k));
+            end
+            
+            %Derivatives
+%             dxdot = zeros(13,17);
+%             dxdot(1:3,8:10) = eye(3);
+%             dxdot(4:7,4:7) = .5*[0 -w'; w, -obj.hat(w)];
+%             dxdot(4:7,11:13) = .5*[-q(2:4)'; q(1)*eye(3) + obj.hat(q(2:4))];
+%             dxdot(8:10,:) = [zeros(3,3), (1/obj.mass)*obj.dqrotate(q,F), zeros(3,10)] + [zeros(3,3), obj.qtodcm(q)*dF];
+%             dxdot(11:13,:) = [zeros(3,10), obj.Jinv*(obj.hat(obj.J*w) - obj.hat(w)*obj.J)] + [zeros(3,3), obj.Jinv*dT];
+        end
+        
+        function xdot = dynamics_fd(obj,t,x,u)
             %States
             %pos = x(1:3); %position in world frame
             q = x(4:7); %rotation from body to world frame, [s; v]
@@ -32,21 +56,14 @@ classdef Airplane < DrakeSystem
             rud = u(4); %Rudder
             
             %Compute aerodynamic forces + torques
-            [F,T,dF,dT] = aerodynamics(obj,t,q,v,w,thr,ail,ele,rud);
+            [F,T] = aerodynamics(obj,t,q,v,w,thr,ail,ele,rud);
             
             %Kinematics
+            xdot = zeros(13,1);
             xdot(1:3) = v;
             xdot(4:7) = .5*[-q(2:4)'*w; q(1)*w + cross(q(2:4),w)];
-            xdot(8:10) = obj.qrotate(q,F)./obj.mass - [0; 0; obj.g];
+            xdot(8:10) = obj.qrotate(q,F)./obj.m - [0; 0; obj.g];
             xdot(11:13) = obj.Jinv*(T - cross(w,obj.J*w));
-            
-            %Derivatives
-            dxdot = zeros(13,17);
-            dxdot(1:3,8:10) = eye(3);
-            dxdot(4:7,4:7) = .5*[0 -w'; w, -obj.hat(w)];
-            dxdot(4:7,11:13) = .5*[-q(2:4)'; q(1)*eye(3) + obj.hat(q(2:4))];
-            dxdot(8:10,:) = [zeros(3,3), (1/obj.mass)*obj.dqrotate(q,F), zeros(3,10)] + [zeros(3,3), obj.qtodcm(q)*dF];
-            dxdot(11:13,:) = [zeros(3,10), obj.Jinv*(obj.hat(obj.J*w) - obj.hat(w)*obj.J)] + [zeros(3,3), obj.Jinv*dT];
         end
         
         function [rrot] = qrotate(obj,q,r)
