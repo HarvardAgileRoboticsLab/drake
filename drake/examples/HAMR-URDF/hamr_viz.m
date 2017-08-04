@@ -1,5 +1,5 @@
 clear; clc; close all;
-format long
+% format long
 
 %% Load Rigid Body
 
@@ -32,9 +32,6 @@ end
 % Build robot + visualizer
 hamr = Hamr(urdf, options);
 hamr = compile(hamr);
-
-% change gravity
-hamr = compile(hamr); 
 
 v = hamr.constructVisualizer();
 
