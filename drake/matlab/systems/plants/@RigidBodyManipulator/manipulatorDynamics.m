@@ -130,7 +130,11 @@ if ~isempty(obj.loop)
         end
         f_ext = f_ext + force;
         if compute_gradients
-            df_ext = df_ext + dforce;
+            if isempty(df_ext)
+                df_ext = dforce; 
+            else
+                df_ext = df_ext + dforce;
+            end
         end
     end
 end

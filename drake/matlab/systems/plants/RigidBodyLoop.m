@@ -68,15 +68,14 @@ classdef RigidBodyLoop < RigidBodyElement
             else
                 kinsol = doKinematics(manip,q);
                 if (nargout >1)
-                    [x1to2, J1to2] = manip.forwardKin(kinsol,child_body,zeros(3,1), kinopt);
-                    
-                    v1to2 = 0;
-                    dv1to2_dq = zeros(1,nq);
-                    dv1to2_dqd = zeros(1,nq);
+                    [x1to2, J1to2] = manip.forwardKin(kinsol,child_body,zeros(3,1), kinopt);                    
+                    v1to2 = zeros(6,1);
+                    dv1to2_dq = zeros(6,nq);
+                    dv1to2_dqd = zeros(6,nq);
                     
                 else
                     [x1to2, J1to2] = manip.forwardKin(kinsol,child_body,zeros(3,1), kinopt);
-                    v1to2 = 0;
+                    v1to2 = zeros(6,1);
                 end
             end
             axis_ind = find(obj.axis ~=0)+3;
