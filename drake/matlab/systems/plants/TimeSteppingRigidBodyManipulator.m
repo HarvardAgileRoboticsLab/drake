@@ -198,23 +198,44 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       end
     end
 
-    function [active_contact, active_sliding, lambda, eta] = getActiveContactFromLCP(obj,z)
-        % TODO: get the normal vector some other way
-        normal = [0;0;1];
-        d = obj.manip.surfaceTangents(normal);
-        N_lambda = obj.getNumContactPairs;
+    function [active_contact, active_sliding, lambda, eta] = getActiveContactFromLCP(obj,z,fullCone)
+        
+            % TODO: get the normal vector some other way
+            normal = [0;0;1];
+            d = obj.manip.surfaceTangents(normal);
+            N_lambda = obj.getNumContactPairs;
 
-        % tease apart the contact forces and tangential velocity
-        lambda_normal = normal*z(1:N_lambda)';
-        lambda_tan1 = d{1}*(z(N_lambda+1:2*N_lambda) - z(3*N_lambda+1:4*N_lambda))';
-        lambda_tan2 = d{2}*(z(2*N_lambda+1:3*N_lambda) - z(4*N_lambda+1:5*N_lambda))';
-        lambda = lambda_normal + lambda_tan1 + lambda_tan2;
-        lambda = reshape(lambda,[],1);
-        eta = z(end-N_lambda+1:end);
+            %%%%%%%%%%%%%%%%%%
+            % Contact Forces %
+            %%%%%%%%%%%%%%%%%%
 
-        % get active contact boolean vectors
-        active_contact = kron(speye(N_lambda),normal')*lambda > 1e-4;
-        active_sliding = active_contact & (eta > 1e-4);
+            % tease apart the contact forces and tangential velocity
+            lambda_normal = normal*z(1:N_lambda)';
+            lambda_tan1 = d{1}*(z(N_lambda+1:2*N_lambda) - z(3*N_lambda+1:4*N_lambda))';
+            lambda_tan2 = d{2}*(z(2*N_lambda+1:3*N_lambda) - z(4*N_lambda+1:5*N_lambda))';
+            lambda = lambda_normal + lambda_tan1 + lambda_tan2;
+            lambda = reshape(lambda,[],1);
+            lambda = lambda./obj.timestep; % convert from impulsed to true forces
+
+            % get active contact boolean vector
+            active_contact = kron(speye(N_lambda),normal')*lambda > 1e-4;
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%
+            % Tangential Velocities %
+            %%%%%%%%%%%%%%%%%%%%%%%%%
+
+            % get tangential velocity
+            if nargin < 3
+                fullCone = true;
+            end
+
+            eta = z(end-N_lambda+1:end);
+            active_sliding = active_contact & (eta > 1e-4);
+
+            % polyhedral cone has different lagrange multipliers
+            if ~fullCone
+                eta = kron([1;1;1;1],eta).*(z(N_lambda+1:5*N_lambda) > 1e-4);
+            end
     end
     
     function x_full = update_full(obj,varargin)
@@ -950,6 +971,16 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       [varargout{:}] = getTerrainHeight(obj.manip,varargin{:});
     end
 
+    function varargout = getCollisions(obj,varargin)
+      varargout = cell(1,nargout);
+      [varargout{:}] = getCollisions(obj.manip,varargin{:});
+    end
+    
+    function varargout = isPointContact(obj,varargin)
+      varargout = cell(1,nargout);
+      [varargout{:}] = isPointContact(obj.manip,varargin{:});
+    end
+    
     function obj = setJointLimits(obj,varargin)
       obj.manip = setJointLimits(obj.manip,varargin{:});
     end

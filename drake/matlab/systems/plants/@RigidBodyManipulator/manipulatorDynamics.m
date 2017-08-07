@@ -1,4 +1,4 @@
-function [H,C,B,dH,dC,dB] = manipulatorDynamics(obj, q, v, use_mex)
+function [H,C,B,dH,dC,dB] = manipulatorDynamics(obj, q, v, use_mex, kinsol)
 % manipulatorDynamics  Calculate coefficients of equation of motion.
 % [H,C,B,dH,dC,dB] = manipulatorDynamics(obj,q,v,use_mex) calculates the
 % coefficients of the joint-space equation of motion,
@@ -28,7 +28,9 @@ end
 options.use_mex = use_mex;
 options.compute_gradients = compute_gradients;
 options.compute_JdotV = true;
-kinsol = doKinematics(obj, q, v, options);
+if nargin < 5 || isempty(kinsol)
+    kinsol = doKinematics(obj, q, v, options);
+end
 
 a_grav = [zeros(3, 1); obj.gravity];
 if (use_mex && obj.mex_model_ptr~=0 && kinsol.mex)
