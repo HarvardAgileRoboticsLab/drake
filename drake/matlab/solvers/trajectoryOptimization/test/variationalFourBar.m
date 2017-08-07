@@ -10,8 +10,8 @@ options.use_bullet = false;
 file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits.urdf');
 plant = RigidBodyManipulator(file,options);
 
-v = constructVisualizer(plant); 
-v.inspector([pi/2*ones(3,1); zeros(3,1)]); 
+% v = constructVisualizer(plant); 
+% v.inspector([pi/2*ones(3,1); zeros(3,1)]); 
 
 % add joint limits
 % ub = [3; pi/6; pi/6];
@@ -21,7 +21,7 @@ v.inspector([pi/2*ones(3,1); zeros(3,1)]);
 
 end
 if nargin < 2
-  N=21;
+  N=11;
 end
 if nargin<3
 % q0 = [pi/6
@@ -48,7 +48,7 @@ options.s_weight = 10;
 nq = plant.getNumPositions;
 % 
 traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);
-% traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1:nq)),1);  
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1:nq)),1);  
 traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(x0(nq+(1:nq))),1);
 % 
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
