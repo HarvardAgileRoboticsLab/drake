@@ -15,7 +15,7 @@ me="The Drake prerequisite set-up script"
 
 . /etc/lsb-release
 
-[[ $DISTRIB_RELEASE == "16.04" ]] || die "$me only supports Ubuntu 16.04."
+#[[ $DISTRIB_RELEASE == "16.04" ]] || die "$me only supports Ubuntu 16.04."
 
 # Install Clang 3.9
 while true; do
