@@ -2,7 +2,7 @@ function runPassiveLCP
 
 options.twoD = true;
 w = warning('off','Drake:RigidBody:SimplifiedCollisionGeometry');
-p = TimeSteppingRigidBodyManipulator('FourBar.urdf',.01,options);
+p = TimeSteppingRigidBodyManipulator('FourBar_JointLimits.urdf',.01,options);
 warning(w);
 v = p.constructVisualizer();
 v.xlim = [-8 8]; v.ylim = [-4 10];
@@ -18,5 +18,5 @@ for i=1:size(x,2)
   % constraints
 end
 
-v.playback(xtraj);
+v.playback(xtraj, struct('slider', true));
 
