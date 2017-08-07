@@ -5,8 +5,8 @@ classdef RigidBodyLoop < RigidBodyElement
         frameA
         frameB
         axis=[1;0;0];
-        b = 0;
-        k = 0;
+        b = 0;      % added by NEEL
+        k = 0;      % added by NEEL
         constraint_id
     end
     

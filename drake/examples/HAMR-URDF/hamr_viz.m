@@ -10,7 +10,7 @@ urdf = [pkg_path, 'SL_assem6/urdf/HAMR_scaled.urdf'];
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.z_inactive_guess_tol = 1;
-options.dt = 2;  %time step
+options.dt = 1;  %time step
 options.use_bullet = false;  
 % options.enable_fastqp = true; 
 
@@ -20,7 +20,7 @@ ISFLOAT = true;
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    x0 = zeros(76,1); x0(3) = 20; % x0(4) = pi/18; x0(5) = pi/18;  %x0(3 + 76/2) = -0.001; 
+    x0 = zeros(76,1); x0(3) = 20; 
     options.terrain = RigidBodyFlatTerrain();
     
 else
@@ -88,7 +88,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 8.0e3; 
+tsim = 4.0e3; 
 
 t = 0:options.dt:tsim;
 
