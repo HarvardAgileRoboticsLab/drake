@@ -33,7 +33,10 @@ end
 hamr = Hamr(urdf, options);
 hamr = compile(hamr);
 
+
+%%
 v = hamr.constructVisualizer();
+
 
 %% Build Actuators
 dp.Vb = 175;

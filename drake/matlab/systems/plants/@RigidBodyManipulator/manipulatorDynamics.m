@@ -112,7 +112,8 @@ else
         df_ext = [];
     end
 end
-% ADDED BY NEEL (7/18/17) -- computes torques applied about the axis of a loop joint
+
+%ADDED BY NEEL (7/18/17) -- computes torques applied about the axis of a loop joint
 %(loop.axis)
 if ~isempty(obj.loop)
     if isempty(f_ext)

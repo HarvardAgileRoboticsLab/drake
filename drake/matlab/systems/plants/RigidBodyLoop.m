@@ -39,6 +39,26 @@ classdef RigidBodyLoop < RigidBodyElement
                 model = updatePositionEqualityConstraint(model,obj.constraint_id(2),orientation_constraint);
             end
         end
+%         
+%         % ADDED BY NEEL: computes loop angle and it's derivative(used in computeSpatialForce)
+%         function [x, xd] = computeLoopState(obj, manip, q, qd)
+%             
+%             parent_body = manip.getFrame(obj.frameA).body_ind;
+%             child_body = manip.getFrame(obj.frameB).body_ind;
+%             
+%             kinopt.base_or_frame_id = parent_body;      % first link in chain
+%             kinopt.rotation_type = 1;                   % we want euler angles
+%             
+%             nq = size(q, 1);
+%             kinsol = doKinematics(manip,q,qd,struct('compute_gradients', true));
+%             [x1to2, J1to2, dJ1to2] = manip.forwardKin(kinsol,child_body,zeros(3,1), kinopt);
+%             J1to2dot = reshape(reshape(dJ1to2, 6*nq, nq)*qd, 6, nq);
+%             
+%             v1to2 = J1to2*qd;
+%             dv1to2_dq = J1to2dot;
+%             dv1to2_dqd = J1to2;
+%             
+            
         
         
         % ADDED BY NEEL (7/18/17): computes spatial forces from
