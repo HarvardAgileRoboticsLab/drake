@@ -33,16 +33,16 @@ classdef RigidBody < RigidBodyElement
     effort_max=[];
     velocity_limit=[];
     has_position_sensor=false;
-  end
-  
-  properties (SetAccess=protected, GetAccess=public)    
     % mass, com, inertia properties
     I=zeros(6);  % total spatial mass matrix, sum of mass, inertia, (and added mass for submerged bodies)
     Imass=zeros(6);  % spatial mass/inertia
     Iaddedmass = zeros(6); % added mass spatial matrix
-    mass = 0;
     com = [];
     inertia = [];
+    mass = 0;
+  end
+  
+  properties (SetAccess=protected, GetAccess=public)    
 
     % Collision filter properties
     collision_filter = struct('belongs_to',CollisionFilterGroup.DEFAULT_COLLISION_FILTER_GROUP_ID, ...

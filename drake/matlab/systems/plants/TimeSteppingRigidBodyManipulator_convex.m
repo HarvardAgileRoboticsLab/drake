@@ -3,19 +3,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
   % manipulator equations, with contact / limits resolved using the linear
   % complementarity problem formulation of contact in Stewart96.
 
-  properties
-      % 0 -> Trinkle LCP dynamics
-      % 1 -> Todorov Smooth Convex dynamics
-      contact_model = ContactModel.TrinkleLCP; 
-      phi_max = 0.1; % m, max contact force distance
-      active_threshold = 0.1; % height below which contact forces are calculated
-      contact_threshold = 1e-3; % threshold where force penalties are eliminated (modulo regularization)
-  end
-  
-  properties (Dependent)
-      update_convex;
-  end
-  
   properties (Access=protected)
     manip  % the CT manipulator
     sensor % additional TimeSteppingRigidBodySensors (beyond the sensors attached to manip)
@@ -32,6 +19,11 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     z_inactive_guess_tol = .01;
     multiple_contacts = false;
     gurobi_present = false;
+    % convex stuff below
+    update_convex = true;
+    phi_max = 0.1; % m, max contact force distance
+    active_threshold = 0.1; % height below which contact forces are calculated
+    contact_threshold = 1e-3; % threshold where force penalties are eliminated (modulo regularization)
   end
 
   methods
@@ -71,12 +63,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         obj.multiple_contacts = options.multiple_contacts;
       end
 
-      if isfield(options, 'contact_model')
-        typecheck(options.contact_model, 'ContactModel');
-        obj.contact_model = options.contact_model;
-      end
-      
-      if isfield(options, 'update_convex') %TODO: delete this check once update_convex is fully deprecated
+      if isfield(options, 'update_convex')
         typecheck(options.update_convex, 'logical');
         obj.update_convex = options.update_convex;
       end
@@ -124,21 +111,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
 
     function manip = getManipulator(obj)
       manip = obj.manip;
-    end
-    
-    function val = get.update_convex(obj)
-        warning('Deprecated, use the contact_model property. (E.g. obj.contact_model == ContactModel.TodorovConvexLinear)');
-        val = obj.contact_model == ContactModel.TodorovConvexLinear;
-    end
-    
-    function set.update_convex(obj, val)
-        warning('Deprecated use the contact_model property. (E.g. obj.contact_model = ContactModel.TodorovConvexLinear)');
-        if val
-            obj.contact_model = 1;
-        else
-            warning('The contact_model is likely out of sync. Defaulting to Trinkle LCP dynamics.u');
-            obj.contact_model = 0;
-        end
     end
 
     function y = output(obj,t,x,u)
@@ -218,7 +190,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       model.LCP_cache.data.t = NaN;
       model.LCP_cache.data.x = NaN(model.getNumStates(),1);
       model.LCP_cache.data.u = NaN(model.getNumInputs(),1);
-%       model.LCP_cache.data.w = NaN(model.getNumStates(),1);
       model.LCP_cache.data.nargout = NaN;
       model.dirty = false;
     end
@@ -236,53 +207,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         end
       end
     end
-    
-    function [active_contact, active_sliding, lambda, eta] = getActiveContactFromLCP(obj,z,fullCone)
-        
-            % TODO: get the normal vector some other way
-            normal = [0;0;1];
-            d = obj.manip.surfaceTangents(normal);
-            N_lambda = obj.getNumContactPairs;
 
-            %%%%%%%%%%%%%%%%%%
-            % Contact Forces %
-            %%%%%%%%%%%%%%%%%%
-
-            % tease apart the contact forces and tangential velocity
-            lambda_normal = normal*z(1:N_lambda)';
-            lambda_tan1 = d{1}*(z(N_lambda+1:2*N_lambda) - z(3*N_lambda+1:4*N_lambda))';
-            lambda_tan2 = d{2}*(z(2*N_lambda+1:3*N_lambda) - z(4*N_lambda+1:5*N_lambda))';
-            lambda = lambda_normal + lambda_tan1 + lambda_tan2;
-            lambda = reshape(lambda,[],1);
-            lambda = lambda./obj.timestep; % convert from impulsed to true forces
-
-            % get active contact boolean vector
-            active_contact = kron(speye(N_lambda),normal')*lambda > 1e-4;
-
-            %%%%%%%%%%%%%%%%%%%%%%%%%
-            % Tangential Velocities %
-            %%%%%%%%%%%%%%%%%%%%%%%%%
-
-            % get tangential velocity
-            if nargin < 3
-                fullCone = true;
-            end
-
-            eta = z(end-N_lambda+1:end);
-            active_sliding = active_contact & (eta > 1e-4);
-
-            % polyhedral cone has different lagrange multipliers
-            if ~fullCone
-                eta = kron([1;1;1;1],eta).*(z(N_lambda+1:5*N_lambda) > 1e-4);
-            end
-    end
-    
-    function x_full = update_full(obj,varargin)
-        % wrapper function to concatentate the state and the contact forces
-        [x,~,z] = obj.update(varargin{:});
-        [~, ~, lambda, eta] = obj.getActiveContactFromLCP(z);
-        x_full = [x; lambda; eta];
-    end
     
     function [phiC,normal,V,n,xA,xB,idxA,idxB] = getContactTerms(obj,q,kinsol)
      
@@ -304,36 +229,16 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
            
     end
     
-    function varargout = getBodyMasses(obj,varargin)
-        varargout = cell(1,nargout);
-        [varargout{:}] = obj.manip.getBodyMasses(varargin{:});
-    end
-    
-    function obj = setBodyMasses(obj,varargin)
-        obj.manip = obj.manip.setBodyMasses(varargin{:});
-    end
-    
-    function [xdn,df,z] = update(obj,t,x,u,w_idx,w,compute_gradients)
-      % change the update depending on the contact model
-      switch obj.contact_model
-          case ContactModel.TodorovConvexLinear
-              [xdn,df,z] = updateConvexLinear(obj,t,x,u);
-          case ContactModel.TodorovConvexSOC
-              [xdn,df,z] = updateConvexSOC(obj,t,x,u);
-          case ContactModel.TrinkleLCP
-              [xdn,df,z] = updateTrinkleLCP(obj,t,x,u,w_idx,w,compute_gradients);
-          otherwise
-              error('Invalid Contact Model')
-      end
-    end
     
     function [xdn,df] = updateConvexOpt(obj,h,x,u)
       
-      [xdn,df] = geval(@obj.updateConvexLinear,h,x,u,struct('grad_method','numerical'));
+      [xdn,df] = geval(@obj.updateConvex,h,x,u,struct('grad_method','numerical'));
       
     end
     
-    function [xdn,df,f] = updateConvexLinear(obj,~,x,u,w)
+    
+   
+    function [xdn,df] = updateConvex(obj,h,x,u,w)
       % this function implement an update based on Todorov 2011, where
       % instead of solving the full SOCP, we make use of polyhedral
       % friction cone approximations and solve a QP.
@@ -408,7 +313,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         vn = v + H\(B*u-C)*h;
         qdn = vToqdot*vn;
         qn = q + qdn*h;
-        f = [];
 
       else
         num_active = length(active);
@@ -518,7 +422,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             model.ub = lambda_ub;
             result = gurobi(model,gurobi_options);
             result_qp = result.x;
-          catch e
+          catch
             keyboard
           end;
         end
@@ -573,27 +477,18 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       df =[];
     end
 
-    function [xdn, df, z] = updateConvexSOC(obj,t,x,u)
-        error('Not Implemented');
-    end
-    
-    function [xdn,df,z] = updateTrinkleLCP(obj,t,x,u,w_idx,w,compute_gradients)
-      if nargin < 7
-          compute_gradients = nargin > 1;
-      end
-      if (nargin > 1) && (~compute_gradients)
-          df = [];
+      
+    function [xdn,df] = update(obj,t,x,u)
+      
+      if obj.update_convex
+        [xdn,df] = updateConvex(obj,t,x,u);
+        return;
       end
       
-      if nargin < 5
-          w_idx = [];
-          w = zeros(6,0);
-      end
-      
-      if (compute_gradients)
-        [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u,w_idx,w);
+      if (nargout>1)
+        [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u);
       else
-        [obj,z,Mvn,wvn] = solveLCP(obj,t,x,u,w_idx,w);
+        [obj,z,Mvn,wvn] = solveLCP(obj,t,x,u);
       end
 
       num_q = obj.manip.num_positions;
@@ -623,7 +518,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       end
       xdn = [qn;vn];
 
-      if (compute_gradients)  % compute gradients
+      if (nargout>1)  % compute gradients
         if isempty(z)
           dqdn = dwvn;
         else
@@ -634,41 +529,31 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
 
       for i=1:length(obj.sensor)
         if isa(obj.sensor{i},'TimeSteppingRigidBodySensorWithState')
-          if (compute_gradients)
+          if (nargout>1)
             [obj,xdn_sensor,df_sensor] = update(obj.sensor{i},obj,t,x,u);
           else
             [obj,xdn_sensor] = update(obj.sensor{i},obj,t,x,u);
           end
           xdn = [xdn;xdn_sensor];
-          if (compute_gradients)
+          if (nargout>1)
             df = [df; df_sensor];
           end
         end
       end
     end
 
-    function hit = cacheHit(obj,t,x,u,w_idx,w,num_args_out)
-      hit = (t==obj.LCP_cache.data.t && ...
-             all(x==obj.LCP_cache.data.x) && ...
-             all(u==obj.LCP_cache.data.u) && ...
-             all(w_idx==obj.LCP_cache.data.w_idx) && ...
-             all(w==obj.LCP_cache.data.w) && ...
-             num_args_out <= obj.LCP_cache.data.nargout);
+    function hit = cacheHit(obj,t,x,u,num_args_out)
+      hit = (t==obj.LCP_cache.data.t && all(x==obj.LCP_cache.data.x) && ...
+             all(u==obj.LCP_cache.data.u) && num_args_out <= obj.LCP_cache.data.nargout);
     end
 
-    function [obj, z, Mqdn, wqdn] = solveMexLCP(obj, t, x, u, w_idx, w)
+    function [obj, z, Mqdn, wqdn] = solveMexLCP(obj, t, x, u)
         num_q = obj.manip.num_positions;
         q=x(1:num_q);
         v=x(num_q+(1:obj.manip.num_velocities));
         kinsol = doKinematics(obj, q, v);
         [H,C,B] = manipulatorDynamics(obj.manip, q, v);
-        % add external disturbances
-        options = struct('rotation_type', 1);
-        for i=1:length(w_idx)
-            [~,Jw] = obj.forwardKin(kinsol,w_idx(i),zeros(3,1),options);
-            C = C - Jw'*w(:,i);
-        end
-        [phiC, normal, d, xA, xB, idxA, idxB, mu, n, D] = obj.manip.contactConstraints(kinsol, obj.multiple_contacts);
+        [phiC,normal,d,xA,xB,idxA,idxB,mu,n,D] = obj.manip.contactConstraints(kinsol, obj.multiple_contacts);
         [z, Mqdn, wqdn, possible_contact_indices, possible_jointlimit_indices] = solveLCPmex(obj.manip.mex_model_ptr, kinsol.mex_ptr, u, phiC, n, D, obj.timestep, obj.z_inactive_guess_tol, obj.LCP_cache.data.z, H, C, B, obj.enable_fastqp);
         possible_contact_indices = logical(possible_contact_indices);
         contact_data.normal = normal(:,possible_contact_indices);
@@ -686,21 +571,16 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         obj.LCP_cache.data.possible_limit_indices = logical(possible_jointlimit_indices)';
     end
 
-    function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u,w_idx,w)
-       if (nargin < 5)
-           w_idx = [];
-           w = zeros(6,0);
-       end
-        
-      if (obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
-        [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u,w_idx,w);
+    function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u)
+      if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
+        [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
         return;
       end
       
 %       global active_set_fail_count
       % do LCP time-stepping
       % todo: implement some basic caching here
-      if cacheHit(obj,t,x,u,w_idx,w,nargout)
+      if cacheHit(obj,t,x,u,nargout)
         z = obj.LCP_cache.data.z;
         Mvn = obj.LCP_cache.data.Mqdn;
         wvn = obj.LCP_cache.data.wqdn;
@@ -715,8 +595,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         obj.LCP_cache.data.x = x;
         obj.LCP_cache.data.u = u;
         obj.LCP_cache.data.nargout = nargout;
-        obj.LCP_cache.data.w_idx = w_idx;
-        obj.LCP_cache.data.w = w;
 
         num_q = obj.manip.getNumPositions;
         num_v = obj.manip.getNumVelocities;
@@ -744,13 +622,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             tau = -C;
             dtau = [zeros(num_v,1), -dC, zeros(size(B))];
           end
-        end
-        
-        % add the disturbance to the forces
-        options = struct('rotation_type', 1);
-        for i=1:length(w_idx)
-            [~,Jw] = obj.forwardKin(kinsol,w_idx(i),zeros(3,1),options);
-            tau = tau + Jw'*w(:,i);
         end
 
         if (obj.position_control)
@@ -962,7 +833,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
 
         M = zeros(nL+nP+(mC+2)*nC)*q(1);
         w = zeros(nL+nP+(mC+2)*nC,1)*q(1);
-        
+
         Hinv = inv(H);
         wvn = v + h*Hinv*tau;
         Mvn = Hinv*vToqdot'*J';
@@ -1123,8 +994,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             z = pathlcp(M,w,lb,ub);
             obj.LCP_cache.data.fastqp_active_set = [];
         end
-        
-        
         % for debugging
         %cN = z(nL+nP+(1:nC))
         %beta1 = z(nL+nP+nC+(1:nC))
@@ -1148,7 +1017,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             cartesian_force = cartesian_force - repmat(beta',3,1).*contact_data.d{i};
           end
 
-          lcmgl = drake.matlab.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton,'LCP contact forces');
+          lcmgl = drake.util.BotLCMGLClient(lcm.lcm.LCM.getSingleton,'LCP contact forces');
           for j=1:nC
             point = forwardKin(obj.manip,kinsol,contact_data.idxA(j),contact_data.xA(:,j));
             lcmgl.glColor3f(.4,.2,.4);
@@ -1302,16 +1171,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       [varargout{:}] = getTerrainHeight(obj.manip,varargin{:});
     end
 
-    function varargout = getCollisions(obj,varargin)
-      varargout = cell(1,nargout);
-      [varargout{:}] = getCollisions(obj.manip,varargin{:});
-    end
-    
-    function varargout = isPointContact(obj,varargin)
-      varargout = cell(1,nargout);
-      [varargout{:}] = isPointContact(obj.manip,varargin{:});
-    end
-    
     function obj = setJointLimits(obj,varargin)
       obj.manip = setJointLimits(obj.manip,varargin{:});
     end
@@ -1449,11 +1308,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       varargout=cell(1,nargout);
       [varargout{:}] = resolveConstraints(obj.manip,x0,varargin{:});
       varargout{1} = varargout{1}.inFrame(obj.getStateFrame());
-    end
-    
-    function varargout = surfaceTangents(obj,varargin)
-        varargout=cell(1,nargout);
-        [varargout{:}] = surfaceTangents(obj.manip,varargin{:});
     end
 
     function varargout = getMass(obj,varargin)
@@ -1620,14 +1474,8 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       joint_names =  {obj.manip.body.jointname}';
     end
 
-    function varargout = getBodyIndices(obj, varargin)
-        varargout = cell(1,nargout);
-        [varargout{:}] = getBodyIndices(obj.manip, varargin{:});
-    end
-    
-    function varargout = getNumBodies(obj, varargin)
-        varargout = cell(1,nargout);
-        [varargout{:}] = getNumBodies(obj.manip, varargin);
+    function num_bodies = getNumBodies(obj)
+      num_bodies = length(obj.manip.body);
     end
 
     function [jl_min, jl_max] = getJointLimits(obj)

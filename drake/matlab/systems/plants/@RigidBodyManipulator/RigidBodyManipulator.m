@@ -302,22 +302,24 @@ classdef RigidBodyManipulator < Manipulator
     function B = getB(obj,q,qd)
       % Note:  getB(obj) is ok iff there are no direct feedthrough force
       % elements.
-      checkDirty(obj);
+        checkDirty(obj);
 
-      B = obj.B;
-      if length(obj.force)>0
+        B = obj.B;
         for i=1:length(obj.force)
           if (obj.force{i}.direct_feedthrough_flag)
             [~,B_force] = computeSpatialForce(obj.force{i},obj,q,qd);
             B = B+B_force;
           end
         end
-      end
 
     end
-    function n = getNumBodies(obj)
+    function n = getNumBodies(obj, robot_num)
       % @ingroup Kinematic Tree
-      n = length(obj.body);
+      if (nargin < 2 || isempty(robot_num))
+          n = length(obj.body);
+      else
+          n = length(obj.getBodyIndices(robot_num));
+      end
     end
 
     function str = getLinkName(obj,body_ind)
@@ -931,6 +933,17 @@ classdef RigidBodyManipulator < Manipulator
 %        warning('Drake:RigidBodyManipulator:SingularH','H appears to be singular (cond(H)=%f).  Are you sure you have a well-defined model?',cond(H));
 %      end
     end
+    
+    function body_idx = getBodyIndices(model, robot_num)
+        body_idx = [];
+        for i=1:length(model.bodies)
+            if isBodyPartOfRobot(model, model.body(i), robot_num)
+                body_idx = [body_idx, i];
+            end
+        end
+    end
+    
+    
 
     function indices = findJointIndices(model, str)
       model.warning_manager.warnOnce('Drake:RigidBodyManipulator:findJointIndicesDeprecated','findJointIndices has been replaced with findPositionIndices.  please update your code');
@@ -1183,7 +1196,7 @@ classdef RigidBodyManipulator < Manipulator
 
     function body = findJoint(model,jointname,robot)
       % @ingroup Deprecated
-      error('the finkJoint method has been deprecated.  if you really must get a *copy* of the body associated with this joint, then use finkJointInd followed by getBody');
+      error('the findJoint method has been deprecated.  if you really must get a *copy* of the body associated with this joint, then use finkJointInd followed by getBody');
     end
 
     function b=leastCommonAncestor(model,body1,body2)
@@ -1625,7 +1638,33 @@ classdef RigidBodyManipulator < Manipulator
         end
       end
     end
+    
+    function [masses, body_idx] = getBodyMasses(model, robotnum)
+        if nargin < 2
+            robotnum = -1; % robot num of -1 means all robots
+        end
 
+        masses = [];
+        body_idx = [];
+        for i=1:length(model.body)
+            if isBodyPartOfRobot(model, model.body(i), robotnum)
+                body_idx = [body_idx, i];
+                masses = [masses, model.body(i).mass];
+            end
+        end
+    end
+
+    function model = setBodyMasses(model, masses, body_idx)
+        for i=1:length(body_idx)
+            mass_ratio = masses(i)/model.body(body_idx(i)).mass;
+            model.body(body_idx(i)).mass = masses(i);
+            model.body(body_idx(i)).I = mass_ratio*model.body(body_idx(i)).I;
+            model.body(body_idx(i)).Imass = mass_ratio*model.body(body_idx(i)).Imass;
+            model.body(body_idx(i)).inertia = mass_ratio*model.body(body_idx(i)).inertia;
+        end
+        model = compile(model);
+    end
+        
     function [T,U] = energy(model, x)
       % @param x the state vector
       % @retval T the total kinetic energy
