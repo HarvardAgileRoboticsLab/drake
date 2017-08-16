@@ -10,7 +10,7 @@ plant = RigidBodyManipulator(file,options);
 N=21;
 
 % Initial condition
-q0 = [9*pi/10; pi/10; 9*pi/10]; %pi/4*ones(3,1);
+q0 = [pi/4; 3*pi/4; pi/4]; %pi/4*ones(3,1);
 valuecheck(positionConstraints(plant, q0), zeros(6,1), 1e-4);
 x0 = [q0;0*q0];
 
@@ -29,8 +29,8 @@ qqopt = qopt.eval(qopt.getBreaks());
 figure(2); clf;
 for i=1:size(q, 1)
     subplot(2,size(q,1)/2,i); hold on;
-    plot(qsim(i,:), 'b');
-    plot(qqopt(i,:), 'r--');
+    plot(rad2deg(qsim(i,:)), 'b');
+    plot(rad2deg(qqopt(i,:)), 'r--');
     hold off;
     legend('MidpointRule', 'TrajOpt')
 end

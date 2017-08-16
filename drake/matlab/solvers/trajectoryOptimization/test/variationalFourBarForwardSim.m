@@ -96,14 +96,18 @@ for i = 1:N-1
     v(:,i) = qdiff(params, q(:,i), q(:,i+1), h);
 end
 xtraj = PPTrajectory(foh(t, [q; v])); 
-% xtraj = xtraj.setOutputFrame(v.getInputFrame); 
-% v.playback(xtraj, struct('slider', true))
+
+% PLAYBACK
+% qtraj = PPTrajectory(foh(t, q)); 
+% vis = plant.constructVisualizer();
+% qtraj = qtraj.setOutputFrame(vis.getInputFrame); 
+% vis.playback(qtraj, struct('slider', true))
 
 figure(1); clf; 
 for i=1:size(q, 1)  
   subplot(1,size(q,1),i); hold on;
-  plot(ts,qs(i,:),'r');
-  plot(t, q(i,:), 'b--'); 
+  plot(ts,rad2deg(qs(i,:)),'r');
+  plot(t, rad2deg(q(i,:)), 'b--'); 
   hold off;
   legend('MidpointRule', 'ode45')
 end

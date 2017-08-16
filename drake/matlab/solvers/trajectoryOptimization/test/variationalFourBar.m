@@ -11,7 +11,7 @@ if nargin < 2
     N=21;
 end
 if nargin<3
-    q0 = [4*pi/5; pi/5; 4*pi/5]; %pi/4*ones(3,1);
+    q0 = [pi/4; 3*pi/4; pi/4]; %pi/4*ones(3,1);
     valuecheck(positionConstraints(plant, q0), zeros(6,1), 1e-4);
     x0 = [q0;0*q0];
 end
@@ -27,14 +27,14 @@ end
 t_init = linspace(0,tf,N);
 
 
-% % ts_plant = TimeSteppingRigidBodyManipulator(plant,dt/2,options);
-% sim_traj = plant.simulate([0,tf], x0);
-% % x0 = sim_traj.eval(0);
+% ts_plant = TimeSteppingRigidBodyManipulator(plant,dt/2,options);
+sim_traj = plant.simulate([0,tf], x0);
+% x0 = sim_traj.eval(0);
 
 options.s_weight = 10;
 nq = plant.getNumPositions;
 
-traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);
+traj_opt = VariationalTrajectoryOptimization_Neel(plant,N,tf,options);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1:nq)),1);
 traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(x0(nq+(1:nq))),1);
 
@@ -55,35 +55,35 @@ toc
 % traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
 % traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
 
-% v = constructVisualizer(plant);
-% v.playback(xtraj, struct('slider', true));
-%
-%
-% ts = sim_traj.getBreaks();
-% tt = xtraj.getBreaks();
-% xx_knot = xtraj.eval(tt); qq = xx_knot(1:nq, :);
-% xx_mid = xtraj.eval(tt + dt/2); vv = xx_mid(nq+1:end, :);
-% xx = [qq; vv];
-% xs = sim_traj.eval(ts);
-%
-% rms_err = rms(xx(:,1:end-1) - [interp1(ts', xs(1:3,:)', tt(1:end-1)'), ...
-%     interp1(ts', xs(4:6,:)', tt(1:end-1)+dt/2', 'linear', 'extrap')]',2);
-% disp(rms_err);
+v = constructVisualizer(plant);
+v.playback(xtraj, struct('slider', true));
+
+dt = tf/N; 
+ts = sim_traj.getBreaks();
+tt = xtraj.getBreaks();
+xx_knot = xtraj.eval(tt); qq = xx_knot(1:nq, :);
+xx_mid = xtraj.eval(tt + dt/2); vv = xx_mid(nq+1:end, :);
+xx = [qq; vv];
+xs = sim_traj.eval(ts);
+
+rms_err = rms(xx(:,1:end-1) - [interp1(ts', xs(1:3,:)', tt(1:end-1)'), ...
+    interp1(ts', xs(4:6,:)', tt(1:end-1)+dt/2', 'linear', 'extrap')]',2);
+disp(rms_err);
 % save(['rms_err_', num2str(N)], 'dt', 'rms_err');
 
-% figure(1); clf;
-% for i=1:size(xs, 1)
-%   subplot(2,size(xs,1)/2,i);
-%   if i <= nq
-%     plot(tt,xx(i,:),'b');
-%   else
-%       plot(tt + dt/2, xx(i,:), 'b');
-%   end
-%   hold on;
-%   plot(ts,xs(i,:),'r--');
-%   hold off;
-%   legend('TrajOpt', 'TimeStepping')
-% end
+figure(1); clf;
+for i=1:size(xs, 1)
+  subplot(2,size(xs,1)/2,i);
+  if i <= nq
+    plot(tt,xx(i,:),'b');
+  else
+      plot(tt + dt/2, xx(i,:), 'b');
+  end
+  hold on;
+  plot(ts,xs(i,:),'r--');
+  hold off;
+  legend('TrajOpt', 'TimeStepping')
+end
 
 end
 

@@ -15,6 +15,7 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
         b_inds
         jl_inds % NDD: joint limit indicies
         kl_inds % NDD: kinematic chains 
+        good_inds 
         s_inds
     end
     
@@ -80,7 +81,9 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
                     nJL = sum(~isinf(-jl_min)) + sum(~isinf(jl_max));  
                     
                     %Kinemaitc loops
-                    nKL = obj.plant.getNumStateConstraints();                    
+                    nKL = obj.plant.getNumStateConstraints()-4;
+                    obj.good_inds = [1; 3];
+
 %                     
                     obj.N = N;
                     obj.nC = nC;
@@ -448,9 +451,11 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
             [~, dkappa] = obj.plant.jointLimitConstraints(q1);
             
             %NDD: closed chains 
-            [~, dKC, dKCdqm] = obj.plant.positionConstraints(qm);   
+            good_inds = obj.good_inds; 
+            [~, dKC, dKCdqm] = obj.plant.positionConstraints(qm); 
+            dKC = dKC(good_inds, :);
             if isempty(dKC); dKC = zeros(0, numel(qm)); end
-            dKCdqm = reshape(dKCdqm', nQ, nKL*nQ)'; 
+            dKCdqm = reshape(dKCdqm(good_inds, :)', nQ, nKL*nQ)'; 
             
             f = f_del + (h/2)*(B*u + dKC'*kl + fdamp) + h*(n'*c + D'*b + dkappa'*jl);
             
@@ -480,7 +485,7 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
 %                 disp(max(abs(df_fd(:)-df(:))));
 % %                 [q1, q2]
 % %             end
-            
+%             
         end
         
         function [f,df] = midpoint_dynamics(obj,xin)
@@ -542,14 +547,17 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
             [~, dkappa] = obj.plant.jointLimitConstraints(q3);      % should this be q3?            
                         
             %NDD: closed chains 
+            good_inds = obj.good_inds; 
             [~, dKC1, dKCdqm1] = obj.plant.positionConstraints(qm1);  
-            [~, dKC2, dKCdqm2] = obj.plant.positionConstraints(qm2);  
+            [~, dKC2, dKCdqm2] = obj.plant.positionConstraints(qm2);
+            dKC1 = dKC1(good_inds, :); 
+            dKC2 = dKC2(good_inds, :); 
             
             if isempty(dKC1); dKC1 = zeros(0, numel(qm1)); end
-            if isempty(dKC2); dKC2 = zeros(0, numel(qm2)); end
-            
-            dKCdqm1 = reshape(dKCdqm1', nQ, nKL*nQ)'; %             
-            dKCdqm2 = reshape(dKCdqm2', nQ, nKL*nQ)'; %             
+            if isempty(dKC2); dKC2 = zeros(0, numel(qm2)); end           
+
+            dKCdqm1 = reshape(dKCdqm1(good_inds, :)', nQ, nKL*nQ)'; %             
+            dKCdqm2 = reshape(dKCdqm2(good_inds, :)', nQ, nKL*nQ)'; %               
 %             
             %Total dynamics residual incluing control, contact, joint
             %limit, kinematic loop, and damping forces
@@ -711,7 +719,12 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
             q = xin(1:nQ);
             
             %kinematic closed loops
+            good_inds = obj.good_inds;
             [f, df] = obj.plant.positionConstraints(q); 
+            f = f(good_inds); 
+            df = df(good_inds, :); 
+%             df = df + obj.options.kl_weight*eye(size(df)); 
+%             cond(df)
 
         end
         
@@ -755,7 +768,7 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
             
         end
          
-        function [fdamp, dfdamp] = computeDampingForces(obj, q, v)             
+        function [fdamp, dfdamp] = computeDampingForces(obj, v)             
             
             % Damping at the generalized velocities
             nQ = obj.plant.getNumPositions();
@@ -768,18 +781,22 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
             end
             
             % Damping at the kinematic loops
-            if obj.nKL
-                rbl = obj.plant.loop; 
-                for i = 1:numel(rbl)
-                    rbli = rbl(i);
-                    rbli.computeSpatialForce
-                end
-                
-            end
+%             fdloop = zeros(nQ, 1); 
+%             dfloop = zeros(nQ, 2*nQ); 
+%             if obj.nKL
+%                 rbl = obj.plant.loop; 
+%                 for i = 1:numel(rbl)
+%                     rbli = rbl(i);
+%                     [x, J, dJ] = rbli.computeLoopStateFun(obj.plant, q,v);
+%                     fdloop = fdloop - J(1,1:nQ)'*rbli.b*x(2); 
+%                     df_loop = -rbli.b*( dJ*x(2) + J(1,1:nQ)'*J(2, 1:nQ)); 
+%                 end
+%                 
+%             end
+%             fdloop
             
-            
-            fdamp = -diag(xx(nQ+1:end))*v;
-            dfdamp = -diag(xx(nQ+1:end)); 
+            fdamp = -diag(xx(nQ+1:end))*v; % + fdloop;
+            dfdamp = -diag(xx(nQ+1:end)); % + dfloop; 
             
             
         end

@@ -79,7 +79,7 @@
     <parent link="base_link"/>
     <child link="link_1"/>
     <origin rpy="0 0 0" xyz="0 0 1.8"/>
-    <!--<dynamics damping="1"/>   -->
+    <dynamics damping="1"/>
     <!--<limit lower="pi/4" upper="5*pi/4" />-->
   </joint>
 
@@ -88,7 +88,7 @@
     <parent link="link_1"/>
     <child link="link_2"/>
     <origin rpy="0 0 0" xyz="0 0 1.8"/>
-    <!--<dynamics damping="1.1"/> -->
+    <dynamics damping="1.1"/>
     <!--<limit lower="-pi" upper="pi" />-->
   </joint>
 
@@ -97,7 +97,7 @@
     <parent link="link_2"/>
     <child link="link_3"/>
     <origin rpy="0 0 0" xyz="0 0 1.8"/>
-    <!--<dynamics damping="1.2"/> -->
+    <dynamics damping="1.2"/>
     <!--<limit lower="pi/4" upper="5*pi/4" />-->
   </joint>
 
@@ -105,11 +105,11 @@
     <axis xyz="0 1 0"/>
     <link1 link="link_3" rpy="0 0 0" xyz="0 0 1.8"/>
     <link2 link="base_link" rpy="0 0 0" xyz="0 0 0"/>
-    <!---<dynamics stiffness="1" damping="10"/>-->
+    <dynamics stiffness="10" damping="0"/>
   </loop_joint>-->
 
- <!---<force_element name="k0">
-  <torsional_spring stiffness="30" rest_angle="0">
+ <force_element name="k0">
+  <torsional_spring stiffness="10" rest_angle="0">
     <joint name="joint_0" />
   </torsional_spring>
  </force_element>
@@ -126,7 +126,7 @@
   </torsional_spring>
  </force_element>
 
-  <transmission type="SimpleTransmission" name="joint_0_trans">
+  <!--<transmission type="SimpleTransmission" name="joint_0_trans">
     <actuator name="control_torque" />
     <joint name="joint_0" />
     <mechanicalReduction>1</mechanicalReduction>
