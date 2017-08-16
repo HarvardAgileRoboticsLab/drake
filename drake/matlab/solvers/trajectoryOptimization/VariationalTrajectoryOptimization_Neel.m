@@ -433,7 +433,7 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
                 zeros(nQ,nU), zeros(nQ,nC), zeros(nQ,nD*nC), zeros(nQ, nJL), zeros(nQ, nKL)]; % d/du, d/dc, d/db, d/djl, d/dkl
             
             % damping forces
-            [fdamp, dfdamp] = obj.computeDampingForces(vm);
+            [fdamp, dfdamp] = obj.computeDampingForcesFun(qm, vm);
             
             %Contact basis
             kinopts = struct();
@@ -528,8 +528,8 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
                 zeros(nQ, 2*nU+nC+(nC*nD)+nJL+2*nKL)];
             
             %Damping
-            [fdamp1, dfdamp1] = obj.computeDampingForces(vm1);
-            [fdamp2, dfdamp2] = obj.computeDampingForces(vm2);
+            [fdamp1, dfdamp1] = obj.computeDampingForcesFun(qm1, vm1);
+            [fdamp2, dfdamp2] = obj.computeDampingForcesFun(qm2, vm2);
             
             %Contact basis
             kinopts = struct();
@@ -767,11 +767,32 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
             D2D2L = M;
             
         end
+        
+        function [fdamp, dfdamp] = computeDampingForcesFun(obj, q, v)
+            
+            xin = [q; v]; 
+            [fdamp,dfdamp] = obj.computeDampingForces(xin);
+%             f
+                        
+            dfdamp_fd = zeros(size(dfdamp));
+            dxin = 1e-6*eye(length(xin));
+            for k = 1:length(xin)
+                dfdamp_fd(:,k) = (obj.computeDampingForces(xin+dxin(:,k)) ...
+                    - obj.computeDampingForces(xin-dxin(:,k)))/2e-6;
+            end
+
+            disp('Damping Derivative Error:');
+            disp(max(abs(dfdamp_fd(:)-dfdamp(:))));
+
+        end
          
-        function [fdamp, dfdamp] = computeDampingForces(obj, v)             
+        function [fdamp, dfdamp] = computeDampingForces(obj, xin)             
             
             % Damping at the generalized velocities
             nQ = obj.plant.getNumPositions();
+            q = xin(1:nQ);
+            v = xin(nQ+1:end); 
+            
             xx = Point(obj.plant.getStateFrame());
             rb = obj.plant.body;
             for i = 1:numel(rb)
@@ -781,22 +802,23 @@ classdef VariationalTrajectoryOptimization_Neel < DirectTrajectoryOptimization
             end
             
             % Damping at the kinematic loops
-%             fdloop = zeros(nQ, 1); 
-%             dfloop = zeros(nQ, 2*nQ); 
-%             if obj.nKL
-%                 rbl = obj.plant.loop; 
-%                 for i = 1:numel(rbl)
-%                     rbli = rbl(i);
-%                     [x, J, dJ] = rbli.computeLoopStateFun(obj.plant, q,v);
-%                     fdloop = fdloop - J(1,1:nQ)'*rbli.b*x(2); 
-%                     df_loop = -rbli.b*( dJ*x(2) + J(1,1:nQ)'*J(2, 1:nQ)); 
-%                 end
-%                 
-%             end
+            fdloop = zeros(nQ, 1); 
+            dfloop = zeros(nQ, 2*nQ); 
+            if obj.nKL
+                rbl = obj.plant.loop; 
+                for i = 1:numel(rbl)
+                    rbli = rbl(i);
+                    [x, J, dJ] = rbli.computeLoopStateFun(obj.plant, q,v);
+                    fdloop = fdloop + J(1,1:nQ)'*rbli.b*x(2); 
+                    dfloop = dfloop + rbli.b*[dJ'*x(2) + J(1,1:nQ)'*J(2, 1:nQ), ... d/dq
+                        J(1,1:nQ)'*J(2,nQ+1:2*nQ)]; %d/dv
+                end
+                
+            end
 %             fdloop
             
-            fdamp = -diag(xx(nQ+1:end))*v; % + fdloop;
-            dfdamp = -diag(xx(nQ+1:end)); % + dfloop; 
+            fdamp = -diag(xx(nQ+1:end))*v + fdloop;
+            dfdamp = [zeros(nQ, nQ), -diag(xx(nQ+1:end))] + dfloop; 
             
             
         end

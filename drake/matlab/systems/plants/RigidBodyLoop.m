@@ -78,7 +78,7 @@ classdef RigidBodyLoop < RigidBodyElement
                 [x, J, ~] = obj.computeLoopStateFun(manip, q, qd);                
                
                 x1to2 = x(1);
-                disp(rad2deg(x1to2)); 
+%                 disp(rad2deg(x1to2)); 
                 dtht_dq = J(1, 1:nq);
                 
                 v1to2 = x(2);
@@ -87,8 +87,8 @@ classdef RigidBodyLoop < RigidBodyElement
                 
                 torque = obj.k*x1to2 + obj.b*v1to2;
                 
-                dtorque_dq = obj.k*dtht_dq + obj.b*dthtd_dq;
-                dtorque_dqd = obj.b*dthtd_dqd;
+                dtorque_dq = -obj.k*dtht_dq - obj.b*dthtd_dq;
+                dtorque_dqd = -obj.b*dthtd_dqd;
                 
                 wrench_on_child_in_child_frame = [obj.axis*torque;zeros(3,1)];
                 f_ext(:,child_body) =  wrench_on_child_in_child_frame;
@@ -221,7 +221,7 @@ classdef RigidBodyLoop < RigidBodyElement
             parent_body = manip.getFrame(obj.frameA).body_ind;
             child_body = manip.getFrame(obj.frameB).body_ind;
             
-            kinopt.base_or_frame_id = parent_body;      % first link in chain
+%             kinopt.base_or_frame_id = parent_body;      % first link in chain
             kinopt.rotation_type = 1;                   % we want euler angles
             
             
@@ -232,7 +232,7 @@ classdef RigidBodyLoop < RigidBodyElement
             
             %             nq = size(q, 1);
             kinsol = doKinematics(manip,q,qd,struct('compute_gradients', true));
-            [tht, J, dJ] = manip.forwardKin(kinsol,child_body,zeros(3,1), kinopt);
+            [tht, J, dJ] = manip.forwardKin(kinsol,parent_body,zeros(3,1), kinopt);
             dJ = reshape(dJ(axis_ind, :)', nq, nq)'; 
             
             tht = tht(axis_ind);

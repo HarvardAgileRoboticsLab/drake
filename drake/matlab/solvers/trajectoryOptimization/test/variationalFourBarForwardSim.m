@@ -98,10 +98,10 @@ end
 xtraj = PPTrajectory(foh(t, [q; v])); 
 
 % PLAYBACK
-% qtraj = PPTrajectory(foh(t, q)); 
-% vis = plant.constructVisualizer();
-% qtraj = qtraj.setOutputFrame(vis.getInputFrame); 
-% vis.playback(qtraj, struct('slider', true))
+qtraj = PPTrajectory(foh(t, q)); 
+vis = plant.constructVisualizer();
+qtraj = qtraj.setOutputFrame(vis.getInputFrame); 
+vis.playback(qtraj, struct('slider', true))
 
 figure(1); clf; 
 for i=1:size(q, 1)  
