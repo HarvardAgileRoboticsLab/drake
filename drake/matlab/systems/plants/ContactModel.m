@@ -1,5 +1,5 @@
 classdef ContactModel
     enumeration
-        TrinkleLCP, TodorovConvexLinear, TodorovConvexSOC
+        TrinkleLCP, TrinkleSOC, TodorovConvexLinear, TodorovConvexSOC
     end
 end

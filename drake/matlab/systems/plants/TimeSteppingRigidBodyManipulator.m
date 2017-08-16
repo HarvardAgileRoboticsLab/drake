@@ -14,6 +14,8 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
   
   properties (Dependent)
       update_convex;
+      N_lambda;
+      N_eta;
   end
   
   properties (Access=protected)
@@ -138,6 +140,23 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         else
             warning('The contact_model is likely out of sync. Defaulting to Trinkle LCP dynamics.u');
             obj.contact_model = 0;
+        end
+    end
+    
+    function val = get.N_lambda(obj)
+        val = obj.getNumContactPairs;    
+    end
+    
+    function val = get.N_eta(obj)
+        switch obj.contact_model
+            case ContactModel.TrinkleLCP
+                val = 4*obj.N_lambda;
+            case ContactModel.TrinkleSOC
+                val = obj.N_lambda;
+            case {ContactModel.TodorovConvexLinear, ContactModel.TodorovConvexSOC}
+                val = 0;
+            otherwise
+                error('Contact Model not currently supported')
         end
     end
 
@@ -322,8 +341,10 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
               [xdn,df,z] = updateConvexSOC(obj,t,x,u);
           case ContactModel.TrinkleLCP
               [xdn,df,z] = updateTrinkleLCP(obj,t,x,u,w_idx,w,compute_gradients);
+          case ContactModel.TrinkleSOC
+              error('Second order cone complementarity update function is not implemented');
           otherwise
-              error('Invalid Contact Model')
+              error('Invalid Contact Model');
       end
     end
     
@@ -333,7 +354,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       
     end
     
-    function [xdn,df,f] = updateConvexLinear(obj,~,x,u,w)
+    function [xdn,df,z] = updateConvexLinear(obj,~,x,u,w)
       % this function implement an update based on Todorov 2011, where
       % instead of solving the full SOCP, we make use of polyhedral
       % friction cone approximations and solve a QP.
@@ -571,6 +592,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       
       xdn = [qn;vn];
       df =[];
+      z = f/h; % convert the impulse into a force
     end
 
     function [xdn, df, z] = updateConvexSOC(obj,t,x,u)
