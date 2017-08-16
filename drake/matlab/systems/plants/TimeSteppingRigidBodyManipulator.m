@@ -6,7 +6,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
   properties
       % 0 -> Trinkle LCP dynamics
       % 1 -> Todorov Smooth Convex dynamics
-      contact_model = ContactModel.TrinkleLCP; 
+      contact_model = ContactModel.TodorovConvexSOC; 
       phi_max = 0.1; % m, max contact force distance
       active_threshold = 0.1; % height below which contact forces are calculated
       contact_threshold = 1e-3; % threshold where force penalties are eliminated (modulo regularization)
@@ -596,7 +596,205 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     end
 
     function [xdn, df, z] = updateConvexSOC(obj,t,x,u)
-        error('Not Implemented');
+      % this function implement an update based on Todorov 2011
+            
+      % q_{k+1} = q_{k} + qd_{k+1}*h;
+      % qd_{k+1} = qd_{k} + H^{-1}*(B*u-C)*h + J'*f;
+  
+      dim = 3;
+      h = obj.timestep;
+
+      num_q = obj.manip.getNumPositions;
+      q=x(1:num_q); 
+      v=x(num_q+(1:obj.manip.getNumVelocities));
+
+      kinsol = doKinematics(obj, q);
+      vToqdot = obj.manip.vToqdot(kinsol);
+      
+      [H,C,B] = manipulatorDynamics(obj.manip,q,v);
+
+      [phiC,normal,V,n,xA,xB,idxA,idxB] = getContactTerms(obj,q,kinsol);
+      num_c = length(phiC);
+    
+      active = find(phiC + h*n*vToqdot*v < obj.active_threshold);
+      phiC = phiC(active);
+      normal = normal(:,active);
+
+      Apts = xA(:,active);
+      Bpts = xB(:,active);
+      Aidx = idxA(active);
+      Bidx = idxB(active);
+
+      JA = [];
+      world_pts = [];
+      for i=1:length(Aidx)
+        [pp,J_] = forwardKin(obj.manip,kinsol,Aidx(i),Apts(:,i));
+        JA = [JA; J_];
+        world_pts = [world_pts, pp];
+      end
+
+      JB = [];
+      for i=1:length(Bidx)
+        [~,J_] = forwardKin(obj.manip,kinsol,Bidx(i),Bpts(:,i));
+        JB = [JB; J_];
+      end
+      
+      J = JA-JB;
+      
+      [phiL,JL] = obj.manip.jointLimitConstraints(q);
+      possible_limit_indices = (phiL + h*JL*vToqdot*v) < obj.active_threshold;
+      nL = sum(possible_limit_indices);
+      JL = JL(possible_limit_indices,:);
+      
+      J = [J;JL];
+      phiL = phiL(possible_limit_indices);
+      phi = [phiC;phiL];
+      
+      if isempty(active)
+        vn = v + H\(B*u-C)*h;
+        qdn = vToqdot*vn;
+        qn = q + qdn*h;
+        f = [];
+
+      else
+        num_active = length(active);
+        num_f = num_active*3; % NOTE: not supporting planar systems for now
+        
+        v_min = zeros(length(phi),1);
+        for i=1:length(phi)
+          v_min(i) =-phi(i)/h;
+        end
+                
+        Hinv = inv(H);
+        A = J*vToqdot*Hinv*vToqdot'*J';
+        c = J*vToqdot*v + J*vToqdot*Hinv*(B*u-C)*h;
+
+        % contact smoothing matrix
+        R_min = 1e-1; 
+        R_max = 1e4;
+        r = zeros(num_active,1);
+        r(phiC>=obj.phi_max) = R_max;
+        r(phiC<=obj.contact_threshold) = R_min;
+        ind = (phiC > obj.contact_threshold) & (phiC < obj.phi_max);
+        y = (phiC(ind)-obj.contact_threshold)./(obj.phi_max - obj.contact_threshold)*2 - 1; % scale between -1,1
+        r(ind) = R_min + R_max./(1+exp(-10*y));
+        r = repmat(r,1,dim)';
+%         R = diag([r(:)',r(:)']);
+        R = diag(r(:));
+
+        % joint limit smoothing matrix
+        W_min = 1e-3; 
+        W_max = 1e3;
+        w = zeros(nL,1);
+        w(phiL>=obj.phi_max) = W_max;
+        w(phiL<=obj.contact_threshold) = W_min;
+        ind = (phiL > obj.contact_threshold) & (phiL < obj.phi_max);
+        y = (phiL(ind)-obj.contact_threshold)./(obj.phi_max - obj.contact_threshold)*2 - 1; % scale between -1,1
+        w(ind) = W_min + W_max./(1+exp(-10*y));
+        W = diag(w(:));
+        
+        R = blkdiag(R,W);
+        
+        num_params = 2*num_f+nL;
+                
+        Q = 0.5*(A+R) + 1e-8*eye(num_f+nL);
+        
+        % N*(A*z + c) - v_min \ge 0
+        Ain = zeros(num_active+nL,num_params);
+        bin = zeros(num_active+nL,1);
+
+        Tf = zeros(num_f,num_f); % this matrix maps world x,y,z contact forces to [normal,t1,t2] coordinates 
+        z = [0;0;1];
+        Rx = rotx(-pi/2);
+        Ry = rotx(-pi/2);
+        for i=1:num_active
+          idx = (i-1)*dim + (1:dim);
+          Ain(i,1:(num_f+nL)) = normal(:,i)'*A(idx,:);
+          bin(i) = v_min(i) - normal(:,i)'*c(idx);
+          
+          % compute transformation from fx,fy,fz to fn,ft1,ft2
+          Tf(idx(1),idx) = normal(:,i)'; % fn
+
+          % TODO: need to handle the opposing normals case
+          vv = cross(normal(:,i),z);
+          s = norm(vv);
+          ct = normal(:,i)'*z;
+          Vs = [0 -vv(3) vv(2); vv(3) 0 -vv(1); -vv(2) vv(1) 0];
+          R = eye(3) + Vs + Vs^2 * (1-ct)/s^2;
+
+          t1 = R'*Rx*R*normal(:,i);
+          t2 = R'*Ry*R*normal(:,i);
+            if any(isnan(t1)) ||  any(isnan(t2))
+                keyboard
+            end
+          Tf(idx(2),idx) = t1'; % ft1
+          Tf(idx(3),idx) = t2'; % ft2
+        end
+        for i=1:nL
+          idx = num_active*dim + i;
+          Ain(i+num_active,:) = A(idx,:)*V;
+          bin(i+num_active) = v_min(i+num_active) - c(idx);
+        end
+
+        mu = 1.0; % TODO: don't hard code
+        % Add second-order cone: mu*f_n >= ||f_t1 + f_t2|| 
+        % we have to annoyingly introduce new variables to handle
+        % transformations in the cone constraints
+        fn_idx = num_f + nL + (1:3:num_f);
+        ft1_idx = num_f + nL + (2:3:num_f);
+        ft2_idx = num_f + nL + (3:3:num_f);
+        
+        % assume variables are now fc,fL,fcT
+        If = zeros(num_f,num_params); If(:,1:num_f) = eye(num_f);
+        IfT = zeros(num_f,num_params); IfT(:,num_f+nL+(1:num_f)) = eye(num_f);
+ 
+        Aeq = Tf*If - IfT;
+        beq = zeros(num_f,1);
+  
+        for jj=1:num_active
+          model.cones(jj).index = [fn_idx(jj) ft1_idx(jj) ft2_idx(jj)];
+        end
+        gurobi_options.outputflag = 0; % verbose flag
+        gurobi_options.method = 1; % -1=automatic, 0=primal simplex, 1=dual simplex, 2=barrier
+        try
+          model.Q = sparse(blkdiag(Q,zeros(num_f)));
+          model.obj = [c;zeros(num_f,1)];
+          model.A = sparse([Ain;Aeq]);
+          model.rhs = [bin;beq];
+          model.sense = [repmat('>',length(bin),1); repmat('=',length(beq),1)];
+          model.lb = [-inf(num_f,1); zeros(nL,1); -inf(num_f,1)];
+          result = gurobi(model,gurobi_options);
+          result_qp = result.x;
+        catch e
+          keyboard
+        end
+        
+        f = result_qp(1:(num_f+nL));
+        
+        vn = v + Hinv*((B*u-C)*h + vToqdot'*J'*f);
+        qdn = vToqdot*vn;
+        qn = q + qdn*h;
+
+      end
+      
+      % Find quaternion indices
+      quat_bodies = obj.manip.body([obj.manip.body.floating] == 2);      
+      quat_positions = [quat_bodies.position_num];
+      for i=1:size(quat_positions,2)
+        quat_dot = qdn(quat_positions(4:7,i));
+        if norm(quat_dot) > 0 
+          % Update quaternion by following geodesic
+          qn(quat_positions(4:7,i)) = q(quat_positions(4:7,i)) + quat_dot/norm(quat_dot)*tan(norm(h*quat_dot));
+          qn(quat_positions(4:7,i)) = qn(quat_positions(4:7,i))/norm(qn(quat_positions(4:7,i)));
+        end
+      end
+      
+      
+      xdn = [qn;vn];
+      df =[];
+      z = f/h; % convert the impulse into a force
+
+
     end
     
     function [xdn,df,z] = updateTrinkleLCP(obj,t,x,u,w_idx,w,compute_gradients)
