@@ -55,8 +55,8 @@ toc
 % traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
 % traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
 
-v = constructVisualizer(plant);
-v.playback(xtraj, struct('slider', true));
+% v = constructVisualizer(plant);
+% v.playback(xtraj, struct('slider', true));
 
 dt = tf/N; 
 ts = sim_traj.getBreaks();
@@ -66,21 +66,21 @@ xx_mid = xtraj.eval(tt + dt/2); vv = xx_mid(nq+1:end, :);
 xx = [qq; vv];
 xs = sim_traj.eval(ts);
 
-rms_err = rms(xx(:,1:end-1) - [interp1(ts', xs(1:3,:)', tt(1:end-1)'), ...
-    interp1(ts', xs(4:6,:)', tt(1:end-1)+dt/2', 'linear', 'extrap')]',2);
+rms_err = rms(xx(:,1:end-1) - [interp1(ts', xs(1:nq,:)', tt(1:end-1)'), ...
+    interp1(ts', xs(nq+1:2*nq,:)', tt(1:end-1)+dt/2', 'linear', 'extrap')]',2);
 disp(rms_err);
 % save(['rms_err_', num2str(N)], 'dt', 'rms_err');
 
-figure(1); clf;
+figure(2); clf;
 for i=1:size(xs, 1)
   subplot(2,size(xs,1)/2,i);
   if i <= nq
-    plot(tt,xx(i,:),'b');
+    plot(tt,rad2deg(xx(i,:)),'b');
   else
-      plot(tt + dt/2, xx(i,:), 'b');
+      plot(tt + dt/2, rad2deg(xx(i,:)), 'b');
   end
   hold on;
-  plot(ts,xs(i,:),'r--');
+  plot(ts,rad2deg(xs(i,:)),'r--');
   hold off;
   legend('TrajOpt', 'TimeStepping')
 end

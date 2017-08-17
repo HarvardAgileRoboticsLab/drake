@@ -5,13 +5,13 @@ if nargin<1
     options.floating = false;
     options.use_bullet = false;
     file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits.urdf');
-    plant = RigidBodyManipulator(file,options);    
+    plant = VariationalFourBarPlant(file,options);    
 end
 if nargin < 2
     N=21;
 end
 if nargin<3
-    q0 = [4*pi/5; pi/5; 4*pi/5]; %pi/4*ones(3,1);
+    q0 = [4*pi/5; pi/5; 4*pi/5' pi/5]; %pi/4*ones(3,1);
     v0 = 0*q0; 
     valuecheck(positionConstraints(plant, q0), zeros(6,1), 1e-4);
     x0 = [q0;v0];
@@ -27,20 +27,22 @@ h = tf/(N-1);
 t = 0:h:tf;
 
 % parameters to pass to initializer
-q0 = z0(1:3); v0 = z0(4:6); 
+nQ = plant.getNumPositions(); 
+nKL = 6*plant.getNumStateConstraints()-3; 
+q0 = z0(1:nQ); v0 = z0(nQ+1:end); 
 init_params.plant = plant;
 init_params.angle_inds = angle_inds;
 init_params.h = h;
 init_params.q0 = q0;
 init_params.v0 = v0;
 
-q = zeros(3, N); q(:,1) = q0; 
-kl = zeros(2,N);
+q = zeros(nQ, N); q(:,1) = q0; 
+kl = zeros(nKL,N);
 
 % Initial guesses
 % kl0 = rand(2,1);
-kl0 = [-1.5864; 5.4613];
-q1 = q0+0.1*rand(3,1);
+kl0 = 0.1*rand(nKL,1);
+q1 = q0+0.1*rand(nQ,1);
 zk = [q1; kl0];
 [fk, dfk] = initializeDyn(zk, init_params);
 
@@ -53,8 +55,8 @@ while(norm(fk,2) > 1e-6)
 end
 fprintf('Cond dF: %s at time %d \r ', cond(dfk), t(2)); 
 
-q(:,2) = zk(1:3);
-kl(:,2) = zk(4:5);
+q(:,2) = zk(1:nQ);
+kl(:,2) = zk(nQ+1:nQ+nKL);
 
 
 %% Simulate forward
@@ -78,8 +80,8 @@ for k = 3:N
         
     end
     fprintf('Cond dF: %s at time %d \r', cond(dfk), t(k));
-    q(:,k) = zk(1:3);
-    kl(:,k) = zk(4:5);
+    q(:,k) = zk(1:nQ);
+    kl(:,k) = zk(nQ+1:nQ+nKL);
     
 end
 
@@ -91,17 +93,17 @@ qs = sim_traj.eval(ts);
 % qs_interp = interp1(sim_traj.getBreaks(), qs(1:3,:), t);  
 
 
-v = zeros(3, N);
+v = zeros(nQ, N);
 for i = 1:N-1
     v(:,i) = qdiff(params, q(:,i), q(:,i+1), h);
 end
 xtraj = PPTrajectory(foh(t, [q; v])); 
 
 % PLAYBACK
-qtraj = PPTrajectory(foh(t, q)); 
-vis = plant.constructVisualizer();
-qtraj = qtraj.setOutputFrame(vis.getInputFrame); 
-vis.playback(qtraj, struct('slider', true))
+% qtraj = PPTrajectory(foh(t, q)); 
+% vis = plant.constructVisualizer();
+% qtraj = qtraj.setOutputFrame(vis.getInputFrame); 
+% vis.playback(qtraj, struct('slider', true))
 
 figure(1); clf; 
 for i=1:size(q, 1)  

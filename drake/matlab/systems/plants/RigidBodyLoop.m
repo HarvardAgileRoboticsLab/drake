@@ -222,7 +222,7 @@ classdef RigidBodyLoop < RigidBodyElement
             child_body = manip.getFrame(obj.frameB).body_ind;
             
 %             kinopt.base_or_frame_id = parent_body;      % first link in chain
-            kinopt.rotation_type = 1;                   % we want euler angles
+            kinopt.rotation_type = 2;                   % we want euler angles
             
             
             axis_ind = find(obj.axis ~=0)+3;
@@ -232,7 +232,8 @@ classdef RigidBodyLoop < RigidBodyElement
             
             %             nq = size(q, 1);
             kinsol = doKinematics(manip,q,qd,struct('compute_gradients', true));
-            [tht, J, dJ] = manip.forwardKin(kinsol,parent_body,zeros(3,1), kinopt);
+            [temp, J, dJ] = manip.forwardKin(kinsol,parent_body,zeros(3,1), kinopt);
+%             disp(tht)
             dJ = reshape(dJ(axis_ind, :)', nq, nq)'; 
             
             tht = tht(axis_ind);
@@ -243,7 +244,6 @@ classdef RigidBodyLoop < RigidBodyElement
             
             x = [tht; thtd];
             J = [J(axis_ind,:), zeros(1, nq); dthtd_dq, dthtd_dqd];
-
             
         end
     end
