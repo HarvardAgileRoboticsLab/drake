@@ -11,7 +11,7 @@ if nargin < 2
     N=21;
 end
 if nargin<3
-    q0 = [4*pi/5; pi/5; 4*pi/5' pi/5]; %pi/4*ones(3,1);
+    q0 = [4*pi/5; pi/5; 4*pi/5]; %pi/4*ones(3,1);
     v0 = 0*q0; 
     valuecheck(positionConstraints(plant, q0), zeros(6,1), 1e-4);
     x0 = [q0;v0];
@@ -28,13 +28,15 @@ t = 0:h:tf;
 
 % parameters to pass to initializer
 nQ = plant.getNumPositions(); 
-nKL = 6*plant.getNumStateConstraints()-3; 
+nKL = plant.getNumStateConstraints()-3; 
 q0 = z0(1:nQ); v0 = z0(nQ+1:end); 
 init_params.plant = plant;
 init_params.angle_inds = angle_inds;
 init_params.h = h;
 init_params.q0 = q0;
 init_params.v0 = v0;
+init_params.nKL = nKL; 
+init_params.good_ind = [1; 3; 5]; 
 
 q = zeros(nQ, N); q(:,1) = q0; 
 kl = zeros(nKL,N);
@@ -63,6 +65,8 @@ kl(:,2) = zk(nQ+1:nQ+nKL);
 params.plant = plant;
 params.angle_inds = angle_inds;
 params.h = h;
+params.nKL = nKL; 
+params.good_ind = init_params.good_ind; 
 % k = 3;
 for k = 3:N
     params.q1 = q(:,k-2);

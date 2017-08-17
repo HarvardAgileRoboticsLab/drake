@@ -7,12 +7,11 @@ q1 = params.q1;
 q2 = params.q2;
 kl1 = params.kl1;
 
-nKL = 6*plant.getNumStateConstraints()-3;  % NDD: constraint forces
+nKL = params.nKL;  % NDD: constraint forces
 nQ = plant.getNumPositions();
 
 q3 = zin(1:nQ);
 kl2 = zin(nQ+(1:nKL));
-
 
 %Take care of angle wrap-around
 qm1 = qavg(params,q1,q2);
@@ -33,7 +32,7 @@ df_del = [(h2/2)*((1/2)*D1D1L2+(1/h2)*D1D2L2') - (1/2)*D1D2L2 - (1/h2)*D2D2L2, .
 [fdamp2, dfdamp2] = computeDampingForcesFun(plant, vm2);
 
 %NDD: closed chains
-good_inds = [1;3; 5];
+good_inds = params.good_ind;
 [~, dKC1, ~] = plant.positionConstraints(qm1);
 [~, dKC2, dKCdqm2] = plant.positionConstraints(qm2);
 

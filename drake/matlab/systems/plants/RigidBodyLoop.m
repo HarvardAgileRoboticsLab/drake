@@ -232,7 +232,7 @@ classdef RigidBodyLoop < RigidBodyElement
             
             %             nq = size(q, 1);
             kinsol = doKinematics(manip,q,qd,struct('compute_gradients', true));
-            [temp, J, dJ] = manip.forwardKin(kinsol,parent_body,zeros(3,1), kinopt);
+            [tht, J, dJ] = manip.forwardKin(kinsol,parent_body,zeros(3,1), kinopt);
 %             disp(tht)
             dJ = reshape(dJ(axis_ind, :)', nq, nq)'; 
             

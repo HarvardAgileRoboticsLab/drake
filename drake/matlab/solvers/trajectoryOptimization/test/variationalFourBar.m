@@ -34,7 +34,7 @@ sim_traj = plant.simulate([0,tf], x0);
 options.s_weight = 10;
 nq = plant.getNumPositions;
 
-traj_opt = VariationalTrajectoryOptimization_Neel(plant,N,tf,options);
+traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1:nq)),1);
 traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(x0(nq+(1:nq))),1);
 

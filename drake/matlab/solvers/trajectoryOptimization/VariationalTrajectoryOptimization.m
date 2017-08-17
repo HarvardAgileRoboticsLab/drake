@@ -35,7 +35,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                 options.active_collision_options.terrain_only = true;
             end
             if ~isfield(options,'integration_method')
-                options.integration_method = VariationalTrajectoryOptimization_Neel.MIDPOINT;
+                options.integration_method = VariationalTrajectoryOptimization.MIDPOINT;
             end
             if ~isfield(options,'multiple_contacts')
                 options.multiple_contacts = false;
@@ -61,9 +61,9 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         
         function obj = setupVariables(obj, N)
             switch obj.options.integration_method
-                case VariationalTrajectoryOptimization_Neel.MIDPOINT
+                case VariationalTrajectoryOptimization.MIDPOINT
                     
-                    obj.integration_method = VariationalTrajectoryOptimization_Neel.MIDPOINT;
+                    obj.integration_method = VariationalTrajectoryOptimization.MIDPOINT;
                     
                     [phi,~,d] = obj.plant.contactConstraints(getZeroConfiguration(obj.plant), ...
                         obj.options.multiple_contacts, obj.options.active_collision_options);
@@ -146,8 +146,8 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                     
                     obj = obj.addDecisionVariable(num_vars,x_names);
                     
-                case VariationalTrajectoryOptimization_Neel.SIMPSON
-                    obj.IntegrationMethod = VariationalTrajectoryOptimization_Neel.SIMPSON;
+                case VariationalTrajectoryOptimization.SIMPSON
+                    obj.IntegrationMethod = VariationalTrajectoryOptimization.SIMPSON;
                     
                     
             end
@@ -166,7 +166,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             assert(nQ == nV) % can't handle quaternions yet
             
             switch obj.integration_method
-                case VariationalTrajectoryOptimization_Neel.MIDPOINT
+                case VariationalTrajectoryOptimization.MIDPOINT
                     
                     cnstr_opts.grad_level = 1;
                     cnstr_opts.grad_method = 'user';
@@ -281,7 +281,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         obj = obj.addConstraint(dyn_constraints{i}, dyn_inds{i});
                     end
                     
-                case VariationalTrajectoryOptimization_Neel.SIMPSON
+                case VariationalTrajectoryOptimization.SIMPSON
                     
             end
             
@@ -346,13 +346,13 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             nQ = obj.plant.getNumPositions();
             nU = obj.plant.getNumInputs();
             switch obj.integration_method
-                case VariationalTrajectoryOptimization_Neel.MIDPOINT
+                case VariationalTrajectoryOptimization.MIDPOINT
                     for i = 1:obj.N-1
                         running_cost = FunctionHandleObjective(1+2*nQ+nU, @(h,q1,q2,u)midpoint_running_fun(obj,running_cost_function,h,q1,q2,u));
                         inds_i = {obj.h_inds(i); obj.x_inds(:,i); obj.x_inds(:,i+1); obj.u_inds(:,i)};
                         obj = obj.addCost(running_cost,inds_i);
                     end
-                case VariationalTrajectoryOptimization_Neel.SIMPSON
+                case VariationalTrajectoryOptimization.SIMPSON
                     
             end
 
@@ -361,13 +361,13 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         function obj = addNormalForceCost(obj,cost_function)
             nC = obj.nC;
             switch obj.integration_method
-                case VariationalTrajectoryOptimization_Neel.MIDPOINT
+                case VariationalTrajectoryOptimization.MIDPOINT
                     for i = 1:obj.N-1
                         contact_cost = FunctionHandleObjective(nC, @(c)cost_function(c));
                         inds = {obj.c_inds(:,i)};
                         obj = obj.addCost(contact_cost,inds);
                     end
-                case VariationalTrajectoryOptimization_Neel.SIMPSON
+                case VariationalTrajectoryOptimization.SIMPSON
             end
         end
         
@@ -378,11 +378,11 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         function obj = addFinalCost(obj,final_cost_function)
             nQ = obj.plant.getNumPositions();
             switch obj.integration_method
-                case VariationalTrajectoryOptimization_Neel.MIDPOINT
+                case VariationalTrajectoryOptimization.MIDPOINT
                     final_cost = FunctionHandleObjective(2+2*nQ, @(h,q1,q2)midpoint_final_fun(obj,final_cost_function,h,q1,q2));
                     inds_i = {obj.h_inds(:); obj.x_inds(:,end-1); obj.x_inds(:,end)};
                     obj = obj.addCost(final_cost,inds_i);
-                case VariationalTrajectoryOptimization_Neel.SIMPSON
+                case VariationalTrajectoryOptimization.SIMPSON
                     
             end
         end
@@ -929,7 +929,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             x = reshape(z(obj.x_inds),[],obj.N);
             
             switch obj.integration_method
-                case VariationalTrajectoryOptimization_Neel.MIDPOINT
+                case VariationalTrajectoryOptimization.MIDPOINT
                     
                     q = x(1:nQ,:);
                     qtraj = PPTrajectory(foh(t,q));
@@ -971,7 +971,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                     %
                     %                     vtraj = PPTrajectory(foh(t,v));
                     
-                case VariationalTrajectoryOptimization_Neel.SIMPSON
+                case VariationalTrajectoryOptimization.SIMPSON
                     
             end
             
@@ -983,12 +983,12 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             if size(obj.u_inds,1) > 0
                 nU = obj.plant.getNumInputs();
                 switch obj.integration_method
-                    case VariationalTrajectoryOptimization_Neel.MIDPOINT
+                    case VariationalTrajectoryOptimization.MIDPOINT
                         t = [0; cumsum(z(obj.h_inds))];
                         u = [reshape(z(obj.u_inds),[],obj.N-1), zeros(nU,1)]; %zoh (correctly in this case) ignores the last entry in v
                         utraj = PPTrajectory(zoh(t,u));
                         utraj = utraj.setOutputFrame(obj.plant.getInputFrame);
-                    case VariationalTrajectoryOptimization_Neel.SIMPSON
+                    case VariationalTrajectoryOptimization.SIMPSON
                         
                 end
             else

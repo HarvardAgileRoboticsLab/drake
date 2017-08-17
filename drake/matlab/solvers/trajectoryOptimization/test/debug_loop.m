@@ -3,7 +3,7 @@ clear; clc; close all;
 % Plant
 options.floating = false;
 options.use_bullet = false;
-file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits.urdf');
+file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits4DOF.urdf');
 plant = VariationalFourBarPlant(file, options);
 plant = compile(plant);
 
@@ -54,9 +54,9 @@ for i=1:size(kllopt, 1)
     if i == 2
         plot(kl(2,1:end), 'b');
     end
-    if i == 3
-        plot(kl(3,1:end), 'b');
-    end
+%     if i == 3
+%         plot(kl(3,1:end), 'b');
+%     end
     plot(kllopt(i,1:end), 'r--');
     hold off;
     legend('MidpointRule', 'TrajOpt')

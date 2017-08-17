@@ -6,7 +6,7 @@ h = params.h;
 q0 = params.q0;
 v0 = params.v0;
 
-nKL = 6*plant.getNumStateConstraints()-3;  % NDD: constraint forces
+nKL = params.nKL;  % NDD: constraint forces
 nQ = plant.getNumPositions();
 
 q1 = zin(1:nQ);
@@ -29,7 +29,7 @@ df_del = [(h/4)*D1D1L + (1/2)*D1D2L' - (1/2)*D1D2L - (1/h)*D2D2L, ... % d/dq1
 [fdamp, dfdamp] = computeDampingForcesFun(plant, vm);
 
 %NDD: closed chains
-good_inds = [1;3;5]; %; 3; 5];
+good_inds = params.good_ind; %; 3; 5];
 [~, dKC, dKCdqm] = plant.positionConstraints(qm);
 % KC = KC(good_inds);
 dKC = dKC(good_inds, :);

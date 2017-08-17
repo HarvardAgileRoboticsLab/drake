@@ -24,8 +24,8 @@ classdef VariationalFourBarPlant< RigidBodyManipulator
             cnstr_opts.grad_level = 2;
             cnstr_opts.grad_method = 'user';
             
-            klconst = FunctionHandleConstraint(6*zeros(obj.nKL, 1), ...
-                6*zeros(obj.nKL, 1), klvars, @obj.kl_const_fun, cnstr_opts);
+            klconst = FunctionHandleConstraint(zeros(6*obj.nKL, 1), ...
+                zeros(6*obj.nKL, 1), klvars, @obj.kl_const_fun, cnstr_opts);
             obj = obj.addPositionEqualityConstraint(klconst, 1:4);  
             
         end
