@@ -33,7 +33,7 @@ classdef FoamyPlant < DrakeSystem
             y = x;
         end
         
-        function [xtraj,utraj]=runDircol(obj,display)
+        function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
             [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 7 m/s
@@ -142,6 +142,10 @@ classdef FoamyPlant < DrakeSystem
             x(5) = 1; %Quaternion - plane oriented right-side up
         end
         
+        function q = getZeroConfiguration(obj)
+            q = zeros(7,1);
+            q(5) = 1; %Quaternion - plane oriented right-side up
+        end
     end
     
 end

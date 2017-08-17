@@ -100,9 +100,9 @@ end
 
 function x1 = rkstep(x0,u0,dt)
     %Single step of the 3rd order Runge-Kutta method
-    xdot1 = foamy_dynamics(0,x0,u0);
-    xdot2 = foamy_dynamics(0,x0+.5*dt*xdot1,u0);
-    xdot3 = foamy_dynamics(0,x0-dt*xdot1+2*dt*xdot2,u0);
+    xdot1 = foamy_dynamics_mex(0,x0,u0);
+    xdot2 = foamy_dynamics_mex(0,x0+.5*dt*xdot1,u0);
+    xdot3 = foamy_dynamics_mex(0,x0-dt*xdot1+2*dt*xdot2,u0);
     x1 = x0 + (dt/6)*(xdot1 + 4*xdot2 + xdot3);
 end
 
