@@ -10,11 +10,19 @@ R = (1/10)^2*eye(4);
 
 [x0,u0,K,t] = foamy_tvlqr(p,Q,R,Qn,xtraj,utraj,ts);
 
+Qkf = (.001)^2*eye(12);
+Rkf = (.05)^2*eye(15);
+Phat = (.1)^2*eye(12);
+
 xtrue = zeros(13,length(xtraj)+1);
 xtrue(:,1) = x0(:,1) + .05*randn(13,1);
 xtrue(4:7,1) = xtrue(4:7,1)/norm(xtrue(4:7,1));
+xhat = x0(:,1);
 for k = 1:(length(t)-1);
-    xtrue(:,k+1) = rkstep(xtrue(:,k),foamy_controller(xtrue(:,k),x0(:,k),u0(:,k),K(:,:,k)),ts);
+    u = foamy_controller(xhat,x0(:,k),u0(:,k),K(:,:,k));
+    xtrue(:,k+1) = rkstep(xtrue(:,k),u,ts);
+    y = foamy_sensors(xtrue(:,k+1),u);
+    [xhat, Phat] = foamy_ukf(xhat,y,u,Phat,Qkf,Rkf,ts);
 end
 
 xsim = PPTrajectory(foh(t,xtrue));

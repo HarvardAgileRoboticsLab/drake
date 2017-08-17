@@ -2,18 +2,20 @@ function [xhat, Phat] = foamy_ukf(x,y,u,P,Q,R,ts)
 
 Nx = 12;
 Ny = 15;
-Np = 2*Nx; %Number of sigma points
+Np = Nx+2; %Number of sigma points
 w = 1/Np; %Sigma point weights
 
 %Make sure quaternion is normalized
 x(4:7) = x(4:7)/norm(x(4:7));
 
 %Generate sigma points
+S = simplex_points(Nx);
 L = chol(P,'lower');
-chi = zeros(Nx+1,Np);
-for j = 1:Nx
-    chi(:,j) = [x(1:3) + L(1:3,j); qmultiply(gtoq(L(4:6,j)),x(4:7)); x(8:13) + L(7:12,j)];
-    chi(:,Nx+j) = [x(1:3) - L(1:3,j); qmultiply(gtoq(-L(4:6,j)),x(4:7)); x(8:13) - L(7:12,j)];
+S = L*S;
+chi = zeros(Nx+1,Np+1);
+chi(:,1) = x;
+for j = 2:Np
+    chi(:,j) = [x(1:3) + S(1:3,j); qmultiply(gtoq(S(4:6,j)),x(4:7)); x(8:13) + S(7:12,j)];
 end
 
 %Propagate sigma points forward one time step
