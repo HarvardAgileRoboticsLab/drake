@@ -36,13 +36,13 @@ classdef FoamyPlant < DrakeSystem
         function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 7 m/s
-            x0(1) = -3;
+            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
+            x0(1) = -6;
             x0(3) = 1.5;
 
             % final conditions:
             xf = x0;
-            xf(1) = 3; %translated in x
+            xf(1) = 6; %translated in x
 
             tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
 
