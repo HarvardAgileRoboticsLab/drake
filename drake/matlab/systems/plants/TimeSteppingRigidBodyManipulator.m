@@ -536,7 +536,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             model.rhs = bin;
             model.sense = repmat('>',length(bin),1);
             model.lb = zeros(num_params,1);
-            model.ub = lambda_ub;
+%             model.ub = lambda_ub;
             result = gurobi(model,gurobi_options);
             result_qp = result.x;
           catch e
@@ -614,7 +614,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       [H,C,B] = manipulatorDynamics(obj.manip,q,v);
 
       [phiC,normal,V,n,xA,xB,idxA,idxB] = getContactTerms(obj,q,kinsol);
-      num_c = length(phiC);
     
       active = find(phiC + h*n*vToqdot*v < obj.active_threshold);
       phiC = phiC(active);
@@ -655,10 +654,9 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         qdn = vToqdot*vn;
         qn = q + qdn*h;
         f = [];
-
       else
         num_active = length(active);
-        num_f = num_active*3; % NOTE: not supporting planar systems for now
+        num_f = num_active*3; % TODO: add support for planar systems
         
         v_min = zeros(length(phi),1);
         for i=1:length(phi)
@@ -695,7 +693,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         
         R = blkdiag(R,W);
         
-        num_params = 2*num_f+nL;
+        num_params = 2*num_f+nL; % 2x num_f because cone constraints are handled in a stupid way by Gurobi
                 
         Q = 0.5*(A+R) + 1e-8*eye(num_f+nL);
         
@@ -706,7 +704,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         Tf = zeros(num_f,num_f); % this matrix maps world x,y,z contact forces to [normal,t1,t2] coordinates 
         z = [0;0;1];
         Rx = rotx(-pi/2);
-        Ry = rotx(-pi/2);
+        Ry = roty(pi/2);
         for i=1:num_active
           idx = (i-1)*dim + (1:dim);
           Ain(i,1:(num_f+nL)) = normal(:,i)'*A(idx,:);
@@ -715,18 +713,20 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
           % compute transformation from fx,fy,fz to fn,ft1,ft2
           Tf(idx(1),idx) = normal(:,i)'; % fn
 
-          % TODO: need to handle the opposing normals case
-          vv = cross(normal(:,i),z);
-          s = norm(vv);
-          ct = normal(:,i)'*z;
-          Vs = [0 -vv(3) vv(2); vv(3) 0 -vv(1); -vv(2) vv(1) 0];
-          R = eye(3) + Vs + Vs^2 * (1-ct)/s^2;
-
+          if all(normal(:,i) - [0;0;-1] < 1e-10)
+            R = rotx(pi);
+          else
+            vv = cross(normal(:,i),z);
+            s = norm(vv);
+            ct = normal(:,i)'*z;
+            Vs = [0 -vv(3) vv(2); vv(3) 0 -vv(1); -vv(2) vv(1) 0];
+            R = eye(3) + Vs + Vs^2 * (1-ct)/s^2;
+          end
           t1 = R'*Rx*R*normal(:,i);
           t2 = R'*Ry*R*normal(:,i);
-            if any(isnan(t1)) ||  any(isnan(t2))
-                keyboard
-            end
+          if any(isnan(t1)) ||  any(isnan(t2))
+              keyboard
+          end
           Tf(idx(2),idx) = t1'; % ft1
           Tf(idx(3),idx) = t2'; % ft2
         end
@@ -748,7 +748,11 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         If = zeros(num_f,num_params); If(:,1:num_f) = eye(num_f);
         IfT = zeros(num_f,num_params); IfT(:,num_f+nL+(1:num_f)) = eye(num_f);
  
-        Aeq = Tf*If - IfT;
+        Mu = diag([mu;1;1]);
+        Mu_cell = repmat({Mu}, 1, num_active);
+        Mu = blkdiag(Mu_cell{:});
+
+        Aeq = Mu*Tf*If - IfT;
         beq = zeros(num_f,1);
   
         for jj=1:num_active
@@ -771,6 +775,19 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         
         f = result_qp(1:(num_f+nL));
         
+        % check friction satisfied
+        fc = f(1:num_f);
+        fT = Tf*fc;
+        Mu = diag([mu;-1;-1]);
+        Mu_cell = repmat({Mu}, 1, num_active);
+        Mu = blkdiag(Mu_cell{:});
+     
+        try
+          assert(fT' * Mu * fT >=-1e-8);
+        catch          
+          keyboard
+        end
+        fc 
         vn = v + Hinv*((B*u-C)*h + vToqdot'*J'*f);
         qdn = vToqdot*vn;
         qn = q + qdn*h;
