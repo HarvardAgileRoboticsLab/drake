@@ -27,7 +27,7 @@ tf = 4;
 %% Simulates
 
 [q, kl] = variationalFourBarForwardSim(plant, N, x0, tf);
-[qopt,utraj,ctraj,btraj,psitraj,etatraj,jltraj, klopt] = variationalFourBar(plant, N, x0, tf);
+[qopt,utraj,ctraj,btraj,psitraj,etatraj,jltraj, klopt, straj] = variationalFourBar(plant, N, x0, tf);
 %%
 
 qsim = q.eval(q.getBreaks());
@@ -37,6 +37,9 @@ figure(3); clf;
 for i=1:size(q, 1)
     subplot(2,size(q,1)/2,i); hold on;
     plot(rad2deg(qsim(i,:)), 'b');
+    if i == 1
+        plot(rad2deg(10*pi/11)*ones(size(qsim(i,:))), 'k'); 
+    end
     plot(rad2deg(qqopt(i,:)), 'r--');
     hold off;
     legend('MidpointRule', 'TrajOpt')
@@ -54,9 +57,9 @@ for i=1:size(kllopt, 1)
     if i == 2
         plot(kl(2,1:end), 'b');
     end
-%     if i == 3
-%         plot(kl(3,1:end), 'b');
-%     end
+    if i == 3
+        plot(kl(3,1:end), 'b');
+    end
     plot(kllopt(i,1:end), 'r--');
     hold off;
     legend('MidpointRule', 'TrajOpt')

@@ -1,10 +1,10 @@
-function [xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj, kltraj]  ...
+function [xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj, kltraj, straj]  ...
     = variationalFourBar(plant,N,x0,tf,x_init)
 
 if nargin<1
     options.floating = false;
     options.use_bullet = false;
-    file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits.urdf');
+    file = fullfile(getDrakePath,'examples', 'SimpleFourBar4DOF', 'FourBar_JointLimits.urdf');
     plant = RigidBodyManipulator(file,options);    
 end
 if nargin < 2
@@ -31,22 +31,23 @@ t_init = linspace(0,tf,N);
 sim_traj = plant.simulate([0,tf], x0);
 % x0 = sim_traj.eval(0);
 
-options.s_weight = 10;
+options.s_weight = 100;
 nq = plant.getNumPositions;
 
 traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1:nq)),1);
 traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(x0(nq+(1:nq))),1);
 
+% traj_opt = traj_opt.setSolver('ipopt');
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
-traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-4);
-traj_opt = traj_opt.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-4);
-traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-4);
-traj_opt = traj_opt.setSolverOptions('snopt','constraint_err_tol',1e-4);
+traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','constraint_err_tol',1e-5);
 
 
 tic
-[xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj, kltraj] = traj_opt.solveTraj(t_init,traj_init);
+[xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj, kltraj, straj] = traj_opt.solveTraj(t_init,traj_init);
 toc
 
 % traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);

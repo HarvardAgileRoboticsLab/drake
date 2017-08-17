@@ -50,7 +50,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                 options.s_weight = 10;
             end
             if ~isfield(options, 'kl_weight')
-                options.kl_weight = 2; 
+                options.kl_weight = 0; 
             end
             if ~isfield(options,'add_ccost')
                 options.add_ccost = false;
@@ -85,7 +85,9 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                     nJL = sum(~isinf(-jl_min)) + sum(~isinf(jl_max));  
                     
                     %Kinemaitc loops
-                    [f, df] = obj.plant.positionConstraints(rand(nQ,1))
+%                     nKL = obj.plant.getNumStateConstraints();
+%                     obj.unique_const = 1:nKL; 
+                    [f, df] = obj.plant.positionConstraints(rand(nQ,1)); 
                     const_inds = 1:numel(f); 
                     obj.unique_const = const_inds(sum(abs(df),2) >= 1e-8);           
                     nKL = numel(obj.unique_const); 
@@ -191,7 +193,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                     kloop_inds = cell(N, 1); 
                     kloop_constraints = cell(N,1);                                       
                     
-                    nvars1 = 2+3*nQ+2*nU+nC+nD*nC+nJL+2*nKL;        % NDD: joint limit forces and position constraints
+                    nvars1 = 2+3*nQ+2*nU+nC+nD*nC+nJL+nKL;        % NDD: joint limit forces and position constraints
                     cnstr1 = FunctionHandleConstraint(zeros(nQ,1), zeros(nQ,1), ...
                         nvars1, @obj.midpoint_dynamics_constraint_fun, cnstr_opts);
                     
@@ -260,7 +262,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                             kloop_constraints{i} = cnstr7.setName(sprintf('kinematicloop[%d]',i));
                             obj = obj.addConstraint(kloop_constraints{i}, kloop_inds{i});
                         end
-                        for i = 1:N-1
+                        for i = 1:N-2
                             obj = obj.addCost(FunctionHandleObjective(obj.nKL,@(kl)klcost(obj,kl)), ...
                                 obj.kl_inds(:,i));
                         end
@@ -276,7 +278,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                     for i = 2:obj.N-1
                         dyn_inds{i} = {obj.h_inds(i-1); obj.h_inds(i); obj.x_inds(:,i-1); obj.x_inds(:,i); ...
                             obj.x_inds(:,i+1); obj.u_inds(:,i-1); obj.u_inds(:,i); obj.c_inds(:,i); ...
-                            obj.b_inds(:,i); obj.jl_inds(:,i); obj.kl_inds(:,i-1); obj.kl_inds(:,i)};
+                            obj.b_inds(:,i); obj.jl_inds(:,i); obj.kl_inds(:,i)};
                         dyn_constraints{i} = cnstr1.setName(sprintf('dynamics[%d]',i));
                         obj = obj.addConstraint(dyn_constraints{i}, dyn_inds{i});
                     end
@@ -391,7 +393,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h;q0;v0;q1;u;c;b;jl;kl];
             [f,df] = midpoint_first_step(obj,xin);
-            
+%             
 %             df_fd = zeros(size(df));
 %             dxin = 1e-6*eye(length(xin));
 %             for k = 1:length(xin)
@@ -403,7 +405,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
 %                 disp(max(abs(df_fd(:)-df(:))));
 % %                 [q0, q1]
 % %             end
-             
+%              
         end        
         
         function [f,df] = midpoint_first_step(obj,xin)
@@ -461,25 +463,25 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             %NDD: closed chains 
             unique_const = obj.unique_const; 
-            [~, dKC, dKCdqm] = obj.plant.positionConstraints(qm); 
+            [~, dKC, dKCdqm] = obj.plant.positionConstraints(q1); 
             dKC = dKC(unique_const, :);
             if isempty(dKC); dKC = zeros(0, numel(qm)); end
             dKCdqm = reshape(dKCdqm(unique_const, :)', nQ, nKL*nQ)'; 
             
-            f = f_del + (h/2)*(B*u + dKC'*kl + fdamp) + h*(n'*c + D'*b + dkappa'*jl);
+            f = f_del + (h/2)*(B*u + fdamp) + h*(n'*c + D'*b + dkappa'*jl + dKC'*kl);
             
-            df = df_del + [(1/2)*B*u + n'*c + D'*b + dkappa'*jl + (1/2)*dKC'*kl + (1/2)*(fdamp - dfdamp'*vm), ... % d/dh
-                (h/4)*kron(u',eye(nQ))*dB + (h/4)*kron(kl',eye(nQ))*dKCdqm - (1/2)*dfdamp, ... % d/dq0
+            df = df_del + [(1/2)*B*u + n'*c + D'*b + dkappa'*jl + dKC'*kl + (1/2)*(fdamp - dfdamp'*vm), ... % d/dh
+                (h/4)*kron(u',eye(nQ))*dB - (1/2)*dfdamp, ... % d/dq0
                 zeros(nQ,nQ), ... % d/dv0
-                (h/4)*kron(u',eye(nQ))*dB + h*kron(c',eye(nQ))*comm(nC,nQ)*dn + h*kron(b',eye(nQ))*comm(nD*nC,nQ)*dD + (h/4)*kron(kl', eye(nQ))*dKCdqm + (1/2)*dfdamp, ...  % d/dq1
-                (h/2)*B, h*n', h*D' h*dkappa', (h/2)*dKC']; % d/du, d/dc, d/db, d/djl, d/dkl
+                (h/4)*kron(u',eye(nQ))*dB + h*kron(c',eye(nQ))*comm(nC,nQ)*dn + h*kron(b',eye(nQ))*comm(nD*nC,nQ)*dD + h*kron(kl', eye(nQ))*dKCdqm + (1/2)*dfdamp, ...  % d/dq1
+                (h/2)*B, h*n', h*D' h*dkappa', h*dKC']; % d/du, d/dc, d/db, d/djl, d/dkl
             
 %             f
         end
         
-        function [f,df] = midpoint_dynamics_constraint_fun(obj,h1,h2,q1,q2,q3,u1,u2,c2,b2,jl2,kl1,kl2)  % NDD:added joint limit forces and position constraints
+        function [f,df] = midpoint_dynamics_constraint_fun(obj,h1,h2,q1,q2,q3,u1,u2,c2,b2,jl2,kl3)  % NDD:added joint limit forces and position constraints
             
-            xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl1;kl2];     %NDD: added joint limit forces
+            xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl3];     %NDD: added joint limit forces
             [f,df] = obj.midpoint_dynamics(xin);
             
 %             df_fd = zeros(size(df));
@@ -516,8 +518,8 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             c2 = xin(2+3*nQ+2*nU+(1:nC));
             b2 = xin(2+3*nQ+2*nU+nC+(1:nC*nD));
             jl2 = xin(2+3*nQ+2*nU+nC+nC*nD+(1:nJL));  % NDD
-            kl1 = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+(1:nKL));
-            kl2 = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+nKL+(1:nKL));  % NDD
+            kl3 = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+(1:nKL));
+%             kl2 = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+nKL+(1:nKL));  % NDD
             
             %Take care of angle wrap-around
             qm1 = obj.qavg(q1,q2);
@@ -534,7 +536,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                 (h1/2)*((1/2)*D1D1L1-(1/h1)*D1D2L1')+(1/2)*D1D2L1-(1/h1)*D2D2L1, ... % d/dq1
                 (h1/2)*((1/2)*D1D1L1+(1/h1)*D1D2L1')+(1/2)*D1D2L1+(1/h1)*D2D2L1 + (h2/2)*((1/2)*D1D1L2-(1/h2)*D1D2L2')-(1/2)*D1D2L2+(1/h2)*D2D2L2, ... % d/dq2
                 (h2/2)*((1/2)*D1D1L2+(1/h2)*D1D2L2') - (1/2)*D1D2L2 - (1/h2)*D2D2L2, ... % d/dq3
-                zeros(nQ, 2*nU+nC+(nC*nD)+nJL+2*nKL)];
+                zeros(nQ, 2*nU+nC+(nC*nD)+nJL+nKL)];
             
             %Damping
             [fdamp1, dfdamp1] = obj.computeDampingForcesFun(vm1);
@@ -557,29 +559,29 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         
             %NDD: closed chains 
             unique_const = obj.unique_const; 
-            [~, dKC1, dKCdqm1] = obj.plant.positionConstraints(qm1);  
-            [~, dKC2, dKCdqm2] = obj.plant.positionConstraints(qm2);
-            dKC1 = dKC1(unique_const, :); 
-            dKC2 = dKC2(unique_const, :); 
+%             [~, dKC1, dKCdqm1] = obj.plant.positionConstraints(qm1);  
+            [~, dKC3, dKCdqm3] = obj.plant.positionConstraints(q3);
+%             dKC1 = dKC1(unique_const, :); 
+            dKC3 = dKC3(unique_const, :); 
             
-            if isempty(dKC1); dKC1 = zeros(0, numel(qm1)); end
-            if isempty(dKC2); dKC2 = zeros(0, numel(qm2)); end           
+%             if isempty(dKC1); dKC1 = zeros(0, numel(qm1)); end
+            if isempty(dKC3); dKC3 = zeros(0, numel(q3)); end           
 
-            dKCdqm1 = reshape(dKCdqm1(unique_const, :)', nQ, nKL*nQ)'; %             
-            dKCdqm2 = reshape(dKCdqm2(unique_const, :)', nQ, nKL*nQ)'; %               
+%             dKCdqm1 = reshape(dKCdqm1(unique_const, :)', nQ, nKL*nQ)'; %             
+            dKCdqm3 = reshape(dKCdqm3(unique_const, :)', nQ, nKL*nQ)'; %               
 %             
             %Total dynamics residual incluing control, contact, joint
             %limit, kinematic loop, and damping forces
-            f = f_del + (h1/2)*(B1*u1 + fdamp1 + dKC1'*kl1) + ...
-                (h2/2)*(B2*u2 + fdamp2 + dKC2'*kl2) + h2*(n2'*c2 + D2'*b2 + dkappa'*jl2); 
+            f = f_del + (h1/2)*(B1*u1 + fdamp1) + ...
+                (h2/2)*(B2*u2 + fdamp2) + h2*(n2'*c2 + D2'*b2 + dkappa'*jl2+dKC3'*kl3); 
        
             %Dynamics Derivatives
-            df = df_del + [(1/2)*B1*u1 + (1/2)*dKC1'*kl1 + (1/2)*(fdamp1 - dfdamp1*vm1), ... % d/dh1,
-                (1/2)*B2*u2 + n2'*c2 + D2'*b2 + dkappa'*jl2  + (1/2)*dKC2'*kl2 + (1/2)*(fdamp2 - dfdamp2*vm2), ...  % d/dh2
-                (h1/4)*kron(u1', eye(nQ))*dB1 + (h1/4)*kron(kl1', eye(nQ))*dKCdqm1 - (1/2)*dfdamp1, ... % d/dq1
-                (h1/4)*kron(u1', eye(nQ))*dB1 + (h2/4)*kron(u2', eye(nQ))*dB2 + (h1/4)*kron(kl1', eye(nQ))*dKCdqm1 + (h2/4)*kron(kl2', eye(nQ))*dKCdqm2 + (1/2)*(dfdamp1 - dfdamp2) , ... % d/dq2
-                (h2/4)*kron(u2', eye(nQ))*dB2 + (h2/4)*kron(kl2', eye(nQ))*dKCdqm2 + h2*kron(c2', eye(nQ))*comm(nC,nQ)*dn2 + h2*kron(b2', eye(nQ))*comm(nD*nC,nQ)*dD2 + (1/2)*dfdamp2, ...% d/dq3
-                (h1/2)*B1, (h2/2)*B2, h2*n2', h2*D2', h2*dkappa', (h1/2)*dKC1', (h2/2)*dKC2']; % d/du1, d/du2, d/dc2, d/db2, d/djl2, d/dkl1, d/dkl2
+            df = df_del + [(1/2)*B1*u1 + (1/2)*(fdamp1 - dfdamp1*vm1), ... % d/dh1,
+                (1/2)*B2*u2 + n2'*c2 + D2'*b2 + dkappa'*jl2  + dKC3'*kl3 + (1/2)*(fdamp2 - dfdamp2*vm2), ...  % d/dh2
+                (h1/4)*kron(u1', eye(nQ))*dB1 - (1/2)*dfdamp1, ... % d/dq1
+                (h1/4)*kron(u1', eye(nQ))*dB1 + (h2/4)*kron(u2', eye(nQ))*dB2 + (1/2)*(dfdamp1 - dfdamp2) , ... % d/dq2
+                (h2/4)*kron(u2', eye(nQ))*dB2 + h2*kron(kl3', eye(nQ))*dKCdqm3 + h2*kron(c2', eye(nQ))*comm(nC,nQ)*dn2 + h2*kron(b2', eye(nQ))*comm(nD*nC,nQ)*dD2 + (1/2)*dfdamp2, ...% d/dq3
+                (h1/2)*B1, (h2/2)*B2, h2*n2', h2*D2', h2*dkappa', h2*dKC3']; % d/du1, d/du2, d/dc2, d/db2, d/djl2, d/dkl1, d/dkl2
             
 %             f
         
@@ -869,6 +871,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             if obj.nJL>0
                 jltraj = PPTrajectory(zoh(t,[reshape(z(obj.jl_inds),[],obj.N-1),z(obj.jl_inds(:,end))]));
+                straj = PPTrajectory(zoh(t,[reshape(z(obj.s_inds),[],obj.N-1),z(obj.s_inds(end))]));
             else
                 jltraj = [];
             end

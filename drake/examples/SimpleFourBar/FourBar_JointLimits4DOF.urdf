@@ -160,7 +160,7 @@
  </force_element>-->
 
   <force_element name="k3">
-  <torsional_spring stiffness="0" rest_angle="0">
+  <torsional_spring stiffness="5" rest_angle="0">
     <joint name="joint_3" />
   </torsional_spring>
  </force_element>
