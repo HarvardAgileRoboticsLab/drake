@@ -344,7 +344,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
           case ContactModel.TrinkleSOC
               error('Second order cone complementarity update function is not implemented');
           otherwise
-              error('Invalid Contact Model');
+              error(['Not implemented for dynamics type of type (',char(obj.contact_model), ')']);
       end
     end
     
@@ -715,6 +715,8 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
 
           if all(normal(:,i) - [0;0;-1] < 1e-10)
             R = rotx(pi);
+          elseif all(normal(:,i) - [0;0;1] < 1e-10)
+            R = eye(3);
           else
             vv = cross(normal(:,i),z);
             s = norm(vv);
@@ -787,7 +789,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         catch          
           keyboard
         end
-        fc 
         vn = v + Hinv*((B*u-C)*h + vToqdot'*J'*f);
         qdn = vToqdot*vn;
         qn = q + qdn*h;

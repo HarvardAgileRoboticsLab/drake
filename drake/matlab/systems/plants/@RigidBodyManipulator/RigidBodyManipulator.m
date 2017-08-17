@@ -936,7 +936,7 @@ classdef RigidBodyManipulator < Manipulator
     
     function body_idx = getBodyIndices(model, robot_num)
         body_idx = [];
-        for i=1:length(model.bodies)
+        for i=1:length(model.body)
             if isBodyPartOfRobot(model, model.body(i), robot_num)
                 body_idx = [body_idx, i];
             end
