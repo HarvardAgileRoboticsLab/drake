@@ -28,7 +28,7 @@ tf = 4;
 
 [q, kl] = variationalFourBarForwardSim(plant, N, x0, tf);
 [qopt,utraj,ctraj,btraj,psitraj,etatraj,jltraj, klopt, straj] = variationalFourBar(plant, N, x0, tf);
-%%
+%% PLotting 
 
 qsim = q.eval(q.getBreaks());
 qqopt = qopt.eval(qopt.getBreaks());
@@ -52,13 +52,13 @@ figure(4); clf;
 for i=1:size(kllopt, 1)
     subplot(size(kllopt,1),1,i); hold on;
     if i == 1
-        plot(kl(i,1:end), 'b');
+        plot(2*kl(i,1:end), 'b');
     end
     if i == 2
-        plot(kl(2,1:end), 'b');
+        plot(2*kl(2,1:end), 'b');
     end
     if i == 3
-        plot(kl(3,1:end), 'b');
+        plot(2*kl(3,1:end), 'b');
     end
     plot(kllopt(i,1:end), 'r--');
     hold off;

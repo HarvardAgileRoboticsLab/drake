@@ -4,6 +4,7 @@ options.terrain = RigidBodyFlatTerrain();
 options.floating = true;
 options.ignore_self_collisions = true;
 options.use_bullet = false;
+options.joint_limit_collisions = false; 
 p = LittleDog(options);
 v = p.constructVisualizer;
 

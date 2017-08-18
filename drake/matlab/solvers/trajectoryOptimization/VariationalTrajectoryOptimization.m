@@ -56,6 +56,10 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                 options.add_ccost = false;
             end
             
+            if ~isfield(options, 'joint_limit_collisions')
+                options.joint_limit_collisions = false; 
+            end
+            
             obj = obj@DirectTrajectoryOptimization(plant,N,duration,options);
         end
         
@@ -81,8 +85,12 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                     nL = 1+(2+2*nD)*nC;  %Includes contact forces, friction cone, tangential speed, and smoothing parameter
                     
                     %Joint limits
-                    [jl_min, jl_max] = obj.plant.getJointLimits();
-                    nJL = sum(~isinf(-jl_min)) + sum(~isinf(jl_max));  
+                    if obj.options.joint_limit_collisions
+                        [jl_min, jl_max] = obj.plant.getJointLimits();
+                        nJL = sum(~isinf(-jl_min)) + sum(~isinf(jl_max));  
+                    else 
+                        nJL = 0; 
+                    end
                     
                     %Kinemaitc loops
 %                     nKL = obj.plant.getNumStateConstraints();
@@ -404,7 +412,6 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
 %                 disp('First step derivative error:');
 %                 disp(max(abs(df_fd(:)-df(:))));
 % %                 [q0, q1]
-% %             end
 %              
         end        
         
@@ -459,22 +466,27 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             dD = reshape(cell2mat(dD)',nQ,nC*nD*nQ)';
             
             %NDD: Joint limits
-            [~, dkappa] = obj.plant.jointLimitConstraints(q1);
+            if nJL
+                [~, dkappa] = obj.plant.jointLimitConstraints(q1);
+            else
+                dkappa = zeros(0, nQ);
+            end
             
             %NDD: closed chains 
             unique_const = obj.unique_const; 
-            [~, dKC, dKCdqm] = obj.plant.positionConstraints(q1); 
+            [~, dKC, dKCdqm] = obj.plant.positionConstraints(qm); 
             dKC = dKC(unique_const, :);
             if isempty(dKC); dKC = zeros(0, numel(qm)); end
             dKCdqm = reshape(dKCdqm(unique_const, :)', nQ, nKL*nQ)'; 
             
-            f = f_del + (h/2)*(B*u + fdamp) + h*(n'*c + D'*b + dkappa'*jl + dKC'*kl);
+            f = f_del + (h/2)*(B*u + fdamp + dKC'*kl) + h*(n'*c + D'*b + dkappa'*jl)
             
-            df = df_del + [(1/2)*B*u + n'*c + D'*b + dkappa'*jl + dKC'*kl + (1/2)*(fdamp - dfdamp'*vm), ... % d/dh
-                (h/4)*kron(u',eye(nQ))*dB - (1/2)*dfdamp, ... % d/dq0
+            df = df_del + [(1/2)*B*u + n'*c + D'*b + dkappa'*jl + (1/2)*dKC'*kl + (1/2)*(fdamp - dfdamp'*vm), ... % d/dh
+                (h/4)*kron(u',eye(nQ))*dB + (h/4)*kron(kl', eye(nQ))*dKCdqm - (1/2)*dfdamp, ... % d/dq0
                 zeros(nQ,nQ), ... % d/dv0
-                (h/4)*kron(u',eye(nQ))*dB + h*kron(c',eye(nQ))*comm(nC,nQ)*dn + h*kron(b',eye(nQ))*comm(nD*nC,nQ)*dD + h*kron(kl', eye(nQ))*dKCdqm + (1/2)*dfdamp, ...  % d/dq1
-                (h/2)*B, h*n', h*D' h*dkappa', h*dKC']; % d/du, d/dc, d/db, d/djl, d/dkl
+                (h/4)*kron(u',eye(nQ))*dB + h*kron(c',eye(nQ))*comm(nC,nQ)*dn + h*kron(b',eye(nQ))*comm(nD*nC,nQ)*dD ...
+                + (h/4)*kron(kl', eye(nQ))*dKCdqm + (1/2)*dfdamp, ...  % d/dq1
+                (h/2)*B, h*n', h*D' h*dkappa', (h/2)*dKC']; % d/du, d/dc, d/db, d/djl, d/dkl
             
 %             f
         end
@@ -483,7 +495,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl3];     %NDD: added joint limit forces
             [f,df] = obj.midpoint_dynamics(xin);
-            
+% %             
 %             df_fd = zeros(size(df));
 %             step = sqrt(eps(max(xin)));
 %             dxin = step*eye(length(xin));
@@ -518,7 +530,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             c2 = xin(2+3*nQ+2*nU+(1:nC));
             b2 = xin(2+3*nQ+2*nU+nC+(1:nC*nD));
             jl2 = xin(2+3*nQ+2*nU+nC+nC*nD+(1:nJL));  % NDD
-            kl3 = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+(1:nKL));
+            kl = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+(1:nKL));
 %             kl2 = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+nKL+(1:nKL));  % NDD
             
             %Take care of angle wrap-around
@@ -555,33 +567,37 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             dD2 = reshape(cell2mat(dD2)',nQ,nC*nD*nQ)';
             
             %NDD: Joint limits
-            [~, dkappa] = obj.plant.jointLimitConstraints(q3);      % should this be q3?            
+            if nJL
+                [~, dkappa] = obj.plant.jointLimitConstraints(q3);      % should this be q3?     
+            else
+                dkappa = zeros(0, nQ);
+            end
                         
             %NDD: closed chains 
             unique_const = obj.unique_const; 
-%             [~, dKC1, dKCdqm1] = obj.plant.positionConstraints(qm1);  
-            [~, dKC3, dKCdqm3] = obj.plant.positionConstraints(q3);
-%             dKC1 = dKC1(unique_const, :); 
-            dKC3 = dKC3(unique_const, :); 
+            [~, dKCm1, dKCdqm1] = obj.plant.positionConstraints(qm1);  
+            [~, dKCm2, dKCdqm2] = obj.plant.positionConstraints(qm2);
+            dKCm1 = dKCm1(unique_const, :); 
+            dKCm2 = dKCm2(unique_const, :); 
             
-%             if isempty(dKC1); dKC1 = zeros(0, numel(qm1)); end
-            if isempty(dKC3); dKC3 = zeros(0, numel(q3)); end           
+            if isempty(dKCm1); dKCm1 = zeros(0, numel(qm1)); end
+            if isempty(dKCm2); dKCm2 = zeros(0, numel(q3)); end           
 
-%             dKCdqm1 = reshape(dKCdqm1(unique_const, :)', nQ, nKL*nQ)'; %             
-            dKCdqm3 = reshape(dKCdqm3(unique_const, :)', nQ, nKL*nQ)'; %               
+            dKCdqm1 = reshape(dKCdqm1(unique_const, :)', nQ, nKL*nQ)'; %             
+            dKCdqm2 = reshape(dKCdqm2(unique_const, :)', nQ, nKL*nQ)'; %               
 %             
             %Total dynamics residual incluing control, contact, joint
             %limit, kinematic loop, and damping forces
-            f = f_del + (h1/2)*(B1*u1 + fdamp1) + ...
-                (h2/2)*(B2*u2 + fdamp2) + h2*(n2'*c2 + D2'*b2 + dkappa'*jl2+dKC3'*kl3); 
+            f = f_del + (h1/2)*(B1*u1 + fdamp1 + dKCm1'*kl) + ...
+                (h2/2)*(B2*u2 + fdamp2+ dKCm2'*kl) + h2*(n2'*c2 + D2'*b2 + dkappa'*jl2); 
        
             %Dynamics Derivatives
-            df = df_del + [(1/2)*B1*u1 + (1/2)*(fdamp1 - dfdamp1*vm1), ... % d/dh1,
-                (1/2)*B2*u2 + n2'*c2 + D2'*b2 + dkappa'*jl2  + dKC3'*kl3 + (1/2)*(fdamp2 - dfdamp2*vm2), ...  % d/dh2
-                (h1/4)*kron(u1', eye(nQ))*dB1 - (1/2)*dfdamp1, ... % d/dq1
-                (h1/4)*kron(u1', eye(nQ))*dB1 + (h2/4)*kron(u2', eye(nQ))*dB2 + (1/2)*(dfdamp1 - dfdamp2) , ... % d/dq2
-                (h2/4)*kron(u2', eye(nQ))*dB2 + h2*kron(kl3', eye(nQ))*dKCdqm3 + h2*kron(c2', eye(nQ))*comm(nC,nQ)*dn2 + h2*kron(b2', eye(nQ))*comm(nD*nC,nQ)*dD2 + (1/2)*dfdamp2, ...% d/dq3
-                (h1/2)*B1, (h2/2)*B2, h2*n2', h2*D2', h2*dkappa', h2*dKC3']; % d/du1, d/du2, d/dc2, d/db2, d/djl2, d/dkl1, d/dkl2
+            df = df_del + [(1/2)*B1*u1 + (1/2)*dKCm1'*kl + (1/2)*(fdamp1 - dfdamp1*vm1), ... % d/dh1,
+                (1/2)*B2*u2 + n2'*c2 + D2'*b2 + dkappa'*jl2  + (1/2)*dKCm2'*kl + (1/2)*(fdamp2 - dfdamp2*vm2), ...  % d/dh2
+                (h1/4)*kron(u1', eye(nQ))*dB1 + (h1/4)*kron(kl', eye(nQ))*dKCdqm1 - (1/2)*dfdamp1, ... % d/dq1
+                (h1/4)*kron(u1', eye(nQ))*dB1 + (h2/4)*kron(u2', eye(nQ))*dB2 + (h1/4)*kron(kl', eye(nQ))*dKCdqm1 + (h2/4)*kron(kl', eye(nQ))*dKCdqm2 + (1/2)*(dfdamp1 - dfdamp2) , ... % d/dq2
+                (h2/4)*kron(u2', eye(nQ))*dB2 + (h2/4)*kron(kl', eye(nQ))*dKCdqm2 + h2*kron(c2', eye(nQ))*comm(nC,nQ)*dn2 + h2*kron(b2', eye(nQ))*comm(nD*nC,nQ)*dD2 + (1/2)*dfdamp2, ...% d/dq3
+                (h1/2)*B1, (h2/2)*B2, h2*n2', h2*D2', h2*dkappa', (h1/2)*dKCm1'+ (h2/2)*dKCm2']; % d/du1, d/du2, d/dc2, d/db2, d/djl2, d/dkl
             
 %             f
         

@@ -31,7 +31,7 @@ t_init = linspace(0,tf,N);
 sim_traj = plant.simulate([0,tf], x0);
 % x0 = sim_traj.eval(0);
 
-options.s_weight = 100;
+options.s_weight = 10;
 nq = plant.getNumPositions;
 
 traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);
