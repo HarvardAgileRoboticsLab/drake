@@ -1,4 +1,4 @@
-clear; clc; close all;
+clclear; clc; close all;
 % format long
 
 %% Load Rigid Body

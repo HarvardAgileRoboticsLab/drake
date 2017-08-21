@@ -400,18 +400,18 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h;q0;v0;q1;u;c;b;jl;kl];
             [f,df] = midpoint_first_step(obj,xin);
+% %             
+%             df_fd = zeros(size(df));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 df_fd(:,k) = (midpoint_first_step(obj,xin+dxin(:,k)) - midpoint_first_step(obj,xin-dxin(:,k)))/2e-6;
+%             end
 %             
-            df_fd = zeros(size(df));
-            dxin = 1e-6*eye(length(xin));
-            for k = 1:length(xin)
-                df_fd(:,k) = (midpoint_first_step(obj,xin+dxin(:,k)) - midpoint_first_step(obj,xin-dxin(:,k)))/2e-6;
-            end
-            
-%             if max(abs(df_fd(:)-df(:))) > 1e-5
-                disp('First step derivative error:');
-                disp(max(abs(df_fd(:)-df(:))));
-%                 [q0, q1]
-%              
+% %             if max(abs(df_fd(:)-df(:))) > 1e-5
+%                 disp('First step derivative error:');
+%                 disp(max(abs(df_fd(:)-df(:))));
+% %                 [q0, q1]
+% %              
         end        
         
         function [f,df] = midpoint_first_step(obj,xin)
@@ -478,7 +478,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             if isempty(dKC); dKC = zeros(0, numel(qm)); end
             dKCdqm = reshape(dKCdqm(unique_const, :)', nQ, nKL*nQ)'; 
             
-            f = f_del + (h/2)*(B*u + fdamp + dKC'*kl) + h*(n'*c + D'*b + dkappa'*jl);
+            f = f_del + (h/2)*(B*u + fdamp + dKC'*kl) + h*(n'*c + D'*b + dkappa'*jl)
             
             df = df_del + [(1/2)*B*u + n'*c + D'*b + dkappa'*jl + (1/2)*dKC'*kl + (1/2)*(fdamp - dfdamp'*vm), ... % d/dh
                 (h/4)*kron(u',eye(nQ))*dB + (h/4)*kron(kl', eye(nQ))*dKCdqm - (1/2)*dfdamp, ... % d/dq0
@@ -507,7 +507,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
 %                 disp(max(abs(df_fd(:)-df(:))));
 % %                 [q1, q2]
 % %             end
-%             
+            
         end
         
         function [f,df] = midpoint_dynamics(obj,xin)
@@ -684,7 +684,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [q2;jl;s];
             [f,df] = obj.midpoint_joint_limit_constraint(xin);
             
-%             df_ fd = zeros(size(df));
+%             df_fd = zeros(size(df));
 %             dxin = 1e-6*eye(length(xin));
 %             for k = 1:length(xin)
 %                 df_fd(:,k) = (obj.midpoint_joint_limit_constraint(xin+dxin(:,k)) - obj.midpoint_joint_limit_constraint(xin-dxin(:,k)))/2e-6;
@@ -692,7 +692,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
 %             
 %             disp('Joint Limit Derivative Error:');
 %             disp(max(abs(df_fd(:)-df(:))));
-%             
+% %             
         end
         
         % NDD
@@ -726,7 +726,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [q1; q2];
             [f,df] = obj.midpoint_kinematic_loop_constraint(xin);
 %             f
-%                         
+% %                         
 %             df_fd = zeros(size(df));
 %             dxin = 1e-6*eye(length(xin));
 %             for k = 1:length(xin)
