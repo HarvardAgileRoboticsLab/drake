@@ -3,40 +3,42 @@ clear; clc; close all;
 
 %% Load Rigid Body
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaled.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMRVariational_scaled.urdf');
 
 % options
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.z_inactive_guess_tol = 1;
-options.dt = 1;  %time step
-options.use_bullet = false;  
+options.use_bullet = false;
+options.dt = 1;
 
 % floating (gnd contact) or in air (not floating)
-% ISFLOAT = false; 
-ISFLOAT = true; 
+% ISFLOAT = false;
+ISFLOAT = true;
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    x0 = zeros(76,1); x0(3) = 12;
+    x0 = zeros(100,1); x0(3) = 12.04;    
     options.terrain = RigidBodyFlatTerrain();
     
 else
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    x0 = zeros(64, 1);
-    options.terrain = [];     
+%     x0 = zeros(88, 1);
+    x0 = zeros(88, 1);
+
+    options.terrain = [];
 end
 
 % Build robot + visualizer
-hamr = HamrTSRBM(urdf, options);
+hamr = HamrVariationalTSRBM(urdf, options);
 hamr = compile(hamr);
 v = hamr.constructVisualizer();
 
 %% Build Actuators
 dp.Vb = 175;
 dp.Vg = 0;
-% 
+%
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
@@ -45,7 +47,7 @@ hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
 
 %% Connect system
 
-% connections from actuators to hamr
+%connections from actuators to hamr
 hr_actuators = hr_actuators.setOutputFrame(hamr.getInputFrame());
 connection1(1).from_output = hr_actuators.getOutputFrame();
 connection1(1).to_input = hamr.getInputFrame();
@@ -55,7 +57,7 @@ hamr_out = hamr.getOutputFrame();
 act_in = hr_actuators.getInputFrame();
 act_in = act_in.replaceFrameNum(2, hamr_out.getFrameByName('ActuatorDeflectionandRate'));
 hr_actuators = hr_actuators.setInputFrame(act_in);
-% 
+
 connection2(1).from_output = hamr_out.getFrameByName('ActuatorDeflectionandRate');
 connection2(1).to_input = act_in.getFrameByName('ActuatorDeflectionandRate');
 
@@ -77,7 +79,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 8.0e3; 
+tsim = 8000;
 
 t = 0:options.dt:tsim;
 
@@ -93,12 +95,14 @@ t = 0:options.dt:tsim;
 %TROT
 Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FLlift
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);                % RLSwing
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                  % RLLift
+    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RLSwing
+    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % RLLift
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);                % FRswing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FRlift
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RRSwing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                      % RRLift
+
+% Vact = zeros(size(Vact));
 
 % ramp
 tramp = 3/fd;
@@ -115,33 +119,32 @@ legend('Swing Drive', 'Lift Drive')
 %% Simulate Open loop
 
 hamr_OL = cascade(u, hamrWact);
-nQ = hamr.getNumPositions(); 
-x0_hat = hamr.getManipulator.positionConstraints(x0); 
-[tf, err_str] = valuecheck(positionConstraints(hamr,x0),zeros(72,1),1e-6);
-
+% nQ = hamr.getNumPositions(); 
 % x0_hat = hamr.positionConstraints(x0(1:nQ));
-% [tf, err_str] = valuecheck(positionConstraints(hamr,x0(1:nQ)),zeros(72,1),1e-6);
-
-% tf = 1; 
+nQ = hamr.getManipulator().getNumPositions(); 
+x0_hat = hamr.getManipulator().positionConstraints(x0(1:nQ));
+[tf, err_str] = valuecheck(positionConstraints(hamr,x0(1:nQ)),zeros(72,1),1e-6);
+% tf = 1;
 if tf
     disp('Valid initial condition: simulating...')
     tic;
-    xtraj = simulate(hamr_OL, [0 tsim], x0);  
-    tlcp = toc;    
-    xtraj_scaled = DTTrajectory(xtraj.getBreaks()*1e-3, xtraj.eval(xtraj.getBreaks())); 
-    xtraj_scaled = xtraj_scaled.setOutputFrame(xtraj.getOutputFrame()); 
+    options = odeset('RelTol',1e-3,'AbsTol',1e-4);
+    xtraj = simulate(hamr_OL, [0 tsim], x0, options);
+    tlcp = toc;
+    xtraj_scaled = PPTrajectory(foh(xtraj.getBreaks()*1e-3, xtraj.eval(xtraj.getBreaks())));
+    xtraj_scaled = xtraj_scaled.setOutputFrame(xtraj.getOutputFrame());
     fprintf('It took %fs to simulate %fs of realtime. \nThats %fx \n', ...
         tlcp, tsim/1000, 1000*tlcp/tsim)
     options.slider = true;
-%     xtraj.tt = xtraj.tt/1000; 
+    %     xtraj.tt = xtraj.tt/1000;
     v.playback(xtraj_scaled, options);
 else
     disp('invalid initial condition...')
 end
 
 %% Plotting
-tt = xtraj.getBreaks();
-yy = xtraj.eval(tt);
+tt = xtraj_scaled.getBreaks();
+yy = xtraj_scaled.eval(tt);
 
 act_dof = hamr.getActuatedJoints();
 ndof = hamr.getNumDiscStates();
@@ -154,9 +157,9 @@ figure(2); clf; hold on;
 for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str(i))
     yyaxis left; hold on; plot(tt, yy(ndof+i,:), 'b')
-%     yyaxis left; plot(tt, yy(act_dof(i), :)*1e3); 
-%     yyaxis right; plot(tt, Vact(i,:)); 
-%     legend('Deflection', 'Force')
+    %     yyaxis left; plot(tt, yy(act_dof(i), :)*1e3);
+    %     yyaxis right; plot(tt, Vact(i,:));
+    %     legend('Deflection', 'Force')
     yyaxis right; hold on; plot(tt, yy(act_dof(i), :)*1e3, 'r--', ...
         t/1000, Vact(i,:) - mean(Vact(i,:)), 'r')
     legend('Force', 'Deflection', 'Drive')
@@ -165,18 +168,19 @@ end
 lp_b = [0, 7.540, -11.350;
     0, 7.540, -11.350;
     0, -7.540, -11.350;
-    0, -7.540, -11.350]; 
+    0, -7.540, -11.350];
 
-lp_g = zeros([numel(t), size(lp_b')]); 
+lp_g = zeros([numel(t), size(lp_b')]);
 
-legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'}; 
+legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
 
+w = warning('off', 'all');
 for j = 1:numel(tt)
     q = yy(1:ndof/2, j);
     qd = yy(ndof/2+1: ndof, j);
     kinsol = hamr.doKinematics(q, qd);
     for i = 1:size(lp_b,1)
-        lp_g(j,:,i) = hamr.forwardKin(kinsol, hamr.findLinkId(legs{i}), lp_b(i,:)'); 
+        lp_g(j,:,i) = hamr.forwardKin(kinsol, hamr.findLinkId(legs{i}),lp_b(i,:)');
     end
 end
 
@@ -203,11 +207,34 @@ if ISFLOAT
     phi = zeros(4, numel(tt));
     for i = 1:numel(tt)
         q = yy(1:ndof/2, i);
-        qd = yy(ndof/2+1:ndof, i);        
-        kinsol = hamr.doKinematics(q, qd);  
-        phi(:,i) = hamr.contactConstraints(kinsol, false, contact_opt); 
+        qd = yy(ndof/2+1:ndof, i);
+        kinsol = hamr.doKinematics(q, qd);
+        phi(:,i) = hamr.contactConstraints(kinsol, false, contact_opt);
     end
     
     figure(5); clf; hold on;
     plot(tt, phi);
 end
+
+%% 
+% posframe = xtraj_scaled.getOutputFrame().getFrameByName('HamrPosition');
+% jointnames = posframe.getCoordinateNames(); 
+% 
+% plotjoints = {'FLqfb2', 'RLqfb2', 'FRqfb2', 'RRqfb2'; 
+%     'FLql3', 'RLql3', 'FRql3', 'RRql3'}; 
+% 
+% figure(6); clf; hold on; 
+% for i = 1:size(plotjoints,2)
+%     inds = find(strcmpi(jointnames, plotjoints{1,i}));
+%     subplot(1,2,1); hold on; 
+%     plot(tt, yy(inds,:))
+%     subplot(1,2,2); hold on; 
+%     indl = find(strcmpi(jointnames, plotjoints{2,i}))
+%     plot(tt, yy(indl,:)); 
+% end
+% subplot(1,2,1); legend(plotjoints{1,:})
+% subplot(1,2,2); legend(plotjoints{2,:})
+% 
+%     
+    
+    

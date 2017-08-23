@@ -4,14 +4,14 @@ addpath('./utils/')
 if nargin<1
     options.floating = false;
     options.use_bullet = false;
-    file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits.urdf');
+    file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits4DOF.urdf');
     plant = VariationalFourBarPlant(file,options);    
 end
 if nargin < 2
     N=21;
 end
 if nargin<3
-    q0 = [4*pi/5; pi/5; 4*pi/5]; %pi/4*ones(3,1);
+    q0 = [4*pi/5; pi/5; 4*pi/5; pi/5]; %pi/4*ones(3,1);
     v0 = 0*q0; 
     valuecheck(positionConstraints(plant, q0), zeros(6,1), 1e-4);
     x0 = [q0;v0];

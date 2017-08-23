@@ -1,4 +1,4 @@
-function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivs(obj,q2,v)
+function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivsParallel(obj,q2,v)
 nq = length(q2);
 nv = length(v);
 [M,G,B,dM,dG,dB] = manipulatorDynamics(obj, q2, zeros(nv,1));
@@ -13,14 +13,20 @@ D2L = M*v;
 %D1D1L = -dG(:,1:nq); %throwing out second derivative of M terms here
 
 D1D1L = zeros(nq);
-step = sqrt(eps(max(q2)));
-deltaq = step*eye(nq);
-for k = 1:nq
-    [~,Gp,~,dMp] = manipulatorDynamics(obj, q2+deltaq(:,k), zeros(nv,1));
+% deltaq = step*eye(nq);
+
+
+ticBytes(gcp); 
+parfor k = 1:nq
+    step = sqrt(eps(max(q2)));
+    deltaq = zeros(nq,1); 
+    deltaq(k) = step; 
+    
+    [~,Gp,~,dMp] = manipulatorDynamics(obj, q2+deltaq, zeros(nv,1));
     dMp = reshape(dMp,nq*nq,nq+nv);
     dMdqp = dMp(:,1:nq);
     
-    [~,Gm,~,dMm] = manipulatorDynamics(obj, q2-deltaq(:,k), zeros(nv,1));
+    [~,Gm,~,dMm] = manipulatorDynamics(obj, q2-deltaq, zeros(nv,1));
     dMm = reshape(dMm,nq*nq,nq+nv);
     dMdqm = dMm(:,1:nq);
     
@@ -29,6 +35,7 @@ for k = 1:nq
     
     D1D1L(:,k) = (D1p - D1m)/(2*step);
 end
+tocBytes(gcp)
 
 %disp(sprintf('D1D1L error: %d',max(abs(D1D1L_fd(:)-D1D1L(:)))));
 

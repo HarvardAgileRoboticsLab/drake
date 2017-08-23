@@ -132,12 +132,13 @@ classdef PZTBender < DrakeSystem
             qd = u(3);
             Ft = (0.75*Vt/obj.ap.lact)*obj.ap.f31_eff_b*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             Fb = (0.75*Vb/obj.ap.lact)*obj.ap.f31_eff_b*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
+%             eps_t = -q*(obj.tp
 %             Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (q/obj.df)*...
 %                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
 %             Fb = (0.75*Vb/obj.ap.lact)*(obj.ap.f31_eff_b + (-q/obj.df)*...
 %                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-%             
-%             fprintf('ActuatorForce at %f: %e \n', t, -obj.kact*q);
+% %             
+            fprintf('ActuatorForce at %f: %e \n', t, -obj.kact*q);
             
             y = obj.orien*(Ft - Fb) - obj.kact*q - obj.bact*qd;  % Fb - Ft results in positive(y) force with V > Vb/2
             %             y = obj.orien*(Ft - Fb); % - obj.bact*qd;
