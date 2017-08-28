@@ -3,8 +3,6 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define DEBUG_PRINTING
-
 #define SQRT2 1.414213562373095
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
@@ -55,7 +53,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     double vlat = round(100.0*y[3]); //linear velocity in cm/sec
     double vlon = round(100.0*y[4]); //linear velocity in cm/sec
-    double valt = round(100.0*y[5]); //linear velocity in cm/sec
+    double valt = round(-100.0*y[5]); //linear velocity in cm/sec
     
     double true_airspeed = round(sqrt(vlat*vlat + vlon+vlon + valt*valt));
     double ind_airspeed = true_airspeed;

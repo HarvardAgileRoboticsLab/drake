@@ -16,11 +16,12 @@ lat = BASELAT + (180.0/pi)*(x(2)/RE); %lat in degrees (linearized)
 lon = BASELON + (180.0/pi)*(x(1)/(RE*COSLAT)); %lon in degrees (linearized)
 alt = BASEALT + x(3); %altitude in meters
 
-vlat = x(9);
-vlon = x(8);
-valt = x(10);
+%Velocity in m/s
+vnorth = x(9);
+veast = x(8);
+vdown = -x(10);
 
-gps = [lat; lon; alt; vlat; vlon; valt]; %GPS position and velocity
+gps = [lat; lon; alt; vnorth; veast; vdown]; %GPS position and velocity
 accel = qrotate(qconj(x(4:7)), xdot(8:10)-g); %Body frame acceleration
 gyro = x(11:13); %body-frame angular velocity
 mag = qrotate(qconj(x(4:7)),B0); %body-frame magnetic field vector
