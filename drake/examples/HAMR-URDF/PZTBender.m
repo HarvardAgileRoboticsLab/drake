@@ -17,11 +17,6 @@ classdef PZTBender < DrakeSystem
         eps;        % total field
         GF;         % geometry factor
         df;         % free deflection
-        kact;       % stiffness
-        bact = 0.02; %0.00263; % damping (TODO: GET GOOD VALUE)
-        
-        % Hamr deflection joints
-        %         obj.
         
     end
     
@@ -68,25 +63,30 @@ classdef PZTBender < DrakeSystem
             %obj = obj.setInputLimits([obj.dp.Vg; -Inf], [obj.dp.Vb; Inf]);
             
             if nargin < 4 % Default geometry for HAMR
-                obj.ap.tact = 325e-6;          %m (actuator thickness)
-                obj.ap.tpzt = 135e-6;          %m (pzt thickness)
-                obj.ap.wn = 3.5e-3;            %m (nominal width)
+                obj.ap.tact = 325e-3;          %m (actuator thickness)
+                obj.ap.tpzt = 135e-3;          %m (pzt thickness)
+                obj.ap.wn = 3.5;            %m (nominal width)
                 obj.ap.wr = 1.5;               %m (width ratio)
-                obj.ap.lext = 1e-3;            %m (extension length)
-                obj.ap.lact = 9.2e-3;          %m (actuator length)
+                obj.ap.lext = 1;            %m (extension length)
+                obj.ap.lact = 9.2;          %m (actuator length)
                 
                 % PZT internal Stress as a function of field (see N.T. Jafferis et al. 2015)
-                obj.ap.f31_eff_f = 32;                     % Pa*m/Volts (sigmoid max)
-                obj.ap.f31_eff_b = 24;                     % Pa*m/Volts (sigmoid min)
+                obj.ap.f31_eff_b = 24e-3;         %Pa*m/V (in blocked case)
+                obj.ap.f31_eff_f = 32e-3;         %Pa*m/V (in free case)
                 
                 % PZT Young's modulus as a function of strain (see N.T. Jafferis et al. 2015)
-                obj.ap.Eave = 40e9;                % average modulus
+                obj.ap.Emin = 38.5e3;          %sigmoid min (Pa)
+                obj.ap.Emax = 81e3;            %sigmoid max (Pa)
+                obj.ap.Eave = 40e3;            % average modulus (Pa)
+                obj.ap.A0 = -0.3496;           %constant on cosine fit for Eave (1/m)
+                obj.ap.A1 = 0.3291;            %multiplier on cosine fit for Eave (1/m)
+                obj.ap.omg = 2.047;             %freq on cosine fit for Eave (unclear units)
                 
                 % Material properties (see N.T. Jafferis et al. 2015)
-                obj.ap.Ecf = 340e9;             % Pa (CF young's modulus)
+                obj.ap.Ecf = 340e3;             % Pa (CF young's modulus)
             else
                 obj.ap = ap;
-            end      
+            end
             
             %  ----------- fillin in derived actuator properties -------------
             obj.tcf = obj.ap.tact - 2*obj.ap.tpzt;            % cf thickness
@@ -103,21 +103,11 @@ classdef PZTBender < DrakeSystem
             df_den = (1/3)*obj.ap.Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + 3*obj.tcf*obj.ap.tpzt + ...
                 2*obj.ap.tpzt^2) + obj.ap.Ecf*obj.tcf^3/12;
             df_num = obj.ap.f31_eff_f*obj.ap.tpzt*obj.ap.lact^2*obj.eps*(obj.ap.tpzt+obj.tcf);
-            obj.df = 0.25*(1 + 2*obj.lr)*(df_num/df_den);
-            
-            % actuator stiffnes
-            kact = 3.0*obj.ap.wn*df_den*obj.GF/(obj.ap.lact^3*(1+2*obj.lr));
-            obj.kact = kact*1e-3; 
-%             obj.bact = 3*obj.kact; 
-            
+            df = 0.25*(1 + 2*obj.lr)*(df_num/df_den);
+            obj.df = df;             
+           
         end
-        
-        % dummy dynamics
-        %         function xdot = dynamics(obj,t,x,u)
-        %             xdot = 0*x + 0*u;
-        %             %dxdot = [1, zeros(1, 1 + numel(x) + numel(u))];
-        %
-        %         end
+
         
         function u0 = getDefaultInput(obj)
             u0 = [0.5*(obj.Vb - obj.Vg); 0];
@@ -129,27 +119,21 @@ classdef PZTBender < DrakeSystem
             Vt = obj.dp.Vb - u(1);        % voltage on top plate
             Vb = u(1) - obj.dp.Vg;        % voltage on bottom plate
             q = u(2);
-            qd = u(3);
-            Ft = (0.75*Vt/obj.ap.lact)*obj.ap.f31_eff_b*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-            Fb = (0.75*Vb/obj.ap.lact)*obj.ap.f31_eff_b*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-%             eps_t = -q*(obj.tp
-%             Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (q/obj.df)*...
-%                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-%             Fb = (0.75*Vb/obj.ap.lact)*(obj.ap.f31_eff_b + (-q/obj.df)*...
-%                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-% %             
-            fprintf('ActuatorForce at %f: %e \n', t, -obj.kact*q);
+ 
+            Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (q/obj.df)*...
+                (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
+            Fb = (0.75*Vb/obj.ap.lact)*(obj.ap.f31_eff_b + (-q/obj.df)*...
+                (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             
-            y = obj.orien*(Ft - Fb) - obj.kact*q - obj.bact*qd;  % Fb - Ft results in positive(y) force with V > Vb/2
-            %             y = obj.orien*(Ft - Fb); % - obj.bact*qd;
-            % NOTE: need to add back actuator spring. Causing chatter
-            %             y = -(obj.kact*q + obj.bact*qd);
-            %             y = -5*obj.bact*qd;
+            Eave = obj.ap.Emin - (obj.ap.Emax - obj.ap.Emin)*(obj.ap.A0 + obj.ap.A1*cos(obj.ap.omg*q));
+            
+            kact = 0.85*3*(obj.ap.wn/obj.ap.lact^3)*obj.GF*(((1/3)*Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + ...
+                3*obj.tcf*obj.ap.tpzt + 2*obj.ap.tpzt^2)+ obj.ap.Ecf*obj.tcf^3/12)/(1 + 2*obj.lr));
+%             kact = kact*1e-3;                       
+            
+            y = obj.orien*(Ft - Fb) - kact*q; 
         end
-        %
-        %         function x0 = getInitialState(obj)
-        %             x0 = 0;
-        %         end
+
     end
     
 end

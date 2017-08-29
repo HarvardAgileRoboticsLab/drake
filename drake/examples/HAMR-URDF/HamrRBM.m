@@ -10,6 +10,9 @@ classdef HamrRBM < RigidBodyManipulator
         function obj=HamrRBM(urdf,options)
             
             typecheck(urdf,'char');
+            if nargin < 1
+                urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaled.urdf');
+            end
             
             if nargin < 2
                 options = struct();

@@ -22,7 +22,10 @@ classdef HamrVariationalRBM < RigidBodyManipulator
         
         function obj=HamrVariationalRBM(urdf,options)
             
-            typecheck(urdf,'char');
+            if nargin < 1
+                urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMRVariational_scaled.urdf');
+            end
+            typecheck(urdf,'char');    
             
             if nargin < 2
                 options = struct();

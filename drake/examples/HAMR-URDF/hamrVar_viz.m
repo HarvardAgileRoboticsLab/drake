@@ -10,7 +10,7 @@ options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.z_inactive_guess_tol = 1;
 options.use_bullet = false;
-options.dt = 1;
+options.dt = 2;
 
 % floating (gnd contact) or in air (not floating)
 % ISFLOAT = false;
@@ -36,7 +36,7 @@ hamr = compile(hamr);
 v = hamr.constructVisualizer();
 
 %% Build Actuators
-dp.Vb = 175;
+dp.Vb = 200;
 dp.Vg = 0;
 %
 nact = 8;
@@ -79,7 +79,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 8000;
+tsim = 3000;
 
 t = 0:options.dt:tsim;
 
@@ -102,10 +102,8 @@ Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RRSwing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                      % RRLift
 
-% Vact = zeros(size(Vact));
-
 % ramp
-tramp = 3/fd;
+tramp = 2/fd;
 ramp = t/tramp; ramp(t >= tramp) = 1;
 
 Vact = bsxfun(@times, ramp, Vact) + 0.5*(dp.Vb - dp.Vg);
@@ -143,8 +141,8 @@ else
 end
 
 %% Plotting
-tt = xtraj_scaled.getBreaks();
-yy = xtraj_scaled.eval(tt);
+tt = xtraj.getBreaks();
+yy = xtraj.eval(tt);
 
 act_dof = hamr.getActuatedJoints();
 ndof = hamr.getNumDiscStates();
@@ -161,7 +159,7 @@ for i = 1:numel(act_dof)
     %     yyaxis right; plot(tt, Vact(i,:));
     %     legend('Deflection', 'Force')
     yyaxis right; hold on; plot(tt, yy(act_dof(i), :)*1e3, 'r--', ...
-        t/1000, Vact(i,:) - mean(Vact(i,:)), 'r')
+        t, Vact(i,:) - mean(Vact(i,:)), 'r')
     legend('Force', 'Deflection', 'Drive')
 end
 
