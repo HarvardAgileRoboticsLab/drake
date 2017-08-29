@@ -27,8 +27,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     double *p = mxGetPr(prhs[0]);
     mwSize len_in = mxGetNumberOfElements(prhs[0]);
     
-    if(len_in < 15) {
-        mexErrMsgTxt("Input must be a double array with 15 elements.");
+    if(len_in < 17) {
+        mexErrMsgTxt("Input must be a double array with 17 elements.");
         return;
     }
     
@@ -44,10 +44,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     float ymag = (float)p[13];
     float zmag = (float)p[14];
     
-    float abs_pressure = 0.0;
-    float diff_pressure = 0.0;
+    float abs_pressure = (float)p[15];
+    float diff_pressure = (float)p[16];
     float pressure_alt = (float)p[2];
-    float temperature = 0.0;
+    float temperature = 15.0;
     
     uint32_t fields_updated = 0x0fff;
     

@@ -26,8 +26,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     double *p = mxGetPr(prhs[0]);
     mwSize len_in = mxGetNumberOfElements(prhs[0]);
     
-    if(len_in < 15) {
-        mexErrMsgTxt("Input must be a double array with 15 elements.");
+    if(len_in < 17) {
+        mexErrMsgTxt("Input must be a double array with 17 elements.");
         return;
     }
     
@@ -51,9 +51,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     len = mavlink_msg_hil_gps_pack(0x01, 0xc8, &msg, time_usec, 3,
                                    (int32_t)lat, (int32_t)lon, (int32_t)alt,
-                                   65535, 65535, (int16_t)vel,
+                                   100, 100, (int16_t)vel,
                                    (int16_t)vn, (int16_t)ve, (int16_t)vd,
-                                   65535, 255);
+                                   65535, 10);
     
     len = mavlink_msg_to_send_buffer(buf, &msg);
     

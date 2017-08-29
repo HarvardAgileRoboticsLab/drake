@@ -9,10 +9,10 @@ function xdot = foamy_dynamics(t,x,u)
     w = x(11:13); %Body-frame angular velocity
 
     %Control input:
-    thr = u(1); %Throttle command (0-255 as sent to motor controller)
-    ail = u(2); %Aileron command (0-255 as sent to servo)
-    elev = u(3); %Elevator command (0-255 as sent to servo)
-    rud = u(4); %Rudder command (0-255 as sent to servo)
+    thr = u(1); %Throttle command (0 to 1 for Pixhawk)
+    ail = u(2); %Aileron command (-1 to 1 for Pixhawk)
+    elev = u(3); %Elevator command (-1 to 1 for Pixhawk)
+    rud = u(4); %Rudder command (-1 to 1 for Pixhawk)
 
     %Note that body coordinate frame is:
     % x: points forward out nose
@@ -21,10 +21,10 @@ function xdot = foamy_dynamics(t,x,u)
 
     % ---------- Input Checks ---------- %
 %     q = q/sqrt(q'*q); %make sure quaternion is normalized
-%     thr = min(215, max(0, thr));
-%     ail = min(215, max(0, ail));
-%     elev = min(215, max(0, elev));
-%     rud = min(215, max(0, rud));
+%     thr = min(1, max(0, thr));
+%     ail = min(1, max(-1, ail));
+%     elev = min(1, max(-1, elev));
+%     rud = min(1, max(-1, rud));
 
     % ---------- Model Parameters ---------- %
     p = foamy_parameters; %load model parameters

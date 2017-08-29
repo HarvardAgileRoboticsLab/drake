@@ -19,7 +19,7 @@ J = [Jx  Jxy Jxz;
 Jinv = inv(J);
 
 % Propeller
-g_thr = .02; %maps control input to Newtons of thrust (approximate)
+g_thr = 5.1; %maps control input to Newtons of thrust (approximate)
 r_prop = 12.7/100;
 D_prop = r_prop*2;
 A_prop = pi*r_prop*r_prop;
@@ -44,8 +44,8 @@ Rt = ct/cr; %wing taper ratio (dimensionless)
 r_ail = (b/6)*(1+2*Rt)/(1+Rt); %aileron moment arm (m)
 
 ep_ail = 0.8; %flap effectiveness (Phillips P.41)
-trim_ail = 127; %control input for zero deflection
-g_ail = (45*pi/180)/255; %maps control input to deflection angle %TODO: Calibrate
+trim_ail = 0; %control input for zero deflection
+g_ail = (45*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_elev = 18.2/100; %elevator span (m)
 cr_elev = 15.2/100; %elevator root chord (m)
@@ -56,8 +56,8 @@ Ra_elev = b_elev^2/S_elev; %elevator aspect ratio (dimensionless)
 r_elev = 45/100; %elevator moment arm (m)
 
 ep_elev = 0.9; %flap effectiveness (Phillips P.41)
-trim_elev = 127; %control input for zero deflection
-g_elev = (45*pi/180)/255; %maps control input to deflection angle %TODO: Calibrate
+trim_elev = 0; %control input for zero deflection
+g_elev = (45*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_rud = 21.6/100; %rudder span (m)
 cr_rud = 20.4/100; %rudder root chord (m)
@@ -69,8 +69,8 @@ r_rud = 48/100; %rudder moment arm (m)
 z_rud = 3/100; %height of rudder center of pressure (m)
 
 ep_rud = 0.9; %flap effectiveness (Phillips P.41)
-trim_rud = 127; %control input for zero deflection
-g_rud = (45*pi/180)/255; %maps from control input to deflection angle %TODO: Calibrate
+trim_rud = 0; %control input for zero deflection
+g_rud = (45*pi/180); %maps from control input to deflection angle %TODO: Calibrate
 
 %Lift curve polynomial fit
 Clcoef = [-9.781885297556400 38.779513049043175 -52.388499489940138 19.266141214863080 15.435976905745736 -13.127972418509980 -1.155316115022734 3.634063117174400 -0.000000000000001]';

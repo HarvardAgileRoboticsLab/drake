@@ -60,14 +60,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             u[2] = (double)controls[7]; //elevator (pitch)
             u[3] = (double)controls[2]; //rudder (yaw)
         }
-        else if(msg.msgid == MAVLINK_MSG_ID_HIL_CONTROLS) {
-            plhs[0] = mxCreateDoubleMatrix(4, 1, mxREAL);
-            double *u = mxGetPr(plhs[0]);
-            u[0] = (double)mavlink_msg_hil_controls_get_throttle(&msg);
-            u[1] = (double)mavlink_msg_hil_controls_get_roll_ailerons(&msg);
-            u[2] = (double)mavlink_msg_hil_controls_get_pitch_elevator(&msg);
-            u[3] = (double)mavlink_msg_hil_controls_get_yaw_rudder(&msg);
-        }
         else {
             for(int k = 0; k < nlhs; k++) {
                 plhs[k] = mxCreateDoubleMatrix(0, 0, mxREAL);

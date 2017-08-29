@@ -4,6 +4,7 @@
 #include <math.h>
 
 #define SQRT2 1.414213562373095
+#define BASEALT 413.0
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
@@ -28,8 +29,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     double *p = mxGetPr(prhs[0]);
     mwSize len_in = mxGetNumberOfElements(prhs[0]);
     
-    if(len_in < 12) {
-        mexErrMsgTxt("Input must be a double array with 12 elements.");
+    if(len_in < 13) {
+        mexErrMsgTxt("Input must be a double array with 13 elements.");
         return;
     }
     

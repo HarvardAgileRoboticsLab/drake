@@ -1,4 +1,4 @@
-function y = foamy_sensors(x,u)
+function y = foamy_sensors(x,xdot)
 
 %Constants
 RE = 6371000.0; %Earth radius in meters
@@ -7,10 +7,11 @@ COSLAT = 0.737662414272813; %cosine of base station latitude
 BASELON = -71.414699; %Base station longitude in degrees
 BASEALT = 413.0; %Base station altitude in meters
 
+RHO = 1.225; %Density of air in kg/m^3 at sea level and 15C
+PRESS0 = 1013.2; %Sea level pressure in millibar
+
 B0 = [-.0505; .1947; -.4807]; %ENU magnetic field vector in Gauss
 g = [0; 0; -9.81]; %ENU gravity field vector
-
-xdot = foamy_dynamics(0,x,u);
 
 lat = BASELAT + (180.0/pi)*(x(2)/RE); %lat in degrees (linearized)
 lon = BASELON + (180.0/pi)*(x(1)/(RE*COSLAT)); %lon in degrees (linearized)
@@ -26,7 +27,10 @@ accel = qrotate(qconj(x(4:7)), xdot(8:10)-g); %Body frame acceleration
 gyro = x(11:13); %body-frame angular velocity
 mag = qrotate(qconj(x(4:7)),B0); %body-frame magnetic field vector
 
-y = [gps; accel; gyro; mag];
+press = PRESS0 - .12*alt; %Atmospheric pressure in millibar
+pdyn = 0.01*0.5*RHO*(x(8:10)'*x(8:10)); %Dynamic pressure in millibar
+
+y = [gps; accel; gyro; mag; press; pdyn];
 
 end
 

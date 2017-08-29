@@ -34,8 +34,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     double *y = mxGetPr(prhs[1]);
     mwSize len_y = mxGetNumberOfElements(prhs[1]);
-    if(len_y < 15) {
-        mexErrMsgTxt("Second input must be a double array with 15 elements.");
+    if(len_y < 16) {
+        mexErrMsgTxt("Second input must be a double array with 17 elements.");
         return;
     }
     
