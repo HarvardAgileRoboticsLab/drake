@@ -1,8 +1,6 @@
 #include "mex.h"
 #include <mavlink.h>
 
-#define DEBUG_PRINTING
-
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     //Do some checks
@@ -36,16 +34,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     for(int k = 0; k < len; k++) {
         received = mavlink_frame_char_buffer(&rxbuf, &sbuf, p[k], &msg, &sout);
     }
-    
-    #ifdef DEBUG_PRINTING
-    if(received == 0) {
-        mexPrintf("Not received.\n");
-    }
-    else if(received == 2) {
-        mexPrintf("CRC error.\n");
-    }
-    mexPrintf("Message ID: %d\n", msg.msgid);
-    #endif
     
     if(nlhs > 0 && received == 1) {
         
