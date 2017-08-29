@@ -79,7 +79,7 @@ function xdot = foamy_dynamics(t,x,u)
 
     % --- Rudder --- %
     a_rud = beta(v_rud);
-    a_eff_rud = a_rud - p.ep_rud*delta_rud; %effective angle of attack
+    a_eff_rud = a_rud + p.ep_rud*delta_rud; %effective angle of attack
 
     F_rud = -p_dyn(v_rud)*p.S_rud*[Cd_rud(a_eff_rud); Cl_rud(a_eff_rud); 0];
 
@@ -211,13 +211,13 @@ end
 function cl = Cl_elev(a)
     %Lift coefficient (alpha in radians)
     
-    cl = Cl(a);
+%     cl = Cl(a);
     
-%     a = min(pi/2, max(-pi/2, a));
-%     
-%     p = foamy_parameters; %load model parameters
-%     
-%     cl = (pi/2)*p.Ra_elev*a;
+    a = min(pi/2, max(-pi/2, a));
+    
+    p = foamy_parameters; %load model parameters
+    
+    cl = (pi/2)*p.Ra_elev*a;
 end
 
 function cd = Cd_elev(a)
@@ -225,25 +225,25 @@ function cd = Cd_elev(a)
     %Induced drag for a tapered finite wing
     %From Phillips P.55
 
-    cd = Cd(a);
+%     cd = Cd(a);
     
-%     a = min(pi/2, max(-pi/2, a));
-%     
-%     p = foamy_parameters; %load model parameters
-% 
-%     cd = (pi/4)*p.Ra_elev*a^2;
+    a = min(pi/2, max(-pi/2, a));
+    
+    p = foamy_parameters; %load model parameters
+
+    cd = (pi/4)*p.Ra_elev*a^2;
 end
 
 function cl = Cl_rud(a)
     %Lift coefficient (alpha in radians)
     
-    cl = Cl(a);
+%     cl = Cl(a);
     
-%     a = min(pi/2, max(-pi/2, a));
-%     
-%     p = foamy_parameters; %load model parameters
-%     
-%     cl = (pi/2)*p.Ra_rud*a;
+    a = min(pi/2, max(-pi/2, a));
+    
+    p = foamy_parameters; %load model parameters
+    
+    cl = (pi/2)*p.Ra_rud*a;
 end
 
 function cd = Cd_rud(a)
@@ -251,11 +251,11 @@ function cd = Cd_rud(a)
     %Induced drag for a tapered finite wing
     %From Phillips P.55
 
-    cd = Cd(a);
+%     cd = Cd(a);
     
-%     a = min(pi/2, max(-pi/2, a));
-%     
-%     p = foamy_parameters; %load model parameters
-%     
-%     cd = (pi/4)*p.Ra_rud*a^2;
+    a = min(pi/2, max(-pi/2, a));
+    
+    p = foamy_parameters; %load model parameters
+    
+    cd = (pi/4)*p.Ra_rud*a^2;
 end
