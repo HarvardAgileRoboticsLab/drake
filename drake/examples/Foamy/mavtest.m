@@ -1,6 +1,6 @@
 %--- Simulation Parameters ---%
 ts = .02; %Simulation timestep in seconds
-x = [0 0 0 0 1/sqrt(2) 1/sqrt(2) 0 0 0 0 0 0 0]'; %Initial State (pointing North)
+x = [0 0 0 0 1 0 0 0 0 0 0 0 0]'; %Initial State (pointing East)
 u = [0 0 0 0]'; %Initial controls
 
 plant = FoamyPlant();
@@ -17,7 +17,7 @@ sender = dsp.UDPSender('RemoteIPPort',14560,'LocalIPPortSource','Property','Loca
 while true
     tic
     
-    %Simulate forward one timestep with midpoint integration
+    %Simulate forward one timestep
     [x, xdot] = foamy_rk4(x,u,ts);
     
     %Calculate sensor measurements and add noise

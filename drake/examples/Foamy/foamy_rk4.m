@@ -23,18 +23,25 @@ xn = x + dt*xdot;
 
 end
 
-function [x,xdot] = clip(x,varargin)
+function [xc,xdotc] = clip(x,varargin)
+
+if nargin == 2
+    xdot = varargin{1};
+else
+    xdot = zeros(13,1);
+end
+
+xc = x;
+xdotc = xdot;
+
 %Make sure quaternion is normalized
-x(4:7) = x(4:7)/sqrt(x(4:7)'*x(4:7));
+xc(4:7) = x(4:7)/sqrt(x(4:7)'*x(4:7));
 
 %Make sure we don't go through the ground
-x(3) = max(0,x(3));
-if(x(3) == 0)
-    x(10) = max(0,x(10));
-    if nargin == 2
-        xdot = varargin{1};
-        xdot(3) = max(0,xdot(3));
-        xdot(10) = max(0,xdot(10));
-    end
+xc(3) = max(0,x(3));
+if(xc(3) == 0)
+    xc(10) = max(0,x(10));
+    xdotc(3) = max(0,xdot(3));
+    xdotc(10) = max(0,xdot(10));
 end
 end

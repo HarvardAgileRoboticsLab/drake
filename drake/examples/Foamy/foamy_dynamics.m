@@ -49,8 +49,8 @@ function xdot = foamy_dynamics(t,x,u)
     % --- Outboard Wing Sections --- %
     a_rout = alpha(v_rout);
     a_lout = alpha(v_lout);
-    a_eff_rout = a_rout + p.ep_ail*delta_ail; %effective angle of attack
-    a_eff_lout = a_lout - p.ep_ail*delta_ail; %effective angle of attack
+    a_eff_rout = a_rout - p.ep_ail*delta_ail; %effective angle of attack
+    a_eff_lout = a_lout + p.ep_ail*delta_ail; %effective angle of attack
 
     F_rout = -p_dyn(v_rout)*.5*p.S_out*[Cd_wing(a_eff_rout); 0; Cl_wing(a_eff_rout)];
     F_lout = -p_dyn(v_lout)*.5*p.S_out*[Cd_wing(a_eff_lout); 0; Cl_wing(a_eff_lout)];
@@ -61,8 +61,8 @@ function xdot = foamy_dynamics(t,x,u)
     % --- Inboard Wing Sections (Includes Propwash) --- %
     a_rin = alpha(v_rin);
     a_lin = alpha(v_lin);
-    a_eff_rin = a_rin + p.ep_ail*delta_ail; %effective angle of attack
-    a_eff_lin = a_lin - p.ep_ail*delta_ail; %effective angle of attack
+    a_eff_rin = a_rin - p.ep_ail*delta_ail; %effective angle of attack
+    a_eff_lin = a_lin + p.ep_ail*delta_ail; %effective angle of attack
 
     F_rin = -p_dyn(v_rin)*.5*p.S_in*[Cd_wing(a_eff_rin); 0; Cl_wing(a_eff_rin)];
     F_lin = -p_dyn(v_lin)*.5*p.S_in*[Cd_wing(a_eff_lin); 0; Cl_wing(a_eff_lin)];
@@ -72,7 +72,7 @@ function xdot = foamy_dynamics(t,x,u)
 
     % --- Elevator --- %
     a_elev = alpha(v_elev);
-    a_eff_elev = a_elev + p.ep_elev*delta_elev; %effective angle of attack
+    a_eff_elev = a_elev - p.ep_elev*delta_elev; %effective angle of attack
 
     F_elev = -p_dyn(v_elev)*p.S_elev*[Cd_elev(a_eff_elev); 0; Cl_elev(a_eff_elev)];
 

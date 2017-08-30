@@ -51,7 +51,7 @@ classdef FoamyPlant < DrakeSystem
             prog = addStateConstraint(prog,ConstantConstraint(x0),1);
             prog = addStateConstraint(prog,ConstantConstraint(xf),N);
             prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,4:7);
-            prog = addInputConstraint(prog,BoundingBoxConstraint([0; 0; 0; 0], [255; 255; 255; 255]),1:N);
+            prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),1:N);
             prog = addRunningCost(prog,@cost);
             %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
 
@@ -109,7 +109,7 @@ classdef FoamyPlant < DrakeSystem
             v0 = [v 0 0]';
             w0 = [0 0 0]';
 
-            u0 = [127; 127; 127; 127; 0; 0; 0];
+            u0 = [.5; 0; 0; 0; 0; 0; 0];
 
             function r = trimResidual(x)
                 if isempty(varargin)

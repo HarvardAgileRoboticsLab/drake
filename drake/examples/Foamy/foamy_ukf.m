@@ -1,7 +1,7 @@
 function [xhat, Phat] = foamy_ukf(x,y,u,P,Q,R,ts)
 
 Nx = 12;
-Ny = 15;
+Ny = 17;
 Np = Nx+2; %Number of sigma points
 w = 1/Np; %Sigma point weights
 
@@ -45,7 +45,8 @@ xbar(4:7) = qbar;
 %Calculate predicted measurements
 y_p = zeros(Ny,Np);
 for j = 1:Np
-    y_p(:,j) = foamy_sensors(x_p(:,j),u);
+    xdot_p = foamy_dynamics_mex(0,x_p(:,j),u);
+    y_p(:,j) = foamy_sensors(x_p(:,j),xdot_p);
 end
 ybar = zeros(Ny,1);
 for j = 1:Np

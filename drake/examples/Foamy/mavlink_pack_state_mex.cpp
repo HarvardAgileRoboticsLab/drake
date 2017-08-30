@@ -46,10 +46,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     //We're using ENU in our simulator but PX4 uses NED
     //So we have to rotate our quaternion
     float attitude_quaternion[4];
-    attitude_quaternion[0] = (float)((-1/SQRT2)*(x[4]+x[5]));
-    attitude_quaternion[1] = (float)((1/SQRT2)*(x[3]+x[6]));
-    attitude_quaternion[2] = (float)((1/SQRT2)*(x[3]-x[6]));
-    attitude_quaternion[3] = (float)((1/SQRT2)*(x[5]-x[4]));
+    attitude_quaternion[0] = (float)((1/SQRT2)*(x[4]+x[5]));
+    attitude_quaternion[1] = (float)((-1/SQRT2)*(x[3]+x[6]));
+    attitude_quaternion[2] = (float)((-1/SQRT2)*(x[3]-x[6]));
+    attitude_quaternion[3] = (float)((-1/SQRT2)*(x[5]-x[4]));
     
     double vlat = round(100.0*y[3]); //linear velocity in cm/sec
     double vlon = round(100.0*y[4]); //linear velocity in cm/sec
