@@ -57,7 +57,7 @@ r_elev = 45/100; %elevator moment arm (m)
 
 ep_elev = 0.9; %flap effectiveness (Phillips P.41)
 trim_elev = 0; %control input for zero deflection
-g_elev = (10*pi/180); %maps control input to deflection angle %TODO: Calibrate
+g_elev = (15*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_rud = 21.6/100; %rudder span (m)
 cr_rud = 20.4/100; %rudder root chord (m)
@@ -70,7 +70,7 @@ z_rud = 3/100; %rudder moment arm along z-axis (m)
 
 ep_rud = 0.9; %flap effectiveness (Phillips P.41)
 trim_rud = 0; %control input for zero deflection
-g_rud = (10*pi/180); %maps from control input to deflection angle %TODO: Calibrate
+g_rud = (15*pi/180); %maps from control input to deflection angle %TODO: Calibrate
 
 b_fus = 14.6/100; %fuselage span (m)
 cm_fus = 64.2/100; %fuselage mean chord (m)
