@@ -18,7 +18,7 @@ while true
     tic
     
     %Simulate forward one timestep with midpoint integration
-    [x, xdot] = foamy_midpoint(x,u,ts);
+    [x, xdot] = foamy_rk4(x,u,ts);
     
     %Calculate sensor measurements and add noise
     %(PX4 doesn't work without some noise)

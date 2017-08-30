@@ -3,7 +3,7 @@ function p = foamy_parameters()
 % ----- Model Parameters for McFoamy RC Airplane ----- %
 
 g = 9.81; %Gravitational acceleration (m/s^2)
-rho = 1.2; %Air density at 20C (kg/m^3)
+rho = 1.225; %Air density at 20C (kg/m^3)
 m = .484; %Mass of plane (kg)
 
 % Inertias
@@ -45,7 +45,7 @@ r_ail = (b/6)*(1+2*Rt)/(1+Rt); %aileron moment arm (m)
 
 ep_ail = 0.8; %flap effectiveness (Phillips P.41)
 trim_ail = 0; %control input for zero deflection
-g_ail = (15*pi/180); %maps control input to deflection angle %TODO: Calibrate
+g_ail = (30*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_elev = 18.2/100; %elevator span (m)
 cr_elev = 15.2/100; %elevator root chord (m)
@@ -57,7 +57,7 @@ r_elev = 45/100; %elevator moment arm (m)
 
 ep_elev = 0.9; %flap effectiveness (Phillips P.41)
 trim_elev = 0; %control input for zero deflection
-g_elev = (15*pi/180); %maps control input to deflection angle %TODO: Calibrate
+g_elev = (30*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_rud = 21.6/100; %rudder span (m)
 cr_rud = 20.4/100; %rudder root chord (m)
@@ -65,14 +65,21 @@ ct_rud = 12.9/100; %rudder tip chord (m)
 cm_rud = (ct_rud + cr_rud)/2; %mean rudder chord (m)
 S_rud = b_rud*cm_rud; %planform area of rudder (m^2)
 Ra_rud = b_rud^2/S_rud; %rudder aspect ratio (dimensionless)
-r_rud = 48/100; %rudder moment arm (m)
-z_rud = 3/100; %height of rudder center of pressure (m)
+r_rud = 48/100; %rudder moment arm along x-axis (m)
+z_rud = 3/100; %rudder moment arm along z-axis (m)
 
 ep_rud = 0.9; %flap effectiveness (Phillips P.41)
 trim_rud = 0; %control input for zero deflection
-g_rud = (15*pi/180); %maps from control input to deflection angle %TODO: Calibrate
+g_rud = (30*pi/180); %maps from control input to deflection angle %TODO: Calibrate
 
-%Lift curve polynomial fit
+b_fus = 14.6/100; %fuselage span (m)
+cm_fus = 64.2/100; %fuselage mean chord (m)
+S_fus = b_fus*cm_fus; %fuselage area (m^2)
+Ra_fus = b_fus^2/S_fus; %fuselage aspect ratio (dimensionless)
+r_fus = 6.4/100; %fuselage moment arm along x-axis (m)
+z_fus = 0.7/100; %fuselage moment arm along z-axis (m)
+
+%Lift curve polynomial fit for main wing
 Clcoef = [-9.781885297556400 38.779513049043175 -52.388499489940138 19.266141214863080 15.435976905745736 -13.127972418509980 -1.155316115022734 3.634063117174400 -0.000000000000001]';
 Cdcoef = [-0.353585618276247 3.607550808703421 -10.272069825351215 -4.489225907857385 -2.746985301074068 3.480420330498847 0.085904634206004 0.063691497636087]';
 
@@ -128,6 +135,12 @@ p.z_rud = z_rud;
 p.ep_rud = ep_rud;
 p.trim_rud = trim_rud;
 p.g_rud = g_rud;
+p.b_fus = b_fus;
+p.cm_fus = cm_fus;
+p.S_fus = S_fus;
+p.Ra_fus = Ra_fus;
+p.r_fus = r_fus;
+p.z_fus = z_fus;
 p.Clcoef = Clcoef;
 p.Cdcoef = Cdcoef;
 

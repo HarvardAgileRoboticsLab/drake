@@ -44,6 +44,7 @@ function xdot = foamy_dynamics(t,x,u)
     v_lin = v_body + cross(w,[0; -p.l_in; 0]) + v_propwash;
     v_elev = v_body + cross(w,[-p.r_elev; 0; 0]) + v_propwash;
     v_rud = v_body + cross(w,[-p.r_rud; 0; -p.z_rud]) + v_propwash;
+    v_fus = v_body + v_propwash;
 
     % --- Outboard Wing Sections --- %
     a_rout = alpha(v_rout);
@@ -85,6 +86,14 @@ function xdot = foamy_dynamics(t,x,u)
 
     F_rud = brotate(a_rud,F_rud); %rotate to body frame
 
+    
+    % --- Fuselage --- %
+    a_fus = beta(v_fus);
+    
+    F_fus = -p_dyn(v_fus)*p.S_fus*[Cd_fus(a_fus); Cl_fus(a_fus); 0];
+    
+    F_fus = brotate(a_fus,F_fus); %rotate to body frame
+    
     % --- Propeller --- %
     F_thr = [thr*p.g_thr; 0; 0];
     n_prop = sqrt(F_thr(1)/(p.rho*p.Ct*(p.D_prop^4))); %rotation speed in Hz
@@ -103,13 +112,15 @@ function xdot = foamy_dynamics(t,x,u)
     T_elev = cross([-p.r_elev; 0; 0],F_elev);
 
     T_rud = cross([-p.r_rud; 0; -p.z_rud],F_rud);
+    
+    T_fus = cross([-p.r_fus; 0; -p.z_fus],F_fus);
 
     % ---------- Add Everything Together ---------- %
 
-    F_aero = F_rout + F_lout + F_rin + F_lin + F_elev + F_rud + F_thr;
+    F_aero = F_rout + F_lout + F_rin + F_lin + F_elev + F_rud + F_fus + F_thr;
     F = qrotate(q,F_aero) - [0; 0; p.m*p.g];
 
-    T = T_rout + T_lout + T_rin + T_lin + T_elev + T_rud + T_prop;
+    T = T_rout + T_lout + T_rin + T_lin + T_elev + T_rud + T_fus + T_prop;
 
     xdot = [v;
             .5*[-q(2:4)'*w; q(1)*w + cross(q(2:4),w)];
@@ -258,4 +269,26 @@ function cd = Cd_rud(a)
     p = foamy_parameters; %load model parameters
     
     cd = (pi/4)*p.Ra_rud*a^2;
+end
+
+function cl = Cl_fus(a)
+    %Lift coefficient (alpha in radians)
+    
+    a = min(pi/2, max(-pi/2, a));
+    
+    p = foamy_parameters; %load model parameters
+    
+    cl = (pi/2)*p.Ra_fus*a;
+end
+
+function cd = Cd_fus(a)
+    %Drag coefficient (alpha in radians)
+    %Induced drag for a tapered finite wing
+    %From Phillips P.55
+    
+    a = min(pi/2, max(-pi/2, a));
+    
+    p = foamy_parameters; %load model parameters
+    
+    cd = (pi/4)*p.Ra_fus*a^2;
 end
