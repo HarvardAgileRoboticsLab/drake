@@ -2,8 +2,6 @@
 #include <mavlink.h>
 #include <sys/time.h>
 
-#define DEBUG_PRINTING
-
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     //Do some checks
@@ -24,7 +22,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         return;
     }
     
-    double *p = mxGetPr(prhs[0]);
+    double *y = mxGetPr(prhs[0]);
     mwSize len_in = mxGetNumberOfElements(prhs[0]);
     
     if(len_in < 17) {
@@ -32,21 +30,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         return;
     }
     
-    float xacc = (float)p[6];
-    float yacc = (float)p[7];
-    float zacc = (float)p[8];
+    float xacc = (float)y[6];
+    float yacc = (float)y[7];
+    float zacc = (float)y[8];
     
-    float xgyro = (float)p[9];
-    float ygyro = (float)p[10];
-    float zgyro = (float)p[11];
+    float xgyro = (float)y[9];
+    float ygyro = (float)y[10];
+    float zgyro = (float)y[11];
     
-    float xmag = (float)p[12];
-    float ymag = (float)p[13];
-    float zmag = (float)p[14];
+    float xmag = (float)y[12];
+    float ymag = (float)y[13];
+    float zmag = (float)y[14];
     
-    float abs_pressure = (float)p[15];
-    float diff_pressure = (float)p[16];
-    float pressure_alt = (float)p[2];
+    float abs_pressure = (float)y[15];
+    float diff_pressure = (float)y[16];
+    float pressure_alt = (float)y[2];
     float temperature = 15.0;
     
     uint32_t fields_updated = 0x0fff;

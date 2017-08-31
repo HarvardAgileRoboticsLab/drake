@@ -23,7 +23,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         return;
     }
     
-    double *p = mxGetPr(prhs[0]);
+    double *y = mxGetPr(prhs[0]);
     mwSize len_in = mxGetNumberOfElements(prhs[0]);
     
     if(len_in < 17) {
@@ -31,15 +31,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         return;
     }
     
-    double lat = round(10000000.0*p[0]); //latitude in degrees*10^-7
-    double lon = round(10000000.0*p[1]); //longitude in degrees*10^-7
-    double alt = round(1000.0*p[2]); //altitude in millimeters
+    double lat = round(10000000.0*y[0]); //latitude in degrees*10^-7
+    double lon = round(10000000.0*y[1]); //longitude in degrees*10^-7
+    double alt = round(1000.0*y[2]); //altitude in millimeters
     
-    double vn = round(100.0*p[3]); //velocity in cm/s in north direction
-    double ve = round(100.0*p[4]); //velocity in cm/s in east direction
-    double vd = round(100.0*p[5]); //velocity in cm/s in down direction
+    double vn = round(100.0*y[3]); //velocity in cm/s in north direction
+    double ve = round(100.0*y[4]); //velocity in cm/s in east direction
+    double vd = round(100.0*y[5]); //velocity in cm/s in down direction
     
-    double vel = round(100.0*sqrt(p[3]*p[3] + p[4]*p[4] + p[5]*p[5])); //velocity magnitude in cm/s
+    double vel = round(100.0*sqrt(y[3]*y[3] + y[4]*y[4] + y[5]*y[5])); //velocity magnitude in cm/s
     
     mavlink_message_t msg;
     uint8_t buf[MAVLINK_MAX_PACKET_LEN];

@@ -51,11 +51,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     attitude_quaternion[2] = (float)((-1/SQRT2)*(x[3]-x[6]));
     attitude_quaternion[3] = (float)((-1/SQRT2)*(x[5]-x[4]));
     
-    double vlat = round(100.0*y[3]); //linear velocity in cm/sec
-    double vlon = round(100.0*y[4]); //linear velocity in cm/sec
-    double valt = round(-100.0*y[5]); //linear velocity in cm/sec
+    double vn = round(100.0*y[3]); //linear velocity in cm/sec
+    double ve = round(100.0*y[4]); //linear velocity in cm/sec
+    double vd = round(100.0*y[5]); //linear velocity in cm/sec
     
-    double true_airspeed = round(sqrt(vlat*vlat + vlon+vlon + valt*valt));
+    double true_airspeed = round(sqrt(vn*vn + ve*ve + vd*vd));
     double ind_airspeed = true_airspeed;
     
     float wx = (float)x[10];
@@ -79,7 +79,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                                                 wx, wy, wz, //float (rad/s)
                                                 (int32_t)lat, (int32_t)lon, //int32 (deg*10^-7)
                                                 (int32_t)alt, //int32 (millimeters)
-                                                (int16_t)vlat, (int16_t)vlon, (int16_t)valt, //int16 (cm/sec)
+                                                (int16_t)vn, (int16_t)ve, (int16_t)vd, //int16 (cm/sec)
                                                 (int16_t)ind_airspeed, //int16 (cm/sec)
                                                 (int16_t)true_airspeed, //int16 (cm/sec)
                                                 (int16_t)xacc, (int16_t)yacc, (int16_t)zacc); //int16 (g*10^-3)

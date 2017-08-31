@@ -18,14 +18,15 @@ while true
     tic
     
     %Simulate forward one timestep
-    [x, xdot] = foamy_rk4(x,u,ts);
+    [x, xdot] = foamy_midpoint(x,u,ts);
     
     %Calculate sensor measurements and add noise
     %(PX4 doesn't work without some noise)
-    y = foamy_sensors(x,xdot)+0.0001*randn(17,1);
+    y = foamy_sensors(x,xdot);
+    yn = y + 0.0001*randn(17,1);
 
     %Communicate over MAVLink
-    ydata = mavlink_pack_sensors_mex(y);
+    ydata = mavlink_pack_sensors_mex(yn);
     step(sender, ydata);
     xdata = mavlink_pack_state_mex(x,y);
     step(sender, xdata);
