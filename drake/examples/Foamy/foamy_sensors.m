@@ -2,15 +2,15 @@ function y = foamy_sensors(x,xdot)
 
 %Constants
 RE = 6371000.0; %Earth radius in meters
-BASELAT = 42.467332; %Base station latitude in degrees
-COSLAT = 0.737662414272813; %cosine of base station latitude
-BASELON = -71.414699; %Base station longitude in degrees
-BASEALT = 413.0; %Base station altitude in meters
+BASELAT = 47.3977420; %42.467332; %Base station latitude in degrees
+COSLAT = 0.676904978400579; %0.737662414272813; %cosine of base station latitude
+BASELON = 8.5455937; %-71.414699; %Base station longitude in degrees
+BASEALT = 488.11; %413.0; %Base station altitude in meters
 
 RHO = 1.225; %Density of air in kg/m^3 at sea level and 15C
 PRESS0 = 1013.2; %Sea level pressure in millibar
 
-B0 = [-.0505; .1947; -.4807]; %ENU magnetic field vector in Gauss
+B0 = [.008665; .21489; -.428427]; %[-.0505; .1947; -.4807]; %ENU magnetic field vector in Gauss
 g = [0; 0; -9.81]; %ENU gravity field vector
 
 lat = BASELAT + (180.0/pi)*(x(2)/RE); %lat in degrees (linearized)

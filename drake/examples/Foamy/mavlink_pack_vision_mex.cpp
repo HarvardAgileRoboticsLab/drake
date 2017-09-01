@@ -41,10 +41,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     //We're using ENU in our simulator but PX4 uses NED
     //So we have to rotate our quaternion
-    double q0 = ((-1/SQRT2)*(p[4]+p[5]));
-    double q1 = ((1/SQRT2)*(p[3]+p[6]));
-    double q2 = ((1/SQRT2)*(p[3]-p[6]));
-    double q3 = ((1/SQRT2)*(p[5]-p[4]));
+    double q0 = ((1/SQRT2)*(p[4]+p[5]));
+    double q1 = ((-1/SQRT2)*(p[3]+p[6]));
+    double q2 = ((-1/SQRT2)*(p[3]-p[6]));
+    double q3 = ((-1/SQRT2)*(p[5]-p[4]));
     
     //Convert quaternion to Euler angles
     double roll = atan2(2*(q0*q1 + q2*q3), 1 - 2*(q1*q1 + q2*q2));

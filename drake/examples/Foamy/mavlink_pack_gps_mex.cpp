@@ -3,6 +3,8 @@
 #include <sys/time.h>
 #include <math.h>
 
+#define PI 3.141592653589793
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     //Do some checks
@@ -41,6 +43,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     double vel = round(100.0*sqrt(y[3]*y[3] + y[4]*y[4] + y[5]*y[5])); //velocity magnitude in cm/s
     
+    double cog = 65535.0;
+    if(vel > 50) {
+        cog = round(100.0*(180/PI)*atan2(y[4],y[3]));
+        if(cog < 0) {
+            cog = cog + 36000;
+        }
+    }
+    
     mavlink_message_t msg;
     uint8_t buf[MAVLINK_MAX_PACKET_LEN];
     uint16_t len;
@@ -53,7 +63,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                                    (int32_t)lat, (int32_t)lon, (int32_t)alt,
                                    100, 100, (int16_t)vel,
                                    (int16_t)vn, (int16_t)ve, (int16_t)vd,
-                                   65535, 10);
+                                   (uint16_t)cog, 10);
     
     len = mavlink_msg_to_send_buffer(buf, &msg);
     
