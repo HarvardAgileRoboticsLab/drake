@@ -3,18 +3,18 @@ clear; clc; close all;
 
 %% Load Rigid Body
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMRVariational_scaled.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMRVariational_scaledV2.urdf');
 
 % options
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.z_inactive_guess_tol = 1;
 options.use_bullet = false;
-options.dt = 2;
+options.dt = 1;
 
 % floating (gnd contact) or in air (not floating)
-% ISFLOAT = false;
 ISFLOAT = true;
+% ISFLOAT = false;
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
@@ -34,9 +34,10 @@ end
 hamr = HamrVariationalTSRBM(urdf, options);
 hamr = compile(hamr);
 v = hamr.constructVisualizer();
+% v.inspector(x0); 
 
 %% Build Actuators
-dp.Vb = 200;
+dp.Vb = 175;
 dp.Vg = 0;
 %
 nact = 8;
@@ -79,7 +80,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 3000;
+tsim = 500;
 
 t = 0:options.dt:tsim;
 
@@ -103,7 +104,7 @@ Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                      % RRLift
 
 % ramp
-tramp = 2/fd;
+tramp = 3/fd;
 ramp = t/tramp; ramp(t >= tramp) = 1;
 
 Vact = bsxfun(@times, ramp, Vact) + 0.5*(dp.Vb - dp.Vg);
@@ -126,8 +127,8 @@ x0_hat = hamr.getManipulator().positionConstraints(x0(1:nQ));
 if tf
     disp('Valid initial condition: simulating...')
     tic;
-    options = odeset('RelTol',1e-3,'AbsTol',1e-4);
-    xtraj = simulate(hamr_OL, [0 tsim], x0, options);
+%     options = odeset('RelTol',1e-3,'AbsTol',1e-4);
+    xtraj = simulate(hamr_OL, [0 tsim], x0); %options);
     tlcp = toc;
     xtraj_scaled = PPTrajectory(foh(xtraj.getBreaks()*1e-3, xtraj.eval(xtraj.getBreaks())));
     xtraj_scaled = xtraj_scaled.setOutputFrame(xtraj.getOutputFrame());

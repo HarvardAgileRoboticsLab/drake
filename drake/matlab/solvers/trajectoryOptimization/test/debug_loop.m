@@ -10,7 +10,7 @@ plant = compile(plant);
 v = plant.constructVisualizer(); 
 
 % Time% Steps
-N=31;
+N=21;
 
 % Initial condition
 q0 = pi/2*ones(4,1); %[9*pi/10; pi/10; 9*pi/10; pi/10]; %pi/4*ones(3,1);
@@ -26,7 +26,7 @@ tf = 4;
 
 %% Simulates
 
-[q, kl] = variationalFourBarForwardSim(plant, N, x0, tf);
+% [q, kl] = variationalFourBarForwardSim(plant, N, x0, tf);
 [qopt,utraj,ctraj,btraj,psitraj,etatraj,jltraj, klopt, straj] = variationalFourBar(plant, N, x0, tf);
 %% PLotting 
 
@@ -54,10 +54,10 @@ for i=1:size(kllopt, 1)
     if i == 1
         plot(2*kl(i,1:end), 'b');
     end
-    if i == 2
+    if i == 3
         plot(2*kl(2,1:end), 'b');
     end
-    if i == 3
+    if i == 5
         plot(2*kl(3,1:end), 'b');
     end
     plot(kllopt(i,1:end), 'r--');

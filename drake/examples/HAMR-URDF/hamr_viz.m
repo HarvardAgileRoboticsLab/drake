@@ -77,7 +77,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 8.0e3; 
+tsim = 0.5e3; 
 
 t = 0:options.dt:tsim;
 

@@ -1,7 +1,7 @@
 function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivs(obj,q2,v)
 nq = length(q2);
 nv = length(v);
-[M,G,B,dM,dG,dB] = manipulatorDynamics(obj, q2, zeros(nv,1));
+[M,G,B,dM,dG,dB] = manipulatorDynamics(obj.plant, q2, zeros(nv,1));
 
 dM = reshape(dM,nq*nq,nq+nv);
 dMdq = dM(:,1:nq);
@@ -16,11 +16,11 @@ D1D1L = zeros(nq);
 step = sqrt(eps(max(q2)));
 deltaq = step*eye(nq);
 for k = 1:nq
-    [~,Gp,~,dMp] = manipulatorDynamics(obj, q2+deltaq(:,k), zeros(nv,1));
+    [~,Gp,~,dMp] = manipulatorDynamics(obj.plant, q2+deltaq(:,k), zeros(nv,1));
     dMp = reshape(dMp,nq*nq,nq+nv);
     dMdqp = dMp(:,1:nq);
     
-    [~,Gm,~,dMm] = manipulatorDynamics(obj, q2-deltaq(:,k), zeros(nv,1));
+    [~,Gm,~,dMm] = manipulatorDynamics(obj.plant, q2-deltaq(:,k), zeros(nv,1));
     dMm = reshape(dMm,nq*nq,nq+nv);
     dMdqm = dMm(:,1:nq);
     

@@ -1,5 +1,5 @@
 function [hamr,xtraj,utraj,ctraj,btraj,...
-    psitraj,etatraj,jltraj, kltraj, straj] = runVariationalTrajOpt()
+    psitraj,etatraj,jltraj, kltraj, straj,z,F,info,infeasible_constraint_name] = runVariationalTrajOpt()
 
 % file
 urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMRVariational_scaled.urdf');
@@ -43,10 +43,8 @@ traj_init.u = PPTrajectory(zoh(t_init, u_init));
 
 T_span = [0 T0];
 
-options.sweight = 10; 
+options.sweight = 1e5; 
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,options);
-
-
 
 traj_init.c = PPTrajectory(zoh([0, T0], [1e-3*rand(traj_opt.nC, 1), 1e-3*rand(traj_opt.nC, 1)])); 
 traj_init.b = PPTrajectory(zoh([0, T0], [1e-3*rand(traj_opt.nD*traj_opt.nC, 1), 1e-3*rand(traj_opt.nD*traj_opt.nC, 1)])); 
@@ -54,9 +52,6 @@ traj_init.psi = PPTrajectory(zoh([0, T0], [1e-3*rand(traj_opt.nC, 1), 1e-3*rand(
 traj_init.eta = PPTrajectory(zoh([0, T0], [1e-3*rand(traj_opt.nC*traj_opt.nD, 1), 1e-3*rand(traj_opt.nC*traj_opt.nD, 1)])); 
 traj_init.jl = PPTrajectory(zoh([0, T0], [1e-3*rand(traj_opt.nJL, 1), 1e-3*rand(traj_opt.nJL, 1)])); 
 traj_init.kl = PPTrajectory(zoh([0, T0], [1e-3*rand(traj_opt.nKL, 1), 1e-3*rand(traj_opt.nKL, 1)])); 
-
-
-
 
 
 % traj_opt = traj_opt.addRunningCost(@running_cost_fun);
@@ -77,6 +72,7 @@ traj_init.kl = PPTrajectory(zoh([0, T0], [1e-3*rand(traj_opt.nKL, 1), 1e-3*rand(
 % Flim = 0.2; % mN
 % traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(-Flim*ones(nu,1),Flim*ones(nu,1)),1:N-1);
 
+traj_opt = traj_opt.setSolver('snopt');
 traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',10000);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
