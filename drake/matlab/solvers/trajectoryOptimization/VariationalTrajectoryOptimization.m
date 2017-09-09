@@ -1190,12 +1190,39 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             df = [dg(:,1)-dg(:,(1+nQ)+(1:nQ))*vm/h, 0.5*dg(:,1+(1:nQ))-(1/h)*dg(:,(1+nQ)+(1:nQ)), 0.5*dg(:,1+(1:nQ))+(1/h)*dg(:,(1+nQ)+(1:nQ)), dg(:,(2+2*nQ):end)];
         end
         
-        function [f,df] = midpoint_final_fun(obj,final_fun,h,q1,q2)
+        
+        function [f, df] = midpoint_final_fun(obj, final_fun, h, q1, q2)
+            xin = [h; q1; q2]; 
+            [f,df] = midpoint_final(obj,final_fun,xin);
+%             df_fd = zeros(size(df));
+%             deltax = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 df_fd(:,k) = (midpoint_final(obj,final_fun,xin+deltax(:,k)) ...
+%                     - midpoint_final(obj,final_fun,xin-deltax(:,k)))/2e-6;
+%             end
+%             
+%             disp('Final cost derivative error:');
+%             disp(max(abs(df_fd(:)-df(:))));
+        end
+        
+        function [f,df] = midpoint_final(obj,final_fun,xin)
+            
+            h = xin(1:obj.N-1); 
             nQ = obj.plant.getNumPositions();
+            q1 = xin(obj.N-1+(1:nQ)); 
+            q2 = xin(obj.N-1+nQ+(1:nQ)); 
+            
             tf = sum(h);
             vm = obj.qdiff(q1,q2,h(end));
             [f,dg] = final_fun(tf,[q2; vm]);
-            df = [kron(ones(1,obj.N-1),dg(:,1)), dg(:,1)-(dg(:,(1+nQ)+(1:nQ))*vm/h(end)), -(1/h(end))*dg(:,nQ+(1:nQ)), dg(:,1:nQ)+(1/h(end))*dg(:,nQ+(1:nQ))];
+            
+            dfdh = kron(ones(1,obj.N-1),dg(:,1)); 
+            dfdh(:,end) = dfdh(:,end) - (dg(:,(1+nQ)+(1:nQ))*vm/h(end)); 
+            
+            df = [dfdh, -(1/h(end))*dg(:,1+nQ+(1:nQ)), dg(:,1+(1:nQ))+1/h(end)*dg(:,1+nQ+(1:nQ))]; 
+            
+%             df = [kron(ones(1,obj.N-1),dg(:,1)), (dg(:,(1+nQ)+(1:nQ))*vm/h(end)), ...
+%                 -(1/h(end))*dg(:,nQ+(1:nQ)), dg(:,1:nQ)+(1/h(end))*dg(:,nQ+(1:nQ))];
         end
         
         function xtraj = reconstructStateTrajectory(obj,z)

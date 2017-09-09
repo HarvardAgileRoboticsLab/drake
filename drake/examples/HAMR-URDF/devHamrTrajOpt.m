@@ -33,7 +33,7 @@ figure(1); clf; hold on;
 for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str(i))
     plot(tt, uu(i, :)*1e3); hold on;
-    plot(ttnom, uunom(i,:)*1e3); 
+    plot(ttnom, uunom(i,:)*1e3);   
     %yyaxis right; plot(tt, yy(act_dof(i), :)*1e3)
     %legend('Force(mN)', 'Deflection(\mum)')
 end

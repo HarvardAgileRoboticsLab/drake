@@ -8,16 +8,17 @@ options.terrain = RigidBodyFlatTerrain();
 file = fullfile(getDrakePath,'examples','KneedCompassGait', 'KneedCompassGait.urdf');
 plant = PlanarRigidBodyManipulator(file, options);  %RigidBodyManipulator(file,options);
 v = plant.constructVisualizer();
-% v.inspector(zeros(12,1)); 
+v.inspector(zeros(12,1)); 
 
 nq = plant.getNumPositions();
 nv = plant.getNumVelocities();
+nx = nv + nq; 
 nu = plant.getNumInputs();
 
 N = 21;
-T0 = 3;
+T0 = 2;
 
-qo = [-.1 1 0 0 0 0]';
+qo = [0    1 0 0 0 0]';
 qm = [0 1 0.2 0 -0.4 0]';
 q1 = [.1 1 0 0 0 0]';
 xo = [qo; zeros(6,1)];
@@ -31,19 +32,26 @@ traj_init.u = PPTrajectory(zoh(t_init,0.1*randn(3,N)));
 T_span = [1 T0];
 
 
-load_traj = 1; 
+load_traj = 0; 
 if load_traj
-    load('xtraj.mat')
+    load('TrajOpt2_07-Sep-2017')
     traj_init.x = xtraj; 
+    traj_init.u = utraj; 
+    traj_init.c = ctraj; 
+    traj_init.b = btraj; 
+    traj_init.psi = psitraj; 
+    traj_init.eta = etatraj; 
+    traj_init.s = straj; 
 end
 
-optimoptions.sweight = 1000;
+optimoptions.sweight = 10000;
 
 traj_opt = VariationalTrajectoryOptimization(plant,N,T_span, optimoptions);
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
+traj_opt = traj_opt.addFinalCost(@final_cost_fun);
 traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(qo),1);
-traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q1(1)),N, 1);
+% traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q1(1)),N, 1);
 % traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(0*qo),1);
 
 % -----Periodic Constraint-----
@@ -56,9 +64,9 @@ periodic_cnst_pos = LinearConstraint(zeros(nq-1,1),zeros(nq-1,1),Qperiodic);
 periodic_cnst_pos = periodic_cnst_pos.setName('periodicity_pos');
 
 % Inputs
-Rperiodic = [-eye(nu), eye(nu)]; 
-periodic_cnst_in = LinearConstraint(zeros(nu,1),zeros(nu,1),Rperiodic);
-periodic_cnst_in = periodic_cnst_in.setName('periodicity_input');
+% Rperiodic = [-eye(nu), eye(nu)]; 
+% periodic_cnst_in = LinearConstraint(zeros(nu,1),zeros(nu,1),Rperiodic);
+% periodic_cnst_in = periodic_cnst_in.setName('periodicity_input');
 
 % Velocity 
 cnstr_opts.grad_level = 1;
@@ -76,11 +84,11 @@ periodic_inds = {traj_opt.h_inds(1); traj_opt.x_inds(:,1); traj_opt.x_inds(:,2);
 
 
 traj_opt = traj_opt.addPositionConstraint(periodic_cnst_pos,{[1 N]}, [2:6]');
-traj_opt = traj_opt.addInputConstraint(periodic_cnst_in,{[1 N-1]});
+% traj_opt = traj_opt.addInputConstraint(periodic_cnst_in,{[1 N-1]});
 traj_opt = traj_opt.addConstraint(periodic_cnst_vel, periodic_inds);
 
-z_lb = qo(2) - 0.02; 
-z_ub = qo(2) + 0.02;
+z_lb = qo(2) - 0.1; 
+z_ub = qo(2) + 0.1;
 traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(z_lb,z_ub),2:N-1, 2);
 
 traj_opt = traj_opt.setSolver('snopt');
@@ -125,11 +133,21 @@ v.playback(xtraj, struct('slider', true'));
     end
 
     function [f,df] = running_cost_fun(h,x,u)
-        Q = 10*eye(12);
-        R = eye(nu);
-        g = (1/2)*(x-x1)'*Q*(x-x1) + (1/2)*u'*R*u;
+        Q = 0* diag([0; 0; 0; 1; 0; 1; zeros(nv, 1)]); % penalize knee motions
+        R = (1/50)^2*eye(nu);
+        g = (1/2)*x'*Q*x + (1/2)*u'*R*u;
         f = h*g;
-        df = [g, h*(x-x1)'*Q, h*u'*R];
+        df = [g, h*x'*Q, h*u'*R];
+    end
+
+    function [f,df] = final_cost_fun(tf,x)
+        a = 0.3; 
+        f = -a*x(1); 
+%         f = (1/2)*[tf; x]'*[tf;x];
+%         df = [tf; x]'; 
+%         df = -eye(nx+1); 
+        df = zeros(1, nx+1); 
+        df(2) = -a;
     end
 
     function [f,df] = periodic_constraint_fun(h0,q0,q1,u0,c0,b0,jl0,kl0, ...
