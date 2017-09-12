@@ -9,12 +9,12 @@ urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaled.urdf'
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.z_inactive_guess_tol = 1;
-options.dt = 1;  %time step
+options.dt = 0.1;  %time step
 options.use_bullet = false;  
 
 % floating (gnd contact) or in air (not floating)
-% ISFLOAT = false; 
-ISFLOAT = true; 
+ISFLOAT = false; 
+% ISFLOAT = true; 
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
@@ -34,7 +34,7 @@ hamr = compile(hamr);
 v = hamr.constructVisualizer();
 
 %% Build Actuators
-dp.Vb = 175;
+dp.Vb = 95;
 dp.Vg = 0;
 % 
 nact = 8;
@@ -76,8 +76,8 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Build (open-loop) control input
 
-fd = 0.001;         % drive frequency (Hz)
-tsim = 0.5e3; 
+fd = 0.065;         % drive frequency (Hz)
+tsim = 0.2e3; 
 
 t = 0:options.dt:tsim;
 
@@ -93,12 +93,12 @@ t = 0:options.dt:tsim;
 %TROT
 Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FLlift
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);                % RLSwing
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                  % RLLift
+    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);              % RLSwing
+    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi);                       % RLLift
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);                % FRswing
     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FRlift
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RRSwing
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                      % RRLift
+    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);              % RRSwing
+    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi)];                      % RRLift
 
 % ramp
 tramp = 3/fd;

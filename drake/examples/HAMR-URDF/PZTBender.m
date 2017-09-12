@@ -104,8 +104,9 @@ classdef PZTBender < DrakeSystem
                 2*obj.ap.tpzt^2) + obj.ap.Ecf*obj.tcf^3/12;
             df_num = obj.ap.f31_eff_f*obj.ap.tpzt*obj.ap.lact^2*obj.eps*(obj.ap.tpzt+obj.tcf);
             df = 0.25*(1 + 2*obj.lr)*(df_num/df_den);
-            obj.df = df;             
-           
+            obj.df = df;         
+            
+          
         end
 
         
@@ -120,17 +121,17 @@ classdef PZTBender < DrakeSystem
             Vb = u(1) - obj.dp.Vg;        % voltage on bottom plate
             q = u(2);
  
-            Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (q/obj.df)*...
+            Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (-obj.orien*q/obj.df)*...
                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-            Fb = (0.75*Vb/obj.ap.lact)*(obj.ap.f31_eff_b + (-q/obj.df)*...
+            Fb = (0.75*Vb/obj.ap.lact)*(obj.ap.f31_eff_b + (obj.orien*q/obj.df)*...
                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             
-            Eave = obj.ap.Emin - (obj.ap.Emax - obj.ap.Emin)*(obj.ap.A0 + obj.ap.A1*cos(obj.ap.omg*q));
+            Eave = obj.ap.Emin - (obj.ap.Emax - obj.ap.Emin)*(obj.ap.A0 + obj.ap.A1*cos(obj.ap.omg*obj.orien*q));
             
-            kact = 0.85*3*(obj.ap.wn/obj.ap.lact^3)*obj.GF*(((1/3)*Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + ...
+            kact = 3*(obj.ap.wn/obj.ap.lact^3)*obj.GF*(((1/3)*Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + ...
                 3*obj.tcf*obj.ap.tpzt + 2*obj.ap.tpzt^2)+ obj.ap.Ecf*obj.tcf^3/12)/(1 + 2*obj.lr));
 %             kact = kact*1e-3;                       
-            
+            disp(kact); 
             y = obj.orien*(Ft - Fb) - kact*q; 
         end
 

@@ -1144,9 +1144,8 @@
    <link name="FRSFB_Loop">
     <inertial>
       <origin xyz="3.5129 4.1437 3.0882" rpy="0 0 0" />
-      <mass value="1.4269E-02" />
-      <inertia ixx="1.206E-1" ixy="3.2785E-2" ixz="-2.9892E-2"
-        iyy="8.3598E-2" iyz="2.1738E-2" izz="9.8829E-2" />
+      <mass value="7.1345e-03" />
+      <inertia ixx="6.0300e-02" ixy="1.6393e-02" ixz="-1.4946e-02" iyy="4.1799e-02" iyz="1.0869e-02" izz="4.9415e-02" />
     </inertial>
     <visual>
       <origin xyz="2.05236472111 5.98079552649 0.0" rpy="0 0 0" />

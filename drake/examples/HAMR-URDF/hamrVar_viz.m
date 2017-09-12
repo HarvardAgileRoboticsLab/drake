@@ -10,11 +10,11 @@ options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.z_inactive_guess_tol = 1;
 options.use_bullet = false;
-options.dt = 1;
+options.dt = 0.1;
 
 % floating (gnd contact) or in air (not floating)
-ISFLOAT = true;
 % ISFLOAT = false;
+ISFLOAT = true;
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
@@ -37,12 +37,12 @@ v = hamr.constructVisualizer();
 % v.inspector(x0); 
 
 %% Build Actuators
-dp.Vb = 175;
+dp.Vb = 95;
 dp.Vg = 0;
 %
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'},  [1; 1; -1; -1; 1; 1; -1; -1], dp);
 % % hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact'}, dp);
 % % hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact'}, dp);
 
@@ -79,8 +79,8 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Build (open-loop) control input
 
-fd = 0.001;         % drive frequency (Hz)
-tsim = 500;
+fd = 0.065;         % drive frequency (Hz)
+tsim = 1000;
 
 t = 0:options.dt:tsim;
 
@@ -161,6 +161,8 @@ for i = 1:numel(act_dof)
     %     legend('Deflection', 'Force')
     yyaxis right; hold on; plot(tt, yy(act_dof(i), :)*1e3, 'r--', ...
         t, Vact(i,:) - mean(Vact(i,:)), 'r')
+%     title_str
+    rms(yy(act_dof(i), :)*1e3)
     legend('Force', 'Deflection', 'Drive')
 end
 
