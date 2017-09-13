@@ -44,3 +44,9 @@ DLL_EXPORT_SYM void velocityToPositionDotMappingmex(int nlhs, mxArray* plhs[],
 DLL_EXPORT_SYM void positionDotToVelocityMappingmex(int nlhs, mxArray* plhs[],
                                                     int nrhs,
                                                     const mxArray* prhs[]);
+
+DLL_EXPORT_SYM void kineticEnergymex(int nlhs, mxArray* plhs[], int nrhs,
+                                     const mxArray* prhs[]);
+
+DLL_EXPORT_SYM void kineticEnergyGradmex(int nlhs, mxArray* plhs[], int nrhs,
+                                         const mxArray* prhs[]);

@@ -937,7 +937,7 @@ void RigidBodyTree<T>::doKinematics(KinematicsCache<Scalar>& cache,
 
       // transform
       auto T_body_to_parent =
-          joint.get_transform_to_parent_body().cast<Scalar>() *
+          joint.get_transform_to_parent_body().template cast<Scalar>() *
               joint.jointTransform(q_body);
       element.transform_to_world =
           parent_element.transform_to_world * T_body_to_parent;
@@ -1688,6 +1688,55 @@ Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> RigidBodyTree<T>::massMatrix(
   }
 
   return ret;
+}
+
+template <typename T>
+template <typename Scalar>
+Matrix<Scalar, 1, 1> RigidBodyTree<T>::kineticEnergy(
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+    KinematicsCache<Scalar>& cache) const {
+
+  Matrix<Scalar, Dynamic, Dynamic> M = massMatrix(cache);
+  Matrix<Scalar, Dynamic, 1> qd = cache.getV();
+  
+  auto p = M*qd;
+  auto E2 = qd.transpose()*p;
+
+  Scalar half = Scalar(0.5);
+
+  return half*E2;
+}
+
+template <typename T>
+template <typename Scalar, typename ScalarOut>
+Matrix<ScalarOut, Dynamic, 1> RigidBodyTree<T>::kineticEnergyGrad(
+    // TODO(#2274) Fix NOLINTNEXTLINE(runtime/references).
+    KinematicsCache<Scalar>& cache) const {
+
+  Matrix<Scalar, Dynamic, 1> qs = cache.getQ();
+  Matrix<Scalar, Dynamic, 1> vs = cache.getV();
+
+  typedef AutoDiffScalar<Matrix<ScalarOut, Dynamic, 1>> ADS;
+
+  Matrix<ADS, Dynamic, 1> qad = qs.template cast<ADS>();
+  Matrix<ADS, Dynamic, 1> vad = vs.template cast<ADS>();
+  
+  for(int k = 0; k < qad.rows(); ++k) {
+  	qad(k).derivatives().resize(qad.rows()+vad.rows());
+  	qad(k).derivatives().setZero();
+  	qad(k).derivatives()(k) = 1;
+  }
+  for(int k = 0; k < vad.rows(); ++k) {
+  	vad(k).derivatives().resize(qad.rows()+vad.rows());
+  	vad(k).derivatives().setZero();
+  	vad(k).derivatives()(qad.rows() + k) = 1;
+  }
+  
+  auto ADcache = doKinematics(qad, vad);
+
+  auto E = kineticEnergy(ADcache);
+
+  return E.value().derivatives();
 }
 
 template <typename T>
@@ -2681,6 +2730,32 @@ RigidBodyTree<double>::massMatrix<AutoDiffXd>(
 template MatrixXd
 RigidBodyTree<double>::massMatrix<double>(KinematicsCache<double>&) const;
 
+// Explicit template instantiations for kineticEnergy.
+template Matrix<AutoDiffUpTo73d, 1, 1>
+RigidBodyTree<double>::kineticEnergy<AutoDiffUpTo73d>(
+    KinematicsCache<AutoDiffUpTo73d>&) const;
+template Matrix<AutoDiffXd, 1, 1>
+RigidBodyTree<double>::kineticEnergy<AutoDiffXd>(
+    KinematicsCache<AutoDiffXd>&) const;
+template Matrix<double, 1, 1>
+RigidBodyTree<double>::kineticEnergy<double>(
+	KinematicsCache<double>&) const;
+template Matrix<AutoDiffScalar<VectorX<AutoDiffXd>>, 1, 1>
+RigidBodyTree<double>::kineticEnergy<AutoDiffScalar<VectorX<AutoDiffXd>>>(
+    KinematicsCache<AutoDiffScalar<VectorX<AutoDiffXd>>>&) const;
+
+
+// Explicit template instantiations for kineticEnergyGrad.
+template VectorX<AutoDiffXd>
+RigidBodyTree<double>::kineticEnergyGrad<AutoDiffUpTo73d>(
+    KinematicsCache<AutoDiffUpTo73d>&) const;
+template VectorX<AutoDiffXd>
+RigidBodyTree<double>::kineticEnergyGrad<AutoDiffXd>(
+    KinematicsCache<AutoDiffXd>&) const;
+template VectorX<double>
+RigidBodyTree<double>::kineticEnergyGrad<double>(
+	KinematicsCache<double>&) const;
+
 // Explicit template instantiations for centerOfMass.
 template Vector3<AutoDiffUpTo73d>
 RigidBodyTree<double>::centerOfMass<AutoDiffUpTo73d>(
@@ -3102,6 +3177,8 @@ template void RigidBodyTree<double>::doKinematics(
     KinematicsCache<AutoDiffXd>&, bool) const;
 template void RigidBodyTree<double>::doKinematics(
     KinematicsCache<AutoDiffUpTo73d>&, bool) const;
+// template void RigidBodyTree<double>::doKinematics(
+//     KinematicsCache<AutoDiffScalar<VectorX<AutoDiffXd>>>&, bool) const;
 
 // Explicit template instantiations for doKinematics(q).
 template KinematicsCache<double>
@@ -3121,6 +3198,9 @@ RigidBodyTree<double>::doKinematics(
 template KinematicsCache<double>
 RigidBodyTree<double>::doKinematics(
     Eigen::MatrixBase<Eigen::Block<VectorXd, -1, 1, false>> const&) const;
+// template KinematicsCache<AutoDiffScalar<VectorX<AutoDiffXd>>>
+// RigidBodyTree<double>::doKinematics(
+//     Eigen::MatrixBase<VectorX<AutoDiffScalar<VectorX<AutoDiffXd>>>> const&) const;
 
 // Explicit template instantiations for doKinematics(q, v).
 template KinematicsCache<double>

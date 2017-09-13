@@ -181,11 +181,29 @@ void rpydot2angularvelMatrix(
   Scalar sy = sin(y);
   Scalar cy = cos(y);
 
-  E << cp * cy, -sy, 0.0, cp * sy, cy, 0.0, -sp, 0.0, 1.0;
+  E.setZero();
+  E(0) = cp * cy;
+  E(1) = -sy;
+  E(3) = cp * sy;
+  E(4) = cy;
+  E(6) = -sp;
+  E(8) = 1.0;
+
+  //E << cp * cy, -sy, 0.0, cp * sy, cy, 0.0, -sp, 0.0, 1.0;
   if (dE) {
-    (*dE) << 0.0, -sp * cy, -cp * sy, 0.0, -sp * sy, cp * cy, 0.0, -cp, 0.0,
-        0.0, 0.0, -cy, 0.0, 0.0, -sy, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0;
+
+    dE->setZero();
+    (*dE)(1) = -sp * cy;
+    (*dE)(2) = -cp * sy;
+    (*dE)(4) = -sp * sy;
+    (*dE)(5) = cp * cy;
+    (*dE)(7) = -cp;
+    (*dE)(11) = -cy;
+    (*dE)(14) = -sy;
+
+    // (*dE) << 0.0, -sp * cy, -cp * sy, 0.0, -sp * sy, cp * cy, 0.0, -cp, 0.0,
+    //     0.0, 0.0, -cy, 0.0, 0.0, -sy, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    //     0.0, 0.0, 0.0, 0.0;
   }
 }
 
@@ -384,17 +402,17 @@ bool isRegularInertiaMatrix(const Eigen::MatrixBase<DerivedI>& I) {
   auto cross_part_1 = I.template topRightCorner<3, 3>();
   auto cross_part_2 = I.template bottomLeftCorner<3, 3>();
   const auto& m = I(3, 3);
-  ret = ret && (J - J.transpose()).isZero();  // J symmetric
+  ret = ret && ((J - J.transpose()).sum() == Scalar(0));  // J symmetric
   ret = ret &&
-        (m * Matrix<Scalar, 3, 3>::Identity() -
+        ((m * Matrix<Scalar, 3, 3>::Identity() -
          I.template bottomRightCorner<3, 3>())
-            .isZero();  // mass part is a scalar matrix
+            .sum() == Scalar(0));  // mass part is a scalar matrix
   ret = ret &&
-        (cross_part_1 - cross_part_2)
-            .isZero();  // cross parts transposes of each other
+        ((cross_part_1 - cross_part_2.transpose())
+            .sum() == Scalar(0));  // cross parts transposes of each other
   ret = ret &&
-        (cross_part_1 + cross_part_1.transpose())
-            .isZero();  // cross parts skew symmetric
+        ((cross_part_1 + cross_part_1.transpose())
+            .sum() == Scalar(0));  // cross parts skew symmetric
 
   return ret;
 }

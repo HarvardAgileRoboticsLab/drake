@@ -385,3 +385,22 @@ void positionDotToVelocityMappingmex(int nlhs, mxArray* plhs[], int nrhs,
   mexTryToCallFunctions(nlhs, plhs, nrhs, prhs, true, func_double,
                         func_autodiff_fixed_max, func_autodiff_dynamic);
 }
+
+void kineticEnergymex(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
+  auto func_double = make_function(&RigidBodyTreed::kineticEnergy<double>);
+  auto func_autodiff_fixed_max =
+      make_function(&RigidBodyTreed::kineticEnergy<AutoDiffFixedMaxSize>);
+  auto func_autodiff_dynamic =
+      make_function(&RigidBodyTreed::kineticEnergy<AutoDiffDynamicSize>);
+  mexTryToCallFunctions(nlhs, plhs, nrhs, prhs, true, func_double,
+                        func_autodiff_fixed_max, func_autodiff_dynamic);
+}
+
+void kineticEnergyGradmex(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
+  auto func_double = make_function(&RigidBodyTreed::kineticEnergyGrad<double,double>);
+  auto func_autodiff_fixed_max =
+      make_function(&RigidBodyTreed::kineticEnergyGrad<AutoDiffFixedMaxSize,AutoDiffDynamicSize>);
+  auto func_autodiff_dynamic =
+      make_function(&RigidBodyTreed::kineticEnergyGrad<AutoDiffDynamicSize,AutoDiffDynamicSize>);
+  mexTryToCallFunctions(nlhs, plhs, nrhs, prhs, true, func_double, func_autodiff_fixed_max, func_autodiff_dynamic);
+}
