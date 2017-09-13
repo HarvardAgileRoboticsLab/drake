@@ -30,17 +30,21 @@ traj_init.x = PPTrajectory(foh([0 T0],[x0, x1]));
 traj_init.u = PPTrajectory(zoh(t_init,0.1*randn(nu,N)));
 T_span = [1 T0];
 
-traj_opt = VariationalTrajectoryOptimization(p,N,T_span);
+optimoptions.joint_limit_collisions = true; 
+traj_opt = VariationalTrajectoryOptimization(p,N,T_span, optimoptions);
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q0),1);  
 % traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(qm),7);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q1),N);
 traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(zeros(nv,1)),1);
 
-[q_lb, q_ub] = getJointLimits(p);
-q_ub(3) = q0(3) + 0.01;
-q_lb(3) = q0(3) - 0.02;
-traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(q_lb,q_ub),2:N-1);
+% [q_lb, q_ub] = getJointLimits(p);
+% q_ub(3) = q0(3) + 0.01;
+% q_lb(3) = q0(3) - 0.02;
+% traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(q_lb,q_ub),2:N-1);
+z_ub = q0(3) + 0.01;
+z_lb = q0(3) - 0.02;
+traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(z_lb,z_ub),2:N-1, 3);
 
 
 state_cost = Point(getStateFrame(p),ones(nx,1));

@@ -56,6 +56,7 @@ x0 = [q0; zeros(6,1)];
 xm = [qm; zeros(6,1)];
 x1 = [q1; zeros(6,1)];
 
+
 t_init = linspace(0,T0,N);
 % traj_init.x = PPTrajectory(foh([0 T0/2 T0],[x0 x1 xf]));
 traj_init.x = PPTrajectory(foh([0 T0/2 T0],[x0, xm, x1]));

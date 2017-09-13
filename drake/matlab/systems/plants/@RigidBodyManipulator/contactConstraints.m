@@ -62,7 +62,7 @@ if nC == 0
 end
 
 % For now, all coefficients of friction are 1
-mu = ones(nC,1);
+mu = 0.5*ones(nC,1);            % CHANGED BY NEEL (7/18/17)
 
 d = obj.surfaceTangents(normal);
 

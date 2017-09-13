@@ -30,7 +30,7 @@ tic
 [xtraj,utraj,z,F,info] = prog.solveTraj(tf0,traj_init);
 toc
 
-v.playback(xtraj);
+v.playback(xtraj, struct('slider', true));
 
     function [g,dg] = cost(h,x,u)
         R = 1;

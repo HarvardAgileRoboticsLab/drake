@@ -9,10 +9,10 @@ tf0 = 4;
 N = 25;
 
 traj_opt = VariationalTrajectoryOptimization(p,N,[2 6]);
-traj_opt = traj_opt.addStateConstraint(ConstantConstraint(x0(1)),1);
-traj_opt = traj_opt.addStateConstraint(ConstantConstraint(x0(1)),2);
-traj_opt = traj_opt.addStateConstraint(ConstantConstraint(xf(1)),N-1);
-traj_opt = traj_opt.addStateConstraint(ConstantConstraint(xf(1)),N);
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1)),1);
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1)),2);
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(xf(1)),N-1);
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(xf(1)),N);
 traj_opt = traj_opt.addRunningCost(@cost);
 traj_opt = traj_opt.addFinalCost(@finalCost);
 

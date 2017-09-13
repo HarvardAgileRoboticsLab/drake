@@ -20,7 +20,7 @@ trajOpt = trajOpt.addVelocityConstraint(ConstantConstraint(v0),1);
 trajOpt = trajOpt.setSolverOptions('snopt','IterationsLimit',200000);
 
 t_init = 0:.1:2;
-traj_init.x = PPTrajectory(zoh([0 Tf],[q0 q0]));
+traj_init.x = PPTrajectory(foh([0 Tf],[[q0;v0], [q0; v0]]));
 
 tic
 [xtraj,utraj,ctraj,btraj,straj,z,F,info,infeasible_constraint_name] = trajOpt.solveTraj(t_init,traj_init);
@@ -28,4 +28,4 @@ toc
 
 v = p.constructVisualizer();
 v.axis = [0 5 -.1 3];
-v.playback(xtraj);
+v.playback(xtraj, struct('slider', true));
