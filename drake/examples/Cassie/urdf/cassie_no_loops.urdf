@@ -432,7 +432,7 @@
     </visual>
   </link>
 
-  <link name="heel_spring_left">
+  <link name="ankle_spring_left">
     <inertial>
       <origin
         xyz="0.081 0.0022 0"
@@ -459,7 +459,7 @@
     </visual>
   </link>
 
-  <link name="heel_spring_right">
+  <link name="ankle_spring_right">
     <inertial>
       <origin
         xyz="0.081 0.0022 0"
@@ -680,16 +680,6 @@
     <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
-  <joint name="hip_roll_right" type="revolute">
-    <origin xyz=".021 -.135 0" rpy="0 1.570796 0" />
-    <parent link="pelvis" />
-    <child link="yaw_right" />
-    <axis xyz="0 0 1" />
-    <limit lower="-0.393" upper="0.262" effort="50"/>
-    <dynamics damping="0.01" /> <!-- made up value -->
-  </joint> 
-
-
   <joint name="hip_yaw_left" type="revolute">
     <origin xyz="0 0 -0.07" rpy="0 -1.570796 0" />
     <parent link="yaw_left" />
@@ -699,22 +689,58 @@
     <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
-   <joint name="hip_yaw_right" type="revolute">
-    <origin xyz="0 0 -0.07" rpy="0 -1.570796 0" />
-    <parent link="yaw_right" />
-    <child link="hip_right" />
-    <axis xyz="0 0 1" />
-    <limit lower="-0.393" upper="0.393" effort="50"/>
-    <dynamics damping="0.01" /> <!-- made up value -->
-  </joint>
-
-
   <joint name="hip_pitch_left" type="revolute">
     <origin xyz="0 0 -0.09" rpy="1.570796 1.570796 0" />
     <parent link="hip_left" />
     <child link="thigh_left" />
     <axis xyz="0 0 1" />
     <limit lower="-0.873" upper="1.396" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
+  </joint>
+
+  <joint name="knee_motor_left" type="revolute">
+    <origin xyz="0.12 0 0.045" rpy="0 0 0" />
+    <parent link="thigh_left" />
+    <child link="knee_left" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.862" upper="-0.646" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
+  </joint>
+
+  <joint name="toe_crank_left_fixed" type="fixed">
+    <origin xyz="0.058 -0.034 0.02275" rpy="0 0 0" />
+    <parent link="tarsus_left" />
+    <child link="toe_crank_link_left" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.443" upper="-0.524" effort="50"/>
+  </joint>
+
+  <joint name="toe_left" type="revolute">
+    <origin xyz="0.408 -0.040 0" rpy="0 0 0" />
+    <parent link="tarsus_left" />
+    <child link="toe_left" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.443" upper="-0.524" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
+  </joint>
+
+
+
+  <joint name="hip_roll_right" type="revolute">
+    <origin xyz=".021 -.135 0" rpy="0 1.570796 0" />
+    <parent link="pelvis" />
+    <child link="yaw_right" />
+    <axis xyz="0 0 1" />
+    <limit lower="-0.393" upper="0.262" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
+  </joint> 
+
+   <joint name="hip_yaw_right" type="revolute">
+    <origin xyz="0 0 -0.07" rpy="0 -1.570796 0" />
+    <parent link="yaw_right" />
+    <child link="hip_right" />
+    <axis xyz="0 0 1" />
+    <limit lower="-0.393" upper="0.393" effort="50"/>
     <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
@@ -727,17 +753,7 @@
     <dynamics damping="0.01" /> <!-- made up value -->
   </joint> 
 
-
-  <joint name="knee_left" type="revolute">
-    <origin xyz="0.12 0 0.045" rpy="0 0 0" />
-    <parent link="thigh_left" />
-    <child link="knee_left" />
-    <axis xyz="0 0 1" />
-    <limit lower="-2.862" upper="-0.646" effort="50"/>
-    <dynamics damping="0.01" /> <!-- made up value -->
-  </joint>
-
-  <joint name="knee_right" type="revolute">
+  <joint name="knee_motor_right" type="revolute">
     <origin xyz="0.12 0 -0.045" rpy="0 0 0" />
     <parent link="thigh_right" />
     <child link="knee_right" />
@@ -746,101 +762,12 @@
     <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
-
-  <joint name="toe_crank_left" type="fixed">
-    <origin xyz="0.058 -0.034 0.02275" rpy="0 0 0" />
-    <parent link="tarsus_left" />
-    <child link="toe_crank_link_left" />
-    <axis xyz="0 0 1" />
-    <limit lower="-2.443" upper="-0.524" effort="50"/>
-  </joint>
-
-  <joint name="toe_crank_right" type="fixed">
+  <joint name="toe_crank_right_fixed" type="fixed">
     <origin xyz="0.058 -0.034 -0.02275" rpy="0 0 0" />
     <parent link="tarsus_right" />
     <child link="toe_crank_link_right" />
     <axis xyz="0 0 1" />
     <limit lower="-2.443" upper="-0.524" effort="50"/>
-  </joint>
-
-
-  <joint name="knee_shin_passive_left" type="revolute">
-    <origin xyz="0.06068 0.04741 0" rpy="0 0 0" />
-    <parent link="knee_left" />
-    <child link="shin_left" />
-    <axis xyz="0 0 1" />
-    <limit lower="-.1" upper="0.075"/>
-    <dynamics damping="1" /> <!-- made up value -->
-  </joint>
-
-  <joint name="knee_shin_passive_right" type="revolute">
-    <origin xyz="0.06068 0.04741 0" rpy="0 0 0" />
-    <parent link="knee_right" />
-    <child link="shin_right" />
-    <axis xyz="0 0 1" />
-    <limit lower="-.1" upper="0.075"/>
-    <dynamics damping="1" /> <!-- made up value -->
-  </joint>
-
-
-  <joint name="knee_spring_joint_left" type="fixed">
-    <origin xyz="0.06068 0.08241 0" rpy="0 0 0" />
-    <parent link="knee_left" />
-    <child link="knee_spring_left" />
-  </joint> 
-
-  <joint name="knee_spring_joint_right" type="fixed">
-    <origin xyz="0.06068 0.08241 0" rpy="0 0 0" />
-    <parent link="knee_right" />
-    <child link="knee_spring_right" />
-  </joint> 
-
-
-  <joint name="shin_tarsus_passive_left" type="revolute">
-    <origin xyz="0.43476 0.02 0" rpy="0 0 0" />
-    <parent link="shin_left" />
-    <child link="tarsus_left" />
-    <axis xyz="0 0 1" />
-    <limit lower=".8" upper="3"/>
-    <dynamics damping="0.01" /> <!-- made up value -->
-  </joint>
-
-  <joint name="shin_tarsus_passive_right" type="revolute">
-    <origin xyz="0.43476 0.02 0" rpy="0 0 0" />
-    <parent link="shin_right" />
-    <child link="tarsus_right" />
-    <axis xyz="0 0 1" />
-    <limit lower=".8" upper="3"/>
-    <dynamics damping="0.01" /> <!-- made up value -->
-  </joint>
-
-
-  <joint name="heel_spring_joint_left" type="revolute">
-    <origin xyz="-.01269 -.03059 .00092" rpy="-0.0689 -0.0370 2.7208" />
-    <parent link="tarsus_left" />
-    <child link="heel_spring_left" />
-    <limit lower="-.1" upper="0.1"/>
-    <axis xyz="0 0 1" />
-    <dynamics damping="1" /> <!-- made up value -->
-  </joint> 
-
-  <joint name="heel_spring_joint_right" type="revolute">
-    <origin xyz="-.01269 -.03059 .00092" rpy="0.0734 0.0269 2.7201" />
-    <parent link="tarsus_right" />
-    <child link="heel_spring_right" />
-    <limit lower="-.1" upper="0.1"/>
-    <axis xyz="0 0 1" />
-    <dynamics damping="1" /> <!-- made up value -->
-  </joint> 
-
-
-  <joint name="toe_left" type="revolute">
-    <origin xyz="0.408 -0.040 0" rpy="0 0 0" />
-    <parent link="tarsus_left" />
-    <child link="toe_left" />
-    <axis xyz="0 0 1" />
-    <limit lower="-2.443" upper="-0.524" effort="50"/>
-    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
   <joint name="toe_right" type="revolute">
@@ -851,6 +778,79 @@
     <limit lower="-2.443" upper="-0.524" effort="50"/>
     <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
+
+
+
+
+  <joint name="knee_joint_left" type="revolute">
+    <origin xyz="0.06068 0.04741 0" rpy="0 0 0" />
+    <parent link="knee_left" />
+    <child link="shin_left" />
+    <axis xyz="0 0 1" />
+    <limit lower="-.1" upper="0.075"/>
+    <dynamics damping="1" /> <!-- made up value -->
+  </joint>
+
+  <joint name="knee_spring_left_fixed" type="fixed">
+    <origin xyz="0.06068 0.08241 0" rpy="0 0 0" />
+    <parent link="knee_left" />
+    <child link="knee_spring_left" />
+  </joint> 
+
+  <joint name="ankle_joint_left" type="revolute">
+    <origin xyz="0.43476 0.02 0" rpy="0 0 0" />
+    <parent link="shin_left" />
+    <child link="tarsus_left" />
+    <axis xyz="0 0 1" />
+    <limit lower=".8" upper="3"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
+  </joint>
+
+  <joint name="ankle_spring_joint_left" type="revolute">
+    <origin xyz="-.01269 -.03059 .00092" rpy="-0.0689 -0.0370 2.7208" />
+    <parent link="tarsus_left" />
+    <child link="ankle_spring_left" />
+    <limit lower="-.1" upper="0.1"/>
+    <axis xyz="0 0 1" />
+    <dynamics damping="1" /> <!-- made up value -->
+  </joint> 
+
+
+
+  <joint name="knee_joint_right" type="revolute">
+    <origin xyz="0.06068 0.04741 0" rpy="0 0 0" />
+    <parent link="knee_right" />
+    <child link="shin_right" />
+    <axis xyz="0 0 1" />
+    <limit lower="-.1" upper="0.075"/>
+    <dynamics damping="1" /> <!-- made up value -->
+  </joint>
+
+  <joint name="knee_spring_right_fixed" type="fixed">
+    <origin xyz="0.06068 0.08241 0" rpy="0 0 0" />
+    <parent link="knee_right" />
+    <child link="knee_spring_right" />
+  </joint> 
+
+  <joint name="ankle_joint_right" type="revolute">
+    <origin xyz="0.43476 0.02 0" rpy="0 0 0" />
+    <parent link="shin_right" />
+    <child link="tarsus_right" />
+    <axis xyz="0 0 1" />
+    <limit lower=".8" upper="3"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
+  </joint>
+
+  <joint name="ankle_spring_joint_right" type="revolute">
+    <origin xyz="-.01269 -.03059 .00092" rpy="0.0734 0.0269 2.7201" />
+    <parent link="tarsus_right" />
+    <child link="ankle_spring_right" />
+    <limit lower="-.1" upper="0.1"/>
+    <axis xyz="0 0 1" />
+    <dynamics damping="1" /> <!-- made up value -->
+  </joint> 
+
+
 
  <!-- MOTORS ||| MOTORS ||| MOTORS ||| MOTORS ||| MOTORS |||-->
  <!-- MOTORS ||| MOTORS ||| MOTORS ||| MOTORS ||| MOTORS |||-->
@@ -868,55 +868,48 @@
     <joint name="hip_roll_left"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-
-  <transmission name="hip_roll_right_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="hip_roll_right_motor"/>
-    <joint name="hip_roll_right"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
   <transmission name="hip_yaw_left_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="hip_yaw_left_motor"/>
     <joint name="hip_yaw_left"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-
-  <transmission name="hip_yaw_right_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="hip_yaw_right_motor"/>
-    <joint name="hip_yaw_right"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
   <transmission name="hip_pitch_left_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="hip_pitch_left_motor"/>
     <joint name="hip_pitch_left"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-
-  <transmission name="hip_pitch_right_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="hip_pitch_right_motor"/>
-    <joint name="hip_pitch_right"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
   <transmission name="knee_left_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="knee_left_motor"/>
-    <joint name="knee_left"/>
+    <joint name="knee_motor_left"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
-
-  <transmission name="knee_right_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="knee_right_motor"/>
-    <joint name="knee_right"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
   <transmission name="toe_left_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="toe_left_motor"/>
     <joint name="toe_left"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
+
+  <transmission name="hip_roll_right_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="hip_roll_right_motor"/>
+    <joint name="hip_roll_right"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="hip_yaw_right_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="hip_yaw_right_motor"/>
+    <joint name="hip_yaw_right"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="hip_pitch_right_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="hip_pitch_right_motor"/>
+    <joint name="hip_pitch_right"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+  <transmission name="knee_right_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="knee_right_motor"/>
+    <joint name="knee_motor_right"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
   <transmission name="toe_right_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="toe_right_motor"/>
     <joint name="toe_right"/>
@@ -938,25 +931,25 @@
 
   <force_element name="left_knee_spring">
     <torsional_spring stiffness="230" rest_angle="0" >
-      <joint name="knee_shin_passive_left" />
+      <joint name="knee_joint_left" />
     </torsional_spring>
   </force_element>
 
-  <force_element name="left_heel_spring">
+  <force_element name="left_ankle_spring">
     <torsional_spring stiffness="200" rest_angle="0">
-      <joint name="heel_spring_joint_left" />
+      <joint name="ankle_joint_left" />
     </torsional_spring>
   </force_element>
 
   <force_element name="right_knee_spring">
     <torsional_spring stiffness="230" rest_angle="0" >
-      <joint name="knee_shin_passive_right" />
+      <joint name="knee_joint_right" />
     </torsional_spring>
   </force_element>
 
-  <force_element name="right_heel_spring">
+  <force_element name="right_ankle_spring">
     <torsional_spring stiffness="200" rest_angle="0">
-      <joint name="heel_spring_joint_right" />
+      <joint name="ankle_joint_right" />
     </torsional_spring>
   </force_element>
 
