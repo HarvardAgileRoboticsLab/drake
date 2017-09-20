@@ -1,0 +1,22 @@
+package drake;
+
+struct lcmt_cassie_state {
+  // The timestamp in microseconds.
+  int64_t utime;
+
+  int32_t status;
+  int32_t charge_state;
+
+  float joint_positions[4];
+  float joint_velocities[4];
+
+  float motor_positions[10];
+  float motor_velocities[10];
+
+  float imu_angular_velocity[3];
+  float imu_linear_acceleration[3];
+  float imu_orientation[4];
+  float imu_magnetic_field[3];
+
+  float radio[16];
+}
