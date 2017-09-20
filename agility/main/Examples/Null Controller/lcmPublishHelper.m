@@ -13,10 +13,10 @@ function lcmPublishHelper(cassie_output)
   state.charge_state = cassie_output.stateOfCharge;
   state.radio = cassie_output.radio;
   
-  state.joint_positions = cassie_output.jointPosition
+  state.joint_positions = cassie_output.jointPosition;
   state.joint_velocities = cassie_output.jointVelocity;
 
-  state.motor_positions = cassie_output.motorPosition
+  state.motor_positions = cassie_output.motorPosition;
   state.motor_velocities = cassie_output.motorVelocity;
 
   state.imu_angular_velocity = cassie_output.vectorNavAngularVelocity;
