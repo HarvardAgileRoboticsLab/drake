@@ -17,6 +17,8 @@ classdef PZTBender < DrakeSystem
         eps;        % total field
         GF;         % geometry factor
         df;         % free deflection
+        kact;       % stiffness
+        bact = 0.02; 
         
     end
     
@@ -47,7 +49,7 @@ classdef PZTBender < DrakeSystem
             end
             
             if nargin < 2
-                obj.dp.Vb = 200;
+                obj.dp.Vb = 225;
                 obj.dp.Vg = 0;
             else
                 obj.dp = dp;
@@ -63,7 +65,7 @@ classdef PZTBender < DrakeSystem
             %obj = obj.setInputLimits([obj.dp.Vg; -Inf], [obj.dp.Vb; Inf]);
             
             if nargin < 4 % Default geometry for HAMR
-                obj.ap.tact = 325e-3;          %m (actuator thickness)
+                obj.ap.tact = 335e-3;          %m (actuator thickness)
                 obj.ap.tpzt = 135e-3;          %m (pzt thickness)
                 obj.ap.wn = 3.5;            %m (nominal width)
                 obj.ap.wr = 1.5;               %m (width ratio)
@@ -75,6 +77,7 @@ classdef PZTBender < DrakeSystem
                 obj.ap.f31_eff_f = 32e-3;         %Pa*m/V (in free case)
                 
                 % PZT Young's modulus as a function of strain (see N.T. Jafferis et al. 2015)
+                %                 obj.ap.Ea
                 obj.ap.Emin = 38.5e3;          %sigmoid min (Pa)
                 obj.ap.Emax = 81e3;            %sigmoid max (Pa)
                 obj.ap.Eave = 40e3;            % average modulus (Pa)
@@ -104,11 +107,30 @@ classdef PZTBender < DrakeSystem
                 2*obj.ap.tpzt^2) + obj.ap.Ecf*obj.tcf^3/12;
             df_num = obj.ap.f31_eff_f*obj.ap.tpzt*obj.ap.lact^2*obj.eps*(obj.ap.tpzt+obj.tcf);
             df = 0.25*(1 + 2*obj.lr)*(df_num/df_den);
-            obj.df = df;         
+            obj.df = df;
             
-          
+            obj.kact = 3*(obj.ap.f31_eff_b/obj.ap.f31_eff_f)*(obj.ap.wn/obj.ap.lact^3)*obj.GF*...
+                (df_den/(1+2*obj.ap.lext/obj.ap.lact));
+            
+            
+            
         end
-
+        
+        function obj = setCFThickness(obj, tcf)
+            obj.ap.tact = (obj.ap.tact - obj.tcf) + tcf;
+            obj.tcf = tcf;
+            
+            df_den = (1/3)*obj.ap.Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + 3*obj.tcf*obj.ap.tpzt + ...
+                2*obj.ap.tpzt^2) + obj.ap.Ecf*obj.tcf^3/12;
+            df_num = obj.ap.f31_eff_f*obj.ap.tpzt*obj.ap.lact^2*obj.eps*(obj.ap.tpzt+obj.tcf);
+            obj.df = 0.25*(1 + 2*obj.lr)*(df_num/df_den);        
+            
+            obj.kact = 3*(obj.ap.f31_eff_b/obj.ap.f31_eff_f)*(obj.ap.wn/obj.ap.lact^3)*obj.GF*...
+                (df_den/(1+2*obj.ap.lext/obj.ap.lact));         
+            
+        end
+        
+        
         
         function u0 = getDefaultInput(obj)
             u0 = [0.5*(obj.Vb - obj.Vg); 0];
@@ -120,21 +142,23 @@ classdef PZTBender < DrakeSystem
             Vt = obj.dp.Vb - u(1);        % voltage on top plate
             Vb = u(1) - obj.dp.Vg;        % voltage on bottom plate
             q = u(2);
- 
+            qdot = u(3); 
+            
             Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (-obj.orien*q/obj.df)*...
                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             Fb = (0.75*Vb/obj.ap.lact)*(obj.ap.f31_eff_b + (obj.orien*q/obj.df)*...
                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             
-            Eave = obj.ap.Emin - (obj.ap.Emax - obj.ap.Emin)*(obj.ap.A0 + obj.ap.A1*cos(obj.ap.omg*obj.orien*q));
-            
-            kact = 3*(obj.ap.wn/obj.ap.lact^3)*obj.GF*(((1/3)*Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + ...
-                3*obj.tcf*obj.ap.tpzt + 2*obj.ap.tpzt^2)+ obj.ap.Ecf*obj.tcf^3/12)/(1 + 2*obj.lr));
-%             kact = kact*1e-3;                       
-            disp(kact); 
-            y = obj.orien*(Ft - Fb) - kact*q; 
+            %  Eave = obj.ap.Emin - (obj.ap.Emax - obj.ap.Emin)*(obj.ap.A0 + obj.ap.A1*cos(obj.ap.omg*obj.orien*q));
+            %
+            %             kact = 0.8*3*(obj.ap.wn/obj.ap.lact^3)*obj.GF*(((1/3)*Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + ...
+            %                 3*obj.tcf*obj.ap.tpzt + 2*obj.ap.tpzt^2)+ obj.ap.Ecf*obj.tcf^3/12)/(1 + 2*obj.lr));
+            %             kact = kact*1e-3;
+            %             disp(obj.kact);
+            fprintf([obj.name, ': %d s, %f \r'], t,  abs(q)/obj.df);
+            y = obj.orien*(Ft - Fb) - obj.kact*q - obj.bact*qdot;
         end
-
+        
     end
     
 end

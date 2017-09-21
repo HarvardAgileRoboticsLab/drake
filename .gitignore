@@ -59,3 +59,7 @@ Pendulum.pmd
 drake/doc/_build
 bazel-*
 xcode
+
+drake/examples/HAMR-URDF/dev/
+
+drake/examples/HAMR-URDF/Trajectories/

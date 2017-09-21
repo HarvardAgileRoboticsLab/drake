@@ -193,7 +193,11 @@ classdef HamrVariationalRBM < RigidBodyManipulator
         end
         
         function x0 = getInitialState(obj)
-            x0 = obj.x0;
+            q0 = load('q0_biased.mat'); 
+            q0 = q0.q0_biased; 
+            x0 = [zeros(6,1); q0(1:44); zeros(6,1); q0(45:end)];
+            x0(3) = 13.04;
+            obj.x0 = x0; 
         end
     end
     

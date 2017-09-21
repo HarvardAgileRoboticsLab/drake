@@ -2,6 +2,7 @@ clear; clc; close all;
 
 [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj] = runVariationalTrajOpt();
+
 save(['TrajOpt_', date], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
     'jltraj', 'kltraj', 'straj'); 
 
@@ -14,13 +15,13 @@ v.playback(xtraj_scaled, struct('slider', true));
 
 
 %% Plotting
-load('NomTraj.mat')
-ttnom = tt; 
-uunom = yy(101:108,:);
+% load('NomTraj.mat')
+% ttnom = tt; 
+% uunom = yy(101:108,:);
 
-tt = xtraj.getBreaks();
-yy = xtraj.eval(tt);
-uu = utraj.eval(tt);
+% tt = xtraj.getBreaks();
+% yy = xtraj.eval(tt);
+% uu = utraj.eval(tt);
 
 act_dof = hamr.getActuatedJoints();
 nq = hamr.getNumPositions();

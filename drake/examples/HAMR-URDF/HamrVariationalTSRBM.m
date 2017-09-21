@@ -15,19 +15,19 @@ classdef HamrVariationalTSRBM < TimeSteppingRigidBodyManipulator
             'RRS3', 'RRS_Loop', [0; 0; 0],[-0.53; 0.12; 0.0];
             'RRL3', 'RRL_Loop', [0; 0; 0],[0.0; 0.12; -0.58];
             'RRS4', 'RRSFB_Loop', [0; 0; 0], [-2.05236472111; 5.98079552649; 0.0]};
-%         
-%         LOOP_BODIES = {'FLS_Loop', 'Chassis', [12.754659815390; 9.79; 1.71], [-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'FLL_Loop', 'Chassis', [10.504659815390; 9.79; 0.46], [-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'FLSFB_Loop', 'FLL4', [0.0; 5.98079552649; 1.64999985615], [-2.4877; 1.5376; -1.509];
-%             'RLS_Loop', 'Chassis', [-12.754659815390; 9.79; 1.71],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'RLL_Loop', 'Chassis', [-10.504659815390; 9.79; 0.46],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'RLSFB_Loop', 'RLL4', [0.0; 5.98079552649; 1.64999985615], [2.4877; 1.5376; -1.509];
-%             'FRS_Loop', 'Chassis', [12.754659815390; -9.79; 1.71],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'FRL_Loop', 'Chassis', [10.504659815390; -9.79; 0.46],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'FRSFB_Loop', 'FRL4', [0.0; -5.98079552649; 1.64999985615], [-2.4877; -1.5376; -1.509];
-%             'RRS_Loop', 'Chassis', [-12.754659815390; -9.79; 1.71],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'RRL_Loop', 'Chassis', [-10.504659815390; -9.79; 0.46],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
-%             'RRSFB_Loop', 'RRL4', [0.0; -5.98079552649; 1.64999985615], [2.4877; -1.5376; -1.509]};
+        %
+        %         LOOP_BODIES = {'FLS_Loop', 'Chassis', [12.754659815390; 9.79; 1.71], [-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'FLL_Loop', 'Chassis', [10.504659815390; 9.79; 0.46], [-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'FLSFB_Loop', 'FLL4', [0.0; 5.98079552649; 1.64999985615], [-2.4877; 1.5376; -1.509];
+        %             'RLS_Loop', 'Chassis', [-12.754659815390; 9.79; 1.71],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'RLL_Loop', 'Chassis', [-10.504659815390; 9.79; 0.46],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'RLSFB_Loop', 'RLL4', [0.0; 5.98079552649; 1.64999985615], [2.4877; 1.5376; -1.509];
+        %             'FRS_Loop', 'Chassis', [12.754659815390; -9.79; 1.71],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'FRL_Loop', 'Chassis', [10.504659815390; -9.79; 0.46],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'FRSFB_Loop', 'FRL4', [0.0; -5.98079552649; 1.64999985615], [-2.4877; -1.5376; -1.509];
+        %             'RRS_Loop', 'Chassis', [-12.754659815390; -9.79; 1.71],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'RRL_Loop', 'Chassis', [-10.504659815390; -9.79; 0.46],[-9.39733204324347E-02; -5.48845250802898E-04; -0.379657560961688];
+        %             'RRSFB_Loop', 'RRL4', [0.0; -5.98079552649; 1.64999985615], [2.4877; -1.5376; -1.509]};
         
     end
     
@@ -108,18 +108,7 @@ classdef HamrVariationalTSRBM < TimeSteppingRigidBodyManipulator
         
         function nActuatedDOF = getNumActuatedDOF(obj)
             nActuatedDOF = numel(obj.getActuatedJoints());
-        end
-        
-        function obj = setInitialState(obj,x0)
-            typecheck(x0,'double');
-            sizecheck(x0,obj.getNumStates());
-            obj.x0 = x0;
-        end
-        
-        function x0 = getInitialState(obj)
-            x0 = obj.x0;
-        end
-        
+        end        
         
         function [f, df, df2] = kl_const_fun(obj, x)
             
@@ -159,8 +148,8 @@ classdef HamrVariationalTSRBM < TimeSteppingRigidBodyManipulator
                     
                     [x1, J1, dJ1] = obj.manip.forwardKin(kinsol, loop_body1, obj.LOOP_BODIES{i,3}, struct('rotation_type', 1));
                     [x2, J2, dJ2] = obj.manip.forwardKin(kinsol, loop_body2, obj.LOOP_BODIES{i,4}, struct('rotation_type', 1));
-%                     [x1, J1, dJ1] = obj.forwardKin(kinsol, loop_body1, -obj.LOOP_BODIES{i,3}, struct('rotation_type', 1));
-%                     [x2, J2, dJ2] = obj.forwardKin(kinsol, loop_body2, zeros(3,1), struct('rotation_type', 1));
+                    %                     [x1, J1, dJ1] = obj.forwardKin(kinsol, loop_body1, -obj.LOOP_BODIES{i,3}, struct('rotation_type', 1));
+                    %                     [x2, J2, dJ2] = obj.forwardKin(kinsol, loop_body2, zeros(3,1), struct('rotation_type', 1));
                     
                     f(6*(i-1)+1:6*i) = x2 - x1;
                     df(6*(i-1)+1:6*i, :) = J2 - J1;
@@ -174,8 +163,8 @@ classdef HamrVariationalTSRBM < TimeSteppingRigidBodyManipulator
                     
                     [x1, J1] = obj.manip.forwardKin(kinsol, loop_body1, obj.LOOP_BODIES{i,3}, struct('rotation_type', 1));
                     [x2, J2] = obj.manip.forwardKin(kinsol, loop_body2, obj.LOOP_BODIES{i,4}, struct('rotation_type', 1));
-%                     [x1, J1] = obj.forwardKin(kinsol, loop_body1, -obj.LOOP_BODIES{i,3}, struct('rotation_type', 1));
-%                     [x2, J2] = obj.forwardKin(kinsol, loop_body2, zeros(3,1), struct('rotation_type', 1));
+                    %                     [x1, J1] = obj.forwardKin(kinsol, loop_body1, -obj.LOOP_BODIES{i,3}, struct('rotation_type', 1));
+                    %                     [x2, J2] = obj.forwardKin(kinsol, loop_body2, zeros(3,1), struct('rotation_type', 1));
                     
                     f(6*(i-1)+1:6*i) = x2 - x1;
                     df(6*(i-1)+1:6*i, :) = J2 - J1;
@@ -213,6 +202,19 @@ classdef HamrVariationalTSRBM < TimeSteppingRigidBodyManipulator
             obj.manip = manip2;
         end
         
+        function obj = setInitialState(obj,x0)
+            typecheck(x0,'double');
+            sizecheck(x0,obj.getNumStates());
+            obj.x0 = x0;
+        end
+        
+        function x0 = getInitialState(obj)
+            q0 = load('q0_biased.mat'); 
+            q0 = q0.q0_biased; 
+            x0 = [zeros(6,1); q0(1:44); zeros(6,1); q0(45:end)];
+            x0(3) = 13.04;
+            obj.x0 = x0; 
+        end
         
     end
 end
