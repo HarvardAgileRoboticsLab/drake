@@ -8,11 +8,11 @@
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     //Do some checks
-    if(nrhs < 2) {
+    if(nrhs < 3) {
         mexErrMsgTxt("Not enough input arguments.");
         return;
     }
-    if(nrhs > 2) {
+    if(nrhs > 3) {
         mexErrMsgTxt("Too many input arguments.");
         return;
     }
@@ -38,6 +38,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         mexErrMsgTxt("Second input must be a double array with 17 elements.");
         return;
     }
+    
+    double *t = mxGetPr(prhs[2]);
     
     double lat = round(10000000.0*y[0]); //latitude in degrees*10^-7
     double lon = round(10000000.0*y[1]); //longitude in degrees*10^-7
@@ -70,11 +72,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     uint8_t buf[MAVLINK_MAX_PACKET_LEN];
     uint16_t len;
     
-    timeval tv;
-    gettimeofday(&tv, NULL);
-    uint64_t time_usec = 1000000*tv.tv_sec + tv.tv_usec;
+//     timeval tv;
+//     gettimeofday(&tv, NULL);
+//     uint64_t time_usec = 1000000*tv.tv_sec + tv.tv_usec;
+    double time_usec = 1000000.0*t[0];
     
-    len = mavlink_msg_hil_state_quaternion_pack(0x01, 0xc8, &msg, time_usec,
+    len = mavlink_msg_hil_state_quaternion_pack(0x01, 0xc8, &msg, (uint64_t)time_usec,
                                                 attitude_quaternion, //float*
                                                 wx, wy, wz, //float (rad/s)
                                                 (int32_t)lat, (int32_t)lon, //int32 (deg*10^-7)

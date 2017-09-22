@@ -13,8 +13,10 @@ receiver = dsp.UDPReceiver('LocalIPPort',54321);
 %Send HIL_SENSOR, HIL_STATE_QUATERNION, and HIL_GPS messages
 sender = dsp.UDPSender('RemoteIPPort',14560,'LocalIPPortSource','Property','LocalIPPort',54321);
 
+sim_timer = tic;
+gps_timer = tic;
+loop_timer = tic;
 while true
-    tic
     
     %Try to receive control inputs over MAVLink
     packet = step(receiver);
@@ -25,27 +27,29 @@ while true
     end
     
     %Simulate forward one timestep
-    [x, xdot] = foamy_midpoint(x,u,ts);
+    dt = toc(loop_timer);
+    [x, xdot] = foamy_midpoint(x,u,dt);
+    loop_timer = tic;
     
     %Calculate sensor measurements and add noise
     %(PX4 doesn't work without some noise)
     y = foamy_sensors(x,xdot);
-    yn = y + [1e-6; 1e-6; .1; .01; .01; .01; 1e-4*ones(11,1)].*randn(17,1);
+    yn = y + [1e-7; 1e-7; .01; 1e-5*ones(14,1)].*randn(17,1);
     
     %Send updated state + sensor measurements over MAVLink
-    ydata = mavlink_pack_sensors_mex(yn);
+    now = toc(sim_timer);
+    ydata = mavlink_pack_sensors_mex(yn,now);
     step(sender, ydata);
-    xdata = mavlink_pack_state_mex(x,y);
+    xdata = mavlink_pack_state_mex(x,y,now);
     step(sender, xdata);
-    gdata = mavlink_pack_gps_mex(yn);
-    step(sender, gdata);
+    if (toc(gps_timer) > 0.1)
+        gdata = mavlink_pack_gps_mex(yn,now);
+        step(sender, gdata);
+        gps_timer = tic;
+    end
 %     vdata = mavlink_pack_vision_mex(x);
 %     step(sender, vdata);
     
     vis.draw(0,x);
-    
-    %Wait so we stay synchronized
-    dt = toc;
-    pause(ts-dt);
 end
 
