@@ -29,7 +29,7 @@ classdef FoamyVisualizer < Visualizer
           end
             
           obj.model = plant;
-          obj.geom = RigidBodyMesh('flat-plate.obj');
+          obj.geom = RigidBodyMesh('flat-plate.obj', [0 0.44 0.2]', [0 0 0]');
           obj.geom.scale = 0.001;
           obj.geom.c = [0.6,0,0];
           obj = update(obj,plant);

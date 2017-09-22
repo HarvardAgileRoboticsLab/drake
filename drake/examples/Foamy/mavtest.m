@@ -28,7 +28,7 @@ while true
     
     %Simulate forward one timestep
     dt = toc(loop_timer);
-    [x, xdot] = foamy_midpoint(x,u,dt);
+    [x, xdot] = foamy_rk4(x,u,dt);
     loop_timer = tic;
     
     %Calculate sensor measurements and add noise

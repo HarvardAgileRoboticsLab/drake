@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.coder" plugin-version="R2016a">
-  <configuration build-checksum="4154506356" file="/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_dynamics.prj" location="/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy" name="foamy_dynamics" target="target.unifiedcoder" target-name="MATLAB Coder">
+  <configuration build-checksum="1822856330" file="/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_dynamics.prj" location="/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy" name="foamy_dynamics" target="target.unifiedcoder" target-name="MATLAB Coder">
     <profile key="profile.mex">
       <param.BuiltInstrumentedMex>false</param.BuiltInstrumentedMex>
       <param.RanInstrumentedMex>false</param.RanInstrumentedMex>
@@ -707,11 +707,11 @@
     <var.DismissScreener>true</var.DismissScreener>
     <param.unifiedParamStorage />
     <var.gc.lastOutputRoot>codegen/mex/foamy_dynamics</var.gc.lastOutputRoot>
-    <var.gc.preBuildChecksum>805100909</var.gc.preBuildChecksum>
+    <var.gc.preBuildChecksum>1533860117</var.gc.preBuildChecksum>
     <var.cfi.lastOutputRoot />
     <var.cfi.preBuildChecksum />
     <var.outdatedOnRestore>false</var.outdatedOnRestore>
-    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_dynamics.m&lt;/file&gt;&lt;file&gt;/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_parameters.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;3079736334&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
+    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_dynamics.m&lt;/file&gt;&lt;file&gt;/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_parameters.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;383843574&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
     <var.sourceSetState>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;sourceModel&gt;&lt;primarySourceFiles&gt;&lt;file&gt;/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_dynamics.m&lt;/file&gt;&lt;file&gt;/home/zacman/Documents/MATLAB/drake-foamy/drake/examples/Foamy/foamy_parameters.m&lt;/file&gt;&lt;/primarySourceFiles&gt;&lt;fixedPointSourceFiles/&gt;&lt;fixedPointSourceRegistered&gt;false&lt;/fixedPointSourceRegistered&gt;&lt;fixedPointSourceSelected&gt;false&lt;/fixedPointSourceSelected&gt;&lt;/sourceModel&gt;</var.sourceSetState>
     <param.forceMexBuild>false</param.forceMexBuild>
     <param.configImportActive>false</param.configImportActive>
@@ -898,7 +898,7 @@
       <vista>false</vista>
       <linux>true</linux>
       <solaris>false</solaris>
-      <osver>4.4.0-93-generic</osver>
+      <osver>4.4.0-96-generic</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>glnxa64</arch>
