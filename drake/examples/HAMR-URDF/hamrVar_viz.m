@@ -10,11 +10,11 @@ options.z_inactive_guess_tol = 1;
 options.use_bullet = false;
 
 % options to change
-options.dt = 0.25;
+options.dt = 1;
 options.mu = 1;
-gait = 'PRONK';
+gait = 'TROT';
 SAVE_FLAG = 1;
-ISFLOAT = true; % floating (gnd contact) or in air (not floating)
+ISFLOAT = false; % floating (gnd contact) or in air (not floating)
 
 if ISFLOAT
     options.floating = ISFLOAT;
@@ -39,10 +39,10 @@ end
 hamr = HamrVariationalTSRBM(urdf, options);
 hamr = compile(hamr);
 v = hamr.constructVisualizer();
-% v.inspector(x0);
+v.inspector(x0);
 
 %% Build Actuators
-dp.Vb = 130;
+dp.Vb = 225;
 dp.Vg = 0;
 %
 nact = 8;
@@ -90,8 +90,8 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Build (open-loop) control input
 
-fd = 0.030;         % drive frequency (Hz)
-tsim = 300;
+fd = 0.001;         % drive frequency (Hz)
+tsim = 4000;
 
 t = 0:options.dt:tsim;
 
@@ -128,7 +128,7 @@ switch gait
 end
 
 % ramp
-tramp = 3/fd;
+tramp = 2/fd;
 ramp = t/tramp; ramp(t >= tramp) = 1;
 
 Vact = bsxfun(@times, ramp, Vact) + 0.5*(dp.Vb - dp.Vg);
@@ -212,9 +212,9 @@ end
 figure(3); clf; hold on;
 for i = 1:size(lp_b,1)
     %     subplot(2,2,i); hold on; title(legs{i});
-%     plot((lp_g(:,1,i) - mean(lp_g(:,1,i))), ...
-%         (lp_g(:,3,i) - mean(lp_g(:,3,i))))
-    plot(lp_g(:,3,i)*1e3) % - mean(lp_g(:,3,i)))
+    plot((lp_g(:,1,i) - mean(lp_g(:,1,i))), ...
+        (lp_g(:,3,i) - mean(lp_g(:,3,i))))
+%     plot(lp_g(:,3,i)*1e3) % - mean(lp_g(:,3,i)))
 %     axis equal;
     %     axis([-2.5, 2.5, -2.5, 2.5])
 end

@@ -110,9 +110,7 @@ classdef PZTBender < DrakeSystem
             obj.df = df;
             
             obj.kact = 3*(obj.ap.f31_eff_b/obj.ap.f31_eff_f)*(obj.ap.wn/obj.ap.lact^3)*obj.GF*...
-                (df_den/(1+2*obj.ap.lext/obj.ap.lact));
-            
-            
+                (df_den/(1+2*obj.ap.lext/obj.ap.lact));            
             
         end
         
@@ -142,7 +140,6 @@ classdef PZTBender < DrakeSystem
             Vt = obj.dp.Vb - u(1);        % voltage on top plate
             Vb = u(1) - obj.dp.Vg;        % voltage on bottom plate
             q = u(2);
-            qdot = u(3); 
             
             Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (-obj.orien*q/obj.df)*...
                 (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
@@ -154,9 +151,8 @@ classdef PZTBender < DrakeSystem
             %             kact = 0.8*3*(obj.ap.wn/obj.ap.lact^3)*obj.GF*(((1/3)*Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + ...
             %                 3*obj.tcf*obj.ap.tpzt + 2*obj.ap.tpzt^2)+ obj.ap.Ecf*obj.tcf^3/12)/(1 + 2*obj.lr));
             %             kact = kact*1e-3;
-            %             disp(obj.kact);
             fprintf([obj.name, ': %d s, %f \r'], t,  abs(q)/obj.df);
-            y = obj.orien*(Ft - Fb) - obj.kact*q - obj.bact*qdot;
+            y = obj.orien*(Ft - Fb);
         end
         
     end
