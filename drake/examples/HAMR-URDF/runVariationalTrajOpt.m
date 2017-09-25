@@ -28,7 +28,7 @@ T = 1e3;                        % 1 second
 N = 11;                         % number of knot points
 x0 = hamr.getInitialState(); 
 q0 = x0(1:nq); v0 = x0(nq+1:(nq+nv)); 
-x1 = x0; x1(1) = 20;            % move 10 mm
+x1 = x0; x1(1) = 10;            % move 10 mm
 
 % --- Set Input limits ---
 Flim = 0.3;                 % set max force
@@ -39,7 +39,7 @@ hamr = hamr.setInputLimits(lb, ub);
 % --- Initialize TrajOpt---
 T_span = [T T];
 
-optimoptions.sweight = 100; 
+optimoptions.sweight = 1000; 
 optimoptions.joint_limit_collisions = false; 
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
 
@@ -56,7 +56,7 @@ if LOAD == 0
 %     traj_init.jl = PPTrajectory(zoh([0, T], [1e-3*rand(traj_opt.nJL, 1), 1e-3*rand(traj_opt.nJL, 1)])); 
     traj_init.kl = PPTrajectory(zoh([0, T], [1e-3*rand(traj_opt.nKL, 1), 1e-3*rand(traj_opt.nKL, 1)])); 
     traj_init.eta = PPTrajectory(zoh([0, T], [1e-3*rand(traj_opt.nC*traj_opt.nD, 1), 1e-3*rand(traj_opt.nC*traj_opt.nD, 1)])); 
-
+%     traj_init.s = PPTrajectory(zoh([0, T], [1e-3*rand(N, 1), 1e-3*rand(N, 1)])); 
 else
     prev_traj = load('TrajOpt_25-Sep-2017 15:06:10'); 
     traj_init.x = prev_traj.xtraj; 
@@ -67,7 +67,7 @@ else
     traj_init.eta = prev_traj.etatraj;
 %     traj_init.jl = prev_traj.jltraj;
     traj_init.kl = prev_traj.kltraj;
-%     traj_init.s = prev_traj.straj;    
+    traj_init.s = prev_traj.straj;    
 end
     
 

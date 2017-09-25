@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-LOAD = 1; 
+LOAD = 0; 
 [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj,z,F,info,infeasible_constraint_name]= runVariationalTrajOpt(1);
 
@@ -17,24 +17,6 @@ v.playback(qtraj_scaled, struct('slider', true));
 
 
 %% Plotting
-% load('NomTraj.mat')
-% ttnom = tt; 
-% uunom = yy(101:108,:);
-% 
-% urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMRVariational_scaledV2_LB.urdf');
-% 
-% % options
-% options.terrain = RigidBodyFlatTerrain();
-% options.ignore_self_collisions = true;
-% options.collision_meshes = false;
-% options.use_bullet = false;
-% options.floating = true;
-% options.collision = true;
-
-
-% hamr = HamrVariationalRBM(urdf,options);
-
-% load TrajOpt_21-Sep-2017 17:16:44
 
 nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();
@@ -86,7 +68,7 @@ for i = 1:size(phi, 1)
     subplot(2,2,i); hold on; title(legs{i}); 
     yyaxis left; plot(tt, phi(i,:)); ylabel('Distance (mm)'); ylim([0, 5])
     yyaxis right; plot(tt, cc(i,:)); ylabel('Force (N)')
-    plot(tt, straj.eval(straj.getBreaks()), 'k')
+%     plot(tt, straj.eval(straj.getBreaks()), 'k')
 end
 
 

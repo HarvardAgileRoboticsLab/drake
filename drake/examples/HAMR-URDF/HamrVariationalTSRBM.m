@@ -104,11 +104,7 @@ classdef HamrVariationalTSRBM < TimeSteppingRigidBodyManipulator
             
             obj = obj.setOutputFrame(output_frame);
         end
-        
-        
-        function nActuatedDOF = getNumActuatedDOF(obj)
-            nActuatedDOF = numel(obj.getActuatedJoints());
-        end        
+
         
         function [f, df, df2] = kl_const_fun(obj, x)
             
@@ -200,7 +196,11 @@ classdef HamrVariationalTSRBM < TimeSteppingRigidBodyManipulator
             % Add Constraints
             manip2 = obj.manip.addPositionEqualityConstraint(klconst, 1:nQ);
             obj.manip = manip2;
-        end
+        end            
+        
+        function nActuatedDOF = getNumActuatedDOF(obj)
+            nActuatedDOF = numel(obj.getActuatedJoints());
+        end        
         
         function obj = setInitialState(obj,x0)
             typecheck(x0,'double');

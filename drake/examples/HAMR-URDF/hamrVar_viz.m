@@ -14,7 +14,7 @@ options.dt = 1;
 options.mu = 1;
 gait = 'TROT';
 SAVE_FLAG = 1;
-ISFLOAT = false; % floating (gnd contact) or in air (not floating)
+ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 
 if ISFLOAT
     options.floating = ISFLOAT;
@@ -39,7 +39,7 @@ end
 hamr = HamrVariationalTSRBM(urdf, options);
 hamr = compile(hamr);
 v = hamr.constructVisualizer();
-v.inspector(x0);
+% v.inspector(x0);
 
 %% Build Actuators
 dp.Vb = 225;
@@ -91,7 +91,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 4000;
+tsim = 7000;
 
 t = 0:options.dt:tsim;
 
@@ -199,7 +199,6 @@ lp_g = zeros([numel(t), size(lp_b')]);
 
 legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
 
-w = warning('off', 'all');
 for j = 1:numel(tt)
     q = yy(1:ndof/2, j);
     qd = yy(ndof/2+1: ndof, j);
