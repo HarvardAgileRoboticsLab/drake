@@ -15,13 +15,13 @@ nq = r.getNumPositions();
 nv = r.getNumVelocities();
 x = zeros(r.getNumStates(),1);
 
-
 t=0;
+dt = 0.01;
 while true
   % check if there is a message available
   msg = lcmAggregator.getNextMessage(5);
   if isempty(msg)
-      continue
+    continue
   end
   
   msg = drake.lcmt_cassie_state(msg);
@@ -33,7 +33,10 @@ while true
 
   q = quatProduct(q,qr);
 
-  x(3) = 1; % arb pelvis position for now
+
+  % x(nq+(1:3)) = x(nq+(1:3)) + dt*(msg.imu_linear_acceleration - [0;0;9.81]);
+  % x(1:3) = x(1:3) +dt*x(nq+(1:3)); % arb pelvis position for now
+  x(3) = 1.0;
   x(4:7) = q;
   x(motor_pos_to_state) = msg.motor_positions;
   x(joint_pos_to_state) = msg.joint_positions;
