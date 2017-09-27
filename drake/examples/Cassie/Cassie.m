@@ -1,14 +1,16 @@
 classdef Cassie < TimeSteppingRigidBodyManipulator 
   methods
 
-    function obj=Cassie(urdf,options)
+    function obj=Cassie(options)
+      
       if nargin < 1
-        urdf = fullfile(getDrakePath(), 'examples', 'Cassie', 'urdf', 'half_cassie_minimal.urdf');
-      else
-        typecheck(urdf,'char');
-      end
-      if nargin < 2
         options = struct();
+      end
+      if ~isfield(options,'urdf')
+          urdf = fullfile(getDrakePath(), 'examples', 'Cassie', 'urdf', 'cassie.urdf');
+      else
+        typecheck(options.urdf,'char');
+        urdf = options.urdf;
       end
       if ~isfield(options,'dt')
         options.dt = 0.0005;
@@ -31,8 +33,8 @@ classdef Cassie < TimeSteppingRigidBodyManipulator
       try
           THIGH_LEFT_ID = obj.findLinkId('thigh_left');
           THIGH_RIGHT_ID = obj.findLinkId('thigh_right');
-          HEEL_SPRING_LEFT_ID = obj.findLinkId('heel_spring_left');
-          HEEL_SPRING_RIGHT_ID = obj.findLinkId('heel_spring_right');
+          HEEL_SPRING_LEFT_ID = obj.findLinkId('ankle_spring_left');
+          HEEL_SPRING_RIGHT_ID = obj.findLinkId('ankle_spring_right');
 
 
           rel_dist_left = @(x) obj.relDistQ(x,THIGH_LEFT_ID,[0;0;0.0045],HEEL_SPRING_LEFT_ID,[0.11877; -0.0001; 0],0.5012);
@@ -55,10 +57,10 @@ classdef Cassie < TimeSteppingRigidBodyManipulator
     function [x,success,prog] = resolveConstraintsZeroSprings(obj,varargin)
 
       % add constraints for spring deflections 
-      idx = 4+[obj.findJointId('knee_shin_passive_left');
-          obj.findJointId('knee_shin_passive_right');
-          obj.findJointId('heel_spring_joint_left');
-          obj.findJointId('heel_spring_joint_right')];
+      idx = 4+[obj.findJointId('knee_joint_left');
+          obj.findJointId('knee_joint_right');
+          obj.findJointId('ankle_spring_joint_left');
+          obj.findJointId('ankle_spring_joint_right')];
  
       con = BoundingBoxConstraint(zeros(4,1),zeros(4,1));
       con = con.setName('springs');

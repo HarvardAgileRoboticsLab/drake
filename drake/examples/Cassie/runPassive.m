@@ -2,8 +2,7 @@ function runPassive
 
 options.use_bullet = false;
 options.floating = true;
-urdf = fullfile(getDrakePath(), 'examples', 'Cassie', 'urdf', 'cassie_no_loops.urdf');
-r = Cassie(urdf,options);
+r = Cassie(options);
 
 v = r.constructVisualizer;
 

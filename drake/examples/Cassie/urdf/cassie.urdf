@@ -26,6 +26,18 @@
           rgba="0.2 0.2 0.2 1.0" />
       </material>
     </visual>
+<!--     <visual>
+      <geometry>
+        <sphere radius="0.13"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </visual> -->
+    <!-- <collision>
+      <geometry>
+        <sphere radius="0.13"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </collision> -->
   </link>
 
   <link name="yaw_left">
@@ -554,8 +566,45 @@
       <material name="">
         <color rgba="0.4 0.4 0.4 1" />
       </material>
+    </visual> 
+<!--     <visual>
+      <geometry>
+        <capsule radius="0.008" length="0.165"/>
+      </geometry>
+      <origin xyz=".0159 0.050 0" rpy=".699 1.570796 0"/>
     </visual>
-  </link>
+    <collision>
+      <geometry>
+        <capsule radius="0.0075" length=".08"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+ -->    
+    <visual>
+      <geometry>
+        <sphere radius="0.001"/>
+      </geometry>
+      <origin xyz="-0.0457 .112 0" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+      <origin xyz="-0.0457 .112 0" rpy="0 0 0"/>
+    </collision>
+   <visual>
+      <geometry>
+        <sphere radius="0.001"/>
+      </geometry>
+      <origin xyz="0.088 0 0" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.0"/>
+      </geometry>
+      <origin xyz="0.088 0 0" rpy="0 0 0"/>
+    </collision>
+   </link>
 
   <link name="toe_right">
     <inertial>
@@ -582,245 +631,34 @@
         <color rgba="0.4 0.4 0.4 1" />
       </material>
     </visual>
-  </link>
-
-  <link name="plantar_rod_left">
-    <inertial>
-      <origin
-        xyz="0.1779 0 0"
-        rpy="0 0 0" />
-      <mass value="0.119" />
-      <inertia
-        ixx=".0000028"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".005530"
-        iyz="0.0"
-        izz=".005530" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+        <visual>
       <geometry>
-        <mesh filename="meshes/plantar-rod.obj" />
+        <sphere radius="0.001"/>
       </geometry>
-      <material name="">
-        <color rgba="0.4 0.4 0.4 1" />
-      </material>
+      <origin xyz="-0.0457 .112 0" rpy="0 0 0"/>
     </visual>
-  </link>
-
-  <link name="plantar_rod_right">
-    <inertial>
-      <origin
-        xyz="0.1779 0 0"
-        rpy="0 0 0" />
-      <mass value="0.119" />
-      <inertia
-        ixx=".0000028"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".005530"
-        iyz="0.0"
-        izz=".005530" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+    <collision>
       <geometry>
-        <mesh filename="meshes/plantar-rod.obj" />
+        <sphere radius="0.0"/>
       </geometry>
-      <material name="">
-        <color rgba="0.4 0.4 0.4 1" />
-      </material>
-    </visual>
-  </link>
-
-  <link name="plantar_toe_ghost_link_left">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
-  </link>
-
-  <link name="plantar_toe_ghost_link_right">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
-  </link>
-
-  <link name="plantar_crank_ghost_link_left">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
-  </link>
-
-  <link name="plantar_crank_ghost_link_right">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
-  </link>
-
-  <link name="achilles_rod_left">
-    <inertial>
-      <origin
-        xyz="0.2472 0 0"
-        rpy="0 0 0" />
-      <mass value="0.157" />
-      <inertia
-        ixx=".000004"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".014061"
-        iyz="0.0"
-        izz=".014061" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="-0.0457 .112 0" rpy="0 0 0"/>
+    </collision>
+   <visual>
       <geometry>
-        <mesh filename="meshes/achilles-rod.obj" />
+        <sphere radius="0.001"/>
       </geometry>
-      <material name="">
-        <color rgba="0.4 0.4 0.4 1" />
-      </material>
+      <origin xyz="0.088 0 0" rpy="0 0 0"/>
     </visual>
-  </link>
-
-  <link name="achilles_rod_right">
-    <inertial>
-      <origin
-        xyz="0.2472 0 0"
-        rpy="0 0 0" />
-      <mass value="0.157" />
-      <inertia
-        ixx=".000004"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".014061"
-        iyz="0.0"
-        izz=".014061" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+    <collision>
       <geometry>
-        <mesh filename="meshes/achilles-rod.obj" />
+        <sphere radius="0.0"/>
       </geometry>
-      <material name="">
-        <color rgba="0.4 0.4 0.4 1" />
-      </material>
-    </visual>
-  </link>
-
-  <link name="achilles_thigh_ghost_link_left">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
-  </link>
-
-  <link name="achilles_thigh_ghost_link_right">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
-  </link>
-
-  <link name="achilles_heel_ghost_link_left">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
-  </link>
-
-  <link name="achilles_heel_ghost_link_right">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass value="0.0001" />
-      <inertia
-        ixx=".00001"
-        ixy="0.0"
-        ixz="0.0"
-        iyy=".00001"
-        iyz="0.0"
-        izz=".00001" />
-    </inertial>
+      <origin xyz="0.088 0 0" rpy="0 0 0"/>
+    </collision>
   </link>
 
 
+ 
  <!-- JOINTS ||| JOINTS ||| JOINTS ||| JOINTS ||| JOINTS |||-->
  <!-- JOINTS ||| JOINTS ||| JOINTS ||| JOINTS ||| JOINTS |||-->
  <!-- JOINTS ||| JOINTS ||| JOINTS ||| JOINTS ||| JOINTS |||-->
@@ -839,6 +677,7 @@
     <child link="yaw_left" />
     <axis xyz="0 0 1" />
     <limit lower="-0.262" upper="0.393" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
   <joint name="hip_roll_right" type="revolute">
@@ -847,6 +686,7 @@
     <child link="yaw_right" />
     <axis xyz="0 0 1" />
     <limit lower="-0.393" upper="0.262" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint> 
 
 
@@ -856,6 +696,7 @@
     <child link="hip_left" />
     <axis xyz="0 0 1" />
     <limit lower="-0.393" upper="0.393" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
    <joint name="hip_yaw_right" type="revolute">
@@ -864,6 +705,7 @@
     <child link="hip_right" />
     <axis xyz="0 0 1" />
     <limit lower="-0.393" upper="0.393" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
 
@@ -873,6 +715,7 @@
     <child link="thigh_left" />
     <axis xyz="0 0 1" />
     <limit lower="-0.873" upper="1.396" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
   <joint name="hip_pitch_right" type="revolute">
@@ -881,27 +724,30 @@
     <child link="thigh_right" />
     <axis xyz="0 0 1" />
     <limit lower="-0.873" upper="1.396" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint> 
 
 
-  <joint name="knee_left" type="revolute">
+  <joint name="knee_motor_left" type="revolute">
     <origin xyz="0.12 0 0.045" rpy="0 0 0" />
     <parent link="thigh_left" />
     <child link="knee_left" />
     <axis xyz="0 0 1" />
     <limit lower="-2.862" upper="-0.646" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
-  <joint name="knee_right" type="revolute">
+  <joint name="knee_motor_right" type="revolute">
     <origin xyz="0.12 0 -0.045" rpy="0 0 0" />
     <parent link="thigh_right" />
     <child link="knee_right" />
     <axis xyz="0 0 1" />
     <limit lower="-2.862" upper="-0.646" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
 
-  <joint name="toe_crank_left" type="revolute">
+  <joint name="toe_crank_left" type="fixed">
     <origin xyz="0.058 -0.034 0.02275" rpy="0 0 0" />
     <parent link="tarsus_left" />
     <child link="toe_crank_link_left" />
@@ -909,7 +755,7 @@
     <limit lower="-2.443" upper="-0.524" effort="50"/>
   </joint>
 
-  <joint name="toe_crank_right" type="revolute">
+  <joint name="toe_crank_right" type="fixed">
     <origin xyz="0.058 -0.034 -0.02275" rpy="0 0 0" />
     <parent link="tarsus_right" />
     <child link="toe_crank_link_right" />
@@ -918,7 +764,7 @@
   </joint>
 
 
-  <joint name="knee_shin_passive_left" type="fixed">
+  <joint name="knee_joint_left" type="revolute">
     <origin xyz="0.06068 0.04741 0" rpy="0 0 0" />
     <parent link="knee_left" />
     <child link="shin_left" />
@@ -927,7 +773,7 @@
     <dynamics damping="1" /> <!-- made up value -->
   </joint>
 
-  <joint name="knee_shin_passive_right" type="fixed">
+  <joint name="knee_joint_right" type="revolute">
     <origin xyz="0.06068 0.04741 0" rpy="0 0 0" />
     <parent link="knee_right" />
     <child link="shin_right" />
@@ -937,37 +783,39 @@
   </joint>
 
 
-  <joint name="knee_spring_joint_left" type="fixed">
+  <joint name="knee_spring_left_fixed" type="fixed">
     <origin xyz="0.06068 0.08241 0" rpy="0 0 0" />
     <parent link="knee_left" />
     <child link="knee_spring_left" />
   </joint> 
 
-  <joint name="knee_spring_joint_right" type="fixed">
+  <joint name="knee_spring_right_fixed" type="fixed">
     <origin xyz="0.06068 0.08241 0" rpy="0 0 0" />
     <parent link="knee_right" />
     <child link="knee_spring_right" />
   </joint> 
 
 
-  <joint name="shin_tarsus_passive_left" type="revolute">
+  <joint name="ankle_joint_left" type="revolute">
     <origin xyz="0.43476 0.02 0" rpy="0 0 0" />
     <parent link="shin_left" />
     <child link="tarsus_left" />
     <axis xyz="0 0 1" />
     <limit lower=".8" upper="3"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
-  <joint name="shin_tarsus_passive_right" type="revolute">
+  <joint name="ankle_joint_right" type="revolute">
     <origin xyz="0.43476 0.02 0" rpy="0 0 0" />
     <parent link="shin_right" />
     <child link="tarsus_right" />
     <axis xyz="0 0 1" />
     <limit lower=".8" upper="3"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
 
-  <joint name="heel_spring_joint_left" type="fixed">
+  <joint name="ankle_spring_joint_left" type="revolute">
     <origin xyz="-.01269 -.03059 .00092" rpy="-0.0689 -0.0370 2.7208" />
     <parent link="tarsus_left" />
     <child link="heel_spring_left" />
@@ -976,7 +824,7 @@
     <dynamics damping="1" /> <!-- made up value -->
   </joint> 
 
-  <joint name="heel_spring_joint_right" type="fixed">
+  <joint name="ankle_spring_joint_right" type="revolute">
     <origin xyz="-.01269 -.03059 .00092" rpy="0.0734 0.0269 2.7201" />
     <parent link="tarsus_right" />
     <child link="heel_spring_right" />
@@ -986,151 +834,23 @@
   </joint> 
 
 
-  <joint name="toe_passive_left" type="revolute">
+  <joint name="toe_left" type="revolute">
     <origin xyz="0.408 -0.040 0" rpy="0 0 0" />
     <parent link="tarsus_left" />
     <child link="toe_left" />
     <axis xyz="0 0 1" />
-    <limit lower="-2.443" upper="-0.524"/>
+    <limit lower="-2.443" upper="-0.524" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
-  <joint name="toe_passive_right" type="revolute">
+  <joint name="toe_right" type="revolute">
     <origin xyz="0.408 -0.040 0" rpy="0 0 0" />
     <parent link="tarsus_right" />
     <child link="toe_right" />
     <axis xyz="0 0 1" />
-    <limit lower="-2.443" upper="-0.524"/>
+    <limit lower="-2.443" upper="-0.524" effort="50"/>
+    <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
-
-
-  <joint name="toe_plantar_pitch_passive_left" type="revolute">
-    <origin xyz="0.055 0 0.00776" rpy="0 0 0" />
-    <parent link="toe_left" />
-    <child link="plantar_toe_ghost_link_left" />
-    <axis xyz="0 0 1" />
-    <limit lower="-2.65" upper="-0.6"/>
-  </joint>
-
-  <joint name="toe_plantar_pitch_passive_right" type="revolute">
-    <origin xyz="0.055 0 -0.00776" rpy="0 0 0" />
-    <parent link="toe_right" />
-    <child link="plantar_toe_ghost_link_right" />
-    <axis xyz="0 0 1" />
-    <limit lower="-2.65" upper="-0.6"/>
-  </joint>
-
-
-  <joint name="toe_plantar_roll_passive_left" type="revolute">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <parent link="plantar_toe_ghost_link_left" />
-    <child link="plantar_rod_left" />
-    <axis xyz="0 1 0" />
-    <limit lower="-.1" upper="0.1"/>
-  </joint>
-
-  <joint name="toe_plantar_roll_passive_right" type="revolute">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <parent link="plantar_toe_ghost_link_right" />
-    <child link="plantar_rod_right" />
-    <axis xyz="0 1 0" />
-    <limit lower="-.1" upper="0.1"/>
-  </joint>  
-
-
-  <joint name="crank_plantar_pitch_passive_left" type="continuous">
-    <origin xyz="0.055 0 -0.00791" rpy="0 0 0" />
-    <parent link="toe_crank_link_left" />
-    <child link="plantar_crank_ghost_link_left" />
-    <axis xyz="0 0 1" />
-  </joint>
-
-  <joint name="crank_plantar_pitch_passive_right" type="continuous">
-    <origin xyz="0.055 0 0.00791" rpy="0 0 0" />
-    <parent link="toe_crank_link_right" />
-    <child link="plantar_crank_ghost_link_right" />
-    <axis xyz="0 0 1" />
-  </joint>
-
-
-  <loop_joint name="plantar_toe_crank_loop_left" type="continuous">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <link1 link="plantar_crank_ghost_link_left" rpy="0 0 0" xyz="0 0 0"/>
-    <link2 link="plantar_rod_left" rpy="0 0 0" xyz=".35012 0 0"/>
-    <axis xyz="0 1 0" />
-  </loop_joint> 
-
-  <loop_joint name="plantar_toe_crank_loop_right" type="continuous">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <link1 link="plantar_crank_ghost_link_right" rpy="0 0 0" xyz="0 0 0"/>
-    <link2 link="plantar_rod_right" rpy="0 0 0" xyz=".35012 0 0"/>
-    <axis xyz="0 1 0" />
-  </loop_joint> 
-
-
-  <joint name="thigh_achilles_pitch_passive_left" type="revolute">
-    <origin xyz="0 0 0.045" rpy="0 0 0" />
-    <parent link="thigh_left" />
-    <child link="achilles_thigh_ghost_link_left" />
-    <axis xyz="0 0 1" />
-    <limit lower="-2.75" upper="-0.5"/>
-  </joint>
-
-  <joint name="thigh_achilles_pitch_passive_right" type="revolute">
-    <origin xyz="0 0 -0.045" rpy="0 0 0" />
-    <parent link="thigh_right" />
-    <child link="achilles_thigh_ghost_link_right" />
-    <axis xyz="0 0 1" />
-    <limit lower="-2.75" upper="-0.5"/>
-  </joint>
-
-
-  <joint name="thigh_achilles_roll_passive_left" type="revolute">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <parent link="achilles_thigh_ghost_link_left" />
-    <child link="achilles_rod_left" />
-    <axis xyz="0 1 0" />
-    <limit lower="-.05" upper="0.05"/>
-  </joint>
-
-  <joint name="thigh_achilles_roll_passive_right" type="revolute">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <parent link="achilles_thigh_ghost_link_right" />
-    <child link="achilles_rod_right" />
-    <axis xyz="0 1 0" />
-    <limit lower="-.05" upper="0.05"/>
-  </joint>
-
-
-  <joint name="heel_achilles_pitch_passive_left" type="revolute">
-    <origin xyz="0.11877 -0.01 0" rpy="0 0 0" />
-    <parent link="heel_spring_left" />
-    <child link="achilles_heel_ghost_link_left" />
-    <axis xyz="0 0 1" />
-    <limit lower="0.6" upper="2.9"/>
-  </joint>
-
-  <joint name="heel_achilles_pitch_passive_right" type="revolute">
-    <origin xyz="0.11877 -0.01 0" rpy="0 0 0" />
-    <parent link="heel_spring_right" />
-    <child link="achilles_heel_ghost_link_right" />
-    <axis xyz="0 0 1" />
-    <limit lower="0.6" upper="2.9"/>
-  </joint>
-
-  <loop_joint name="heel_achilles_loop_left" type="continuous">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <link1 link="achilles_heel_ghost_link_left" rpy="0 0 0" xyz="0 0 0"/>
-    <link2 link="achilles_rod_left" rpy="0 0 0" xyz=".5012 0 0"/>
-    <axis xyz="0 1 0" />
-  </loop_joint> 
-
-  <loop_joint name="heel_achilles_loop_right" type="continuous">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-    <link1 link="achilles_heel_ghost_link_right" rpy="0 0 0" xyz="0 0 0"/>
-    <link2 link="achilles_rod_right" rpy="0 0 0" xyz=".5012 0 0"/>
-    <axis xyz="0 1 0" />
-  </loop_joint> 
-
 
  <!-- MOTORS ||| MOTORS ||| MOTORS ||| MOTORS ||| MOTORS |||-->
  <!-- MOTORS ||| MOTORS ||| MOTORS ||| MOTORS ||| MOTORS |||-->
@@ -1149,34 +869,15 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
-  <transmission name="hip_yaw_left_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="hip_yaw_left_motor"/>
-    <joint name="hip_yaw_left"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-  <transmission name="hip_pitch_left_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="hip_pitch_left_motor"/>
-    <joint name="hip_pitch_left"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-  <transmission name="knee_left_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="knee_left_motor"/>
-    <joint name="knee_left"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-  <transmission name="toe_crank_left_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="toe_crank_left_motor"/>
-    <joint name="toe_crank_left"/>
-    <mechanicalReduction>1</mechanicalReduction>
-  </transmission>
-
-
   <transmission name="hip_roll_right_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="hip_roll_right_motor"/>
     <joint name="hip_roll_right"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+  <transmission name="hip_yaw_left_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="hip_yaw_left_motor"/>
+    <joint name="hip_yaw_left"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
@@ -1186,21 +887,39 @@
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
+  <transmission name="hip_pitch_left_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="hip_pitch_left_motor"/>
+    <joint name="hip_pitch_left"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
   <transmission name="hip_pitch_right_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="hip_pitch_right_motor"/>
     <joint name="hip_pitch_right"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
-  <transmission name="knee_right_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="knee_right_motor"/>
-    <joint name="knee_right"/>
+  <transmission name="knee_left_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="knee_left_motor"/>
+    <joint name="knee_motor_left"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
-  <transmission name="toe_crank_right_trans" type="transmission_interface/SimpleTransmission">
-    <actuator name="toe_crank_right_motor"/>
-    <joint name="toe_crank_right"/>
+  <transmission name="knee_right_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="knee_right_motor"/>
+    <joint name="knee_motor_right"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+  <transmission name="toe_left_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="toe_left_motor"/>
+    <joint name="toe_left"/>
+    <mechanicalReduction>1</mechanicalReduction>
+  </transmission>
+
+  <transmission name="toe_right_trans" type="transmission_interface/SimpleTransmission">
+    <actuator name="toe_right_motor"/>
+    <joint name="toe_right"/>
     <mechanicalReduction>1</mechanicalReduction>
   </transmission>
 
@@ -1218,26 +937,26 @@
 
 
   <force_element name="left_knee_spring">
-    <torsional_spring stiffness="2300" rest_angle="0" >
-      <joint name="knee_shin_passive_left" />
+    <torsional_spring stiffness="230" rest_angle="0" >
+      <joint name="knee_joint_left" />
     </torsional_spring>
   </force_element>
 
-  <force_element name="left_heel_spring">
-    <torsional_spring stiffness="2000" rest_angle="0">
-      <joint name="heel_spring_joint_left" />
+  <force_element name="left_ankle_spring">
+    <torsional_spring stiffness="200" rest_angle="0">
+      <joint name="ankle_spring_joint_left" />
     </torsional_spring>
   </force_element>
 
   <force_element name="right_knee_spring">
-    <torsional_spring stiffness="2300" rest_angle="0" >
-      <joint name="knee_shin_passive_right" />
+    <torsional_spring stiffness="230" rest_angle="0" >
+      <joint name="knee_joint_right" />
     </torsional_spring>
   </force_element>
 
   <force_element name="right_heel_spring">
-    <torsional_spring stiffness="2000" rest_angle="0">
-      <joint name="heel_spring_joint_right" />
+    <torsional_spring stiffness="200" rest_angle="0">
+      <joint name="ankle_spring_joint_right" />
     </torsional_spring>
   </force_element>
 

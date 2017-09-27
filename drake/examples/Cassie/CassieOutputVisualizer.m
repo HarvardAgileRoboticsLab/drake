@@ -1,8 +1,7 @@
 
 options.use_bullet = false;
 options.floating = 'quat';
-urdf = fullfile(getDrakePath(), 'examples', 'Cassie', 'urdf', 'cassie_no_loops.urdf');
-r = Cassie(urdf,options);
+r = Cassie(options);
 v = r.constructVisualizer;
 
 lc = lcm.lcm.LCM.getSingleton();
