@@ -401,6 +401,11 @@ if ~isempty(elnode)
   [model,fe] = RigidBodyTorsionalSpring.parseURDFNode(model,name,robotnum,elnode,options);
 end
 
+elnode = node.getElementsByTagName('prismatic_spring').item(0);
+if ~isempty(elnode)
+  [model,fe] = RigidBodyPrismaticSpring.parseURDFNode(model,name,robotnum,elnode,options);
+end
+
 elnode = node.getElementsByTagName('wing').item(0);
 if ~isempty(elnode)
   [model,fe] = RigidBodyWing.parseURDFNode(model,name,robotnum,elnode,options);
