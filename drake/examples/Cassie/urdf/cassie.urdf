@@ -3,15 +3,15 @@
   <link name="pelvis">
     <inertial>
       <origin
-        xyz=".0507 0 .0284"
+        xyz=".05066 0.000346 .02841"
         rpy="0 0 0" />
       <mass value="10.33" />
       <inertia
         ixx=".094158"
-        ixy=".000169"
+        ixy=".0001685"
         ixz=".015026"
         iyy=".084066"
-        iyz=".000516"
+        iyz=".0005156"
         izz=".112770" />
     </inertial>
     <visual>
@@ -43,15 +43,15 @@
   <link name="yaw_left">
     <inertial>
       <origin
-        xyz=".0257 0.0001 .0879"
+        xyz=".0257 0.0001 .0179"
         rpy="0 -1.570796 0" />
       <mass value="1.82" />
       <inertia
-        ixx=".002720"
-        ixy=".0000007"
-        ixz=".0000015"
+        ixx=".002722"
+        ixy=".000000703"
+        ixz=".00000153"
         iyy=".005586"
-        iyz=".0000026"
+        iyz=".00000261"
         izz=".004638" />
     </inertial>
     <visual>
@@ -59,7 +59,8 @@
         xyz="0 0 -0.07"
         rpy="0 -1.570796 0" />
       <geometry>
-        <mesh filename="meshes/yaw.obj" />
+      	<mesh filename="meshes/agility/left_yaw.obj" />
+        <!-- <mesh filename="meshes/yaw.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.4 0.4 0.4 1" />
@@ -71,15 +72,15 @@
   <link name="yaw_right">
     <inertial>
       <origin
-        xyz=".0257 -0.0001 .0879"
+        xyz=".0257 -0.0001 .0179"
         rpy="0 -1.570796 0" />
       <mass value="1.82" />
       <inertia
-        ixx=".002720"
-        ixy=".0000007"
-        ixz=".0000015"
+        ixx=".002722"
+        ixy="-.000000703"
+        ixz=".00000153"
         iyy=".005586"
-        iyz=".0000026"
+        iyz="-.00000261"
         izz=".004638" />
     </inertial>
     <visual>
@@ -87,7 +88,8 @@
         xyz="0 0 -0.07"
         rpy="0 -1.570796 0" />
       <geometry>
-        <mesh filename="meshes/yaw-r.obj" />
+        <mesh filename="meshes/agility/right_yaw.obj" />
+        <!-- <mesh filename="meshes/yaw-r.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.4 0.4 0.4 1" />
@@ -99,15 +101,15 @@
 	<link name="hip_left">
     <inertial>
       <origin
-        xyz="-.0557 0 -0.09"
+        xyz="-.05572 0 0.00001"
         rpy="-1.570796 1.570796 0" />
-      <mass value="1.17" />
+      <mass value="1.171" />
       <inertia
         ixx=".000842"
-        ixy=".0000002"
-        ixz="-.0000006"
+        ixy=".0000002462"
+        ixz="-.0000006251"
         iyy=".006076"
-        iyz="0.0"
+        iyz="-.00000004"
         izz=".006436" />
     </inertial>
     <visual>
@@ -115,8 +117,8 @@
         xyz="0 0 -0.09"
         rpy="-1.570796 1.570796 0" />
       <geometry>
-        <mesh
-          filename="meshes/hip.obj" />
+        <mesh filename="meshes/agility/left_hip.obj" />
+        <!-- <mesh filename="meshes/hip.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.4 0.4 0.4 1" />
@@ -128,15 +130,15 @@
 	<link name="hip_right">
     <inertial>
       <origin
-        xyz="-.0557 0 -0.09"
+        xyz="-.05572 0 -0.00001"
         rpy="-1.570796 1.570796 0" />
-      <mass value="1.17" />
+      <mass value="1.171" />
       <inertia
         ixx=".000842"
-        ixy=".0000002"
-        ixz="-.0000006"
+        ixy=".0000002462"
+        ixz=".0000006251"
         iyy=".006076"
-        iyz="0.0"
+        iyz=".00000004"
         izz=".006436" />
     </inertial>
     <visual>
@@ -144,8 +146,8 @@
         xyz="0 0 -0.09"
         rpy="-1.570796 1.570796 0" />
       <geometry>
-        <mesh
-          filename="meshes/hip.obj" />
+        <mesh filename="meshes/agility/right_hip.obj" />
+        <!-- <mesh filename="meshes/hip.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.4 0.4 0.4 1" />
@@ -157,15 +159,15 @@
   <link name="thigh_left">
     <inertial>
       <origin
-        xyz="0.0595 0.0001 -.0358"
+        xyz="0.05946 0.00005 -.03581"
         rpy="0 0 0" />
       <mass value="5.52" />
       <inertia
         ixx=".017969"
-        ixy=".000284"
-        ixz="-.011700"
+        ixy=".0002836"
+        ixz="-.011685"
         iyy=".056284"
-        iyz="-.000019"
+        iyz="-.00001926"
         izz=".049756" />
     </inertial>
     <visual>
@@ -173,7 +175,8 @@
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
-        <mesh filename="meshes/thigh.obj" />
+        <mesh filename="meshes/agility/left_thigh.obj" />
+        <!-- <mesh filename="meshes/thigh.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.56 0.095 0.165 1.0" />
@@ -185,15 +188,15 @@
   <link name="thigh_right">
     <inertial>
       <origin
-        xyz="0.0595 0.0001 -.0358"
+        xyz="0.05946 0.00005 .03581"
         rpy="0 0 0" />
       <mass value="5.52" />
       <inertia
         ixx=".017969"
-        ixy=".000284"
-        ixz="-.011700"
+        ixy=".0002836"
+        ixz=".011685"
         iyy=".056284"
-        iyz="-.000019"
+        iyz=".00001926"
         izz=".049756" />
     </inertial>
     <visual>
@@ -201,7 +204,8 @@
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
-        <mesh filename="meshes/thigh-r.obj" />
+        <mesh filename="meshes/agility/right_thigh.obj" />
+        <!-- <mesh filename="meshes/thigh-r.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.56 0.095 0.165 1.0" />
@@ -213,15 +217,15 @@
   <link name="knee_left">
     <inertial>
       <origin
-        xyz="0.023 0.0321 -0.0022"
+        xyz="0.023 0.03207 -0.002181"
         rpy="0 0 0" />
-      <mass value="0.758" />
+      <mass value="0.7578" />
       <inertia
         ixx=".002159"
-        ixy=".000956"
-        ixz=".0000028"
+        ixy=".0009564"
+        ixz=".000002837"
         iyy=".001438"
-        iyz=".0000007"
+        iyz=".000000739"
         izz=".003344" />
     </inertial>
     <visual>
@@ -241,15 +245,15 @@
   <link name="knee_right">
     <inertial>
       <origin
-        xyz="0.023 0.0321 -0.0022"
+        xyz="0.023 0.03207 0.002181"
         rpy="0 0 0" />
-      <mass value="0.758" />
+      <mass value="0.7578" />
       <inertia
         ixx=".002159"
-        ixy=".000956"
-        ixz=".0000028"
+        ixy=".0009564"
+        ixz=".000002837"
         iyy=".001438"
-        iyz=".0000007"
+        iyz="-.000000739"
         izz=".003344" />
     </inertial>
     <visual>
@@ -269,15 +273,15 @@
   <link name="shin_left">
     <inertial>
       <origin
-        xyz=".1834 0.0012 0.0002"
+        xyz=".18338 0.001169 0.0002123"
         rpy="0 0 0" />
-      <mass value="0.577" />
+      <mass value="0.5771" />
       <inertia
-        ixx=".000360"
-        ixy=".000334"
-        ixz="0.0"
+        ixx=".0003602"
+        ixy=".0003335"
+        ixz="-.0000001941"
         iyy=".034132"
-        iyz="0.0"
+        iyz=".0000002652"
         izz=".034111" />
     </inertial>
     <visual>
@@ -285,7 +289,8 @@
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
-        <mesh filename="meshes/shin-bone.obj" />
+        <mesh filename="meshes/agility/left_shin.obj" />
+        <!-- <mesh filename="meshes/shin-bone.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.56 0.095 0.165 1.0" />
@@ -297,15 +302,15 @@
   <link name="shin_right">
     <inertial>
       <origin
-        xyz=".1834 0.0012 0.0002"
+        xyz=".18338 0.001169 -0.0002123"
         rpy="0 0 0" />
-      <mass value="0.577" />
+      <mass value="0.5771" />
       <inertia
-        ixx=".000360"
+        ixx=".0003602"
         ixy=".000334"
-        ixz="0.0"
+        ixz=".0000001941"
         iyy=".034132"
-        iyz="0.0"
+        iyz="-.0000002652"
         izz=".034111" />
     </inertial>
     <visual>
@@ -313,7 +318,8 @@
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
-        <mesh filename="meshes/shin-bone-r.obj" />
+        <mesh filename="meshes/agility/right_shin.obj" />
+        <!-- <mesh filename="meshes/shin-bone-r.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.56 0.095 0.165 1.0" />
@@ -325,12 +331,12 @@
   <link name="knee_spring_left">
     <inertial>
       <origin
-        xyz=".0836 0.0034 0.0"
+        xyz=".08364 0.003427 0.0"
         rpy="0 0 0" />
-      <mass value="0.186" />
+      <mass value="0.1864" />
       <inertia
         ixx=".0000543"
-        ixy=".0000460"
+        ixy=".00004601"
         ixz="0.0"
         iyy=".001712"
         iyz="0.0"
@@ -352,12 +358,12 @@
   <link name="knee_spring_right">
     <inertial>
       <origin
-        xyz=".0836 0.0034 0.0"
+        xyz=".08364 0.003427 0.0"
         rpy="0 0 0" />
-      <mass value="0.186" />
+      <mass value="0.1864" />
       <inertia
         ixx=".0000543"
-        ixy=".0000460"
+        ixy=".00004601"
         ixz="0.0"
         iyy=".001712"
         iyz="0.0"
@@ -379,15 +385,15 @@
   <link name="tarsus_left">
     <inertial>
       <origin
-        xyz=".1105 -.0306 -.0013"
+        xyz=".11046 -.03058 -.00131"
         rpy="0 0 0" />
       <mass value="0.782" />
       <inertia
         ixx=".001125"
         ixy="-.002878"
-        ixz="-.000063"
+        ixz="-.00006329"
         iyy=".023138"
-        iyz=".000036"
+        iyz=".00003615"
         izz=".023947" />
     </inertial>
     <visual>
@@ -407,15 +413,15 @@
   <link name="tarsus_right">
     <inertial>
       <origin
-        xyz=".1105 -.0306 -.0013"
+        xyz=".11046 -.03058 -.00131"
         rpy="0 0 0" />
       <mass value="0.782" />
       <inertia
         ixx=".001125"
         ixy="-.002878"
-        ixz="-.000063"
+        ixz=".00006329"
         iyy=".023138"
-        iyz=".000036"
+        iyz="-.00003615"
         izz=".023947" />
     </inertial>
     <visual>
@@ -435,15 +441,15 @@
   <link name="heel_spring_left">
     <inertial>
       <origin
-        xyz="0.081 0.0022 0"
+        xyz="0.08097 0.00223 -0.0000385"
         rpy="0 0 0" />
-      <mass value="0.126" />
+      <mass value="0.1259" />
       <inertia
-        ixx=".0000302"
-        ixy=".0000153"
-        ixz=".0000006"
+        ixx=".00003016"
+        ixy=".00001528"
+        ixz=".000000575"
         iyy=".001049"
-        iyz="-.0000001"
+        iyz="-.0000000557"
         izz=".001028" />
     </inertial>
     <visual>
@@ -462,15 +468,15 @@
   <link name="heel_spring_right">
     <inertial>
       <origin
-        xyz="0.081 0.0022 0"
+        xyz="0.08097 0.00223 -0.0000385"
         rpy="0 0 0" />
-      <mass value="0.126" />
+      <mass value="0.1259" />
       <inertia
-        ixx=".0000302"
-        ixy=".0000153"
-        ixz=".0000006"
+        ixx=".00003016"
+        ixy=".00001528"
+        ixz=".000000575"
         iyy=".001049"
-        iyz="-.0000001"
+        iyz="-.0000000557"
         izz=".001028" />
     </inertial>
     <visual>
@@ -489,26 +495,27 @@
   <link name="toe_crank_link_left">
     <inertial>
       <origin
-        xyz="0.0048 0 -0.0029"
+        xyz="0.00481 0.00002 -0.00293"
         rpy="0 0 0" />
       <mass value="0.129" />
       <inertia
         ixx=".0000307"
-        ixy="0.0"
-        ixz=".0000026"
-        iyy=".0000571"
-        iyz="0.0"
-        izz=".0000664" />
+        ixy=".0000000019"
+        ixz=".00000262"
+        iyy=".00005705"
+        iyz=".0000000066"
+        izz=".00006643" />
     </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
+        <!-- <mesh filename="meshes/agility/foot_crank.obj" /> -->
         <mesh filename="meshes/toe-output-crank.obj" />
       </geometry>
       <material name="">
-        <color rgba="0.56 0.095 0.165 1.0" />
+      	<color rgba="0.56 0.095 0.165 1.0" />
         <!-- <color rgba="1.0 0.423529411765 0.0392156862745 1.0" /> -->
       </material>
     </visual>
@@ -517,26 +524,27 @@
   <link name="toe_crank_link_right">
     <inertial>
       <origin
-        xyz="0.0048 0 -0.0029"
+        xyz="0.00481 0.00002 -0.00293"
         rpy="0 0 0" />
       <mass value="0.129" />
       <inertia
         ixx=".0000307"
-        ixy="0.0"
-        ixz=".0000026"
-        iyy=".0000571"
-        iyz="0.0"
-        izz=".0000664" />
+        ixy=".0000000019"
+        ixz=".00000262"
+        iyy=".00005705"
+        iyz=".0000000066"
+        izz=".00006643" />
     </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
+        <!-- <mesh filename="meshes/agility/foot_crank.obj" /> -->
         <mesh filename="meshes/toe-output-crank-r.obj" />
       </geometry>
       <material name="">
-        <color rgba="0.56 0.095 0.165 1.0" />
+      	<color rgba="0.56 0.095 0.165 1.0" />
         <!-- <color rgba="1.0 0.423529411765 0.0392156862745 1.0" /> -->
       </material>
     </visual>
@@ -545,23 +553,24 @@
   <link name="toe_left">
     <inertial>
       <origin
-        xyz="0.0047 0.0275 -0.0001"
+        xyz="0.00474 0.02748 -0.00014"
         rpy="0 0 0" />
-      <mass value="0.150" />
+      <mass value="0.1498" />
       <inertia
         ixx=".000287"
-        ixy="-.0000986"
-        ixz="-.0000015"
-        iyy=".000171"
-        iyz=".0000002"
-        izz=".000449" />
+        ixy="-.00009863"
+        ixz="-.000001456"
+        iyy=".0001713"
+        iyz=".0000001716"
+        izz=".0004491" />
     </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
-        <mesh filename="meshes/toe.obj" />
+        <mesh filename="meshes/agility/left_foot.obj" />
+        <!-- <mesh filename="meshes/toe.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.4 0.4 0.4 1" />
@@ -609,23 +618,24 @@
   <link name="toe_right">
     <inertial>
       <origin
-        xyz="0.0047 0.0275 -0.0001"
+        xyz="0.00474 0.02748 0.00014"
         rpy="0 0 0" />
-      <mass value="0.150" />
+      <mass value="0.1498" />
       <inertia
         ixx=".000287"
-        ixy="-.0000986"
-        ixz="-.0000015"
-        iyy=".000171"
-        iyz=".0000002"
-        izz=".000449" />
+        ixy="-.00009863"
+        ixz=".000001456"
+        iyy=".0001713"
+        iyz="-.0000001716"
+        izz=".0004491" />
     </inertial>
     <visual>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
       <geometry>
-        <mesh filename="meshes/toe-r.obj" />
+        <mesh filename="meshes/agility/right_foot.obj" />
+        <!-- <mesh filename="meshes/toe-r.obj" /> -->
       </geometry>
       <material name="">
         <color rgba="0.4 0.4 0.4 1" />
@@ -729,7 +739,7 @@
 
 
   <joint name="knee_motor_left" type="revolute">
-    <origin xyz="0.12 0 0.045" rpy="0 0 0" />
+    <origin xyz="0.12 0 0.0045" rpy="0 0 0" />
     <parent link="thigh_left" />
     <child link="knee_left" />
     <axis xyz="0 0 1" />
@@ -738,7 +748,7 @@
   </joint>
 
   <joint name="knee_motor_right" type="revolute">
-    <origin xyz="0.12 0 -0.045" rpy="0 0 0" />
+    <origin xyz="0.12 0 -0.0045" rpy="0 0 0" />
     <parent link="thigh_right" />
     <child link="knee_right" />
     <axis xyz="0 0 1" />
@@ -814,9 +824,9 @@
     <dynamics damping="0.01" /> <!-- made up value -->
   </joint>
 
-
+<!-- rpy="-0.0689 -0.0370 2.7208"-->
   <joint name="ankle_spring_joint_left" type="revolute">
-    <origin xyz="-.01269 -.03059 .00092" rpy="-0.0689 -0.0370 2.7208" />
+    <origin xyz="-.01269 -.03059 .00092" rpy="0.0780 0.00549 2.7192" />
     <parent link="tarsus_left" />
     <child link="heel_spring_left" />
     <limit lower="-.1" upper="0.1"/>
@@ -824,8 +834,9 @@
     <dynamics damping="1" /> <!-- made up value -->
   </joint> 
 
+<!-- rpy="0.0734 0.0269 2.7201"-->
   <joint name="ankle_spring_joint_right" type="revolute">
-    <origin xyz="-.01269 -.03059 .00092" rpy="0.0734 0.0269 2.7201" />
+    <origin xyz="-.01269 -.03059 -.00092" rpy="-0.0780 -0.00549 2.7192" />
     <parent link="tarsus_right" />
     <child link="heel_spring_right" />
     <limit lower="-.1" upper="0.1"/>
@@ -935,9 +946,9 @@
  <!-- SPRINGS ||| SPRINGS ||| SPRINGS ||| SPRINGS ||| SPRINGS |||-->
 
 
-
+  <!-- Softened springs -->
   <force_element name="left_knee_spring">
-    <torsional_spring stiffness="230" rest_angle="0" >
+    <torsional_spring stiffness="240" rest_angle="0" >
       <joint name="knee_joint_left" />
     </torsional_spring>
   </force_element>
@@ -949,7 +960,7 @@
   </force_element>
 
   <force_element name="right_knee_spring">
-    <torsional_spring stiffness="230" rest_angle="0" >
+    <torsional_spring stiffness="240" rest_angle="0" >
       <joint name="knee_joint_right" />
     </torsional_spring>
   </force_element>
@@ -959,5 +970,30 @@
       <joint name="ankle_spring_joint_right" />
     </torsional_spring>
   </force_element>
+
+  <!-- Real springs -->
+  <!-- <force_element name="left_knee_spring">
+    <torsional_spring stiffness="1500" rest_angle="0" >
+      <joint name="knee_joint_left" />
+    </torsional_spring>
+  </force_element>
+
+  <force_element name="left_ankle_spring">
+    <torsional_spring stiffness="1250" rest_angle="0">
+      <joint name="ankle_spring_joint_left" />
+    </torsional_spring>
+  </force_element>
+
+  <force_element name="right_knee_spring">
+    <torsional_spring stiffness="1500" rest_angle="0" >
+      <joint name="knee_joint_right" />
+    </torsional_spring>
+  </force_element>
+
+  <force_element name="right_heel_spring">
+    <torsional_spring stiffness="1250" rest_angle="0">
+      <joint name="ankle_spring_joint_right" />
+    </torsional_spring>
+  </force_element> -->
 
 </robot>
