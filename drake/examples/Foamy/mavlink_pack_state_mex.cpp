@@ -41,17 +41,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     double *t = mxGetPr(prhs[2]);
     
-    double lat = round(10000000.0*y[0]); //latitude in degrees*10^-7
-    double lon = round(10000000.0*y[1]); //longitude in degrees*10^-7
+    double lat = round(1e7*y[0]); //latitude in degrees*10^-7
+    double lon = round(1e7*y[1]); //longitude in degrees*10^-7
     double alt = round(1000.0*y[2]); //altitude in millimeters
     
-    //We're using ENU in our simulator but PX4 uses NED
-    //So we have to rotate our quaternion
+    //We're using NWU in our simulator to match Gazebo, but PX4 uses NED
+    //internally, so we have to rotate our quaternion
     float attitude_quaternion[4];
-    attitude_quaternion[0] = (float)((1/SQRT2)*(x[4]+x[5]));
-    attitude_quaternion[1] = (float)((-1/SQRT2)*(x[3]+x[6]));
-    attitude_quaternion[2] = (float)((-1/SQRT2)*(x[3]-x[6]));
-    attitude_quaternion[3] = (float)((-1/SQRT2)*(x[5]-x[4]));
+    attitude_quaternion[0] = (float)(-x[4]);
+    attitude_quaternion[1] = (float)(x[3]);
+    attitude_quaternion[2] = (float)(-x[6]);
+    attitude_quaternion[3] = (float)(x[5]);
     
     double vn = round(100.0*y[3]); //linear velocity in cm/sec
     double ve = round(100.0*y[4]); //linear velocity in cm/sec

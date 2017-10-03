@@ -34,8 +34,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         return;
     }
     
-    double lat = round(10000000.0*y[0]); //latitude in degrees*10^-7
-    double lon = round(10000000.0*y[1]); //longitude in degrees*10^-7
+    double lat = round((1e7*180.0/PI)*y[0]); //latitude in degrees*10^-7
+    double lon = round((1e7*180.0/PI)*y[1]); //longitude in degrees*10^-7
     double alt = round(1000.0*y[2]); //altitude in millimeters
     
     double vn = round(100.0*y[3]); //velocity in cm/s in north direction
@@ -44,11 +44,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     double vel = round(100.0*sqrt(y[3]*y[3] + y[4]*y[4] + y[5]*y[5])); //velocity magnitude in cm/s
     
-    double cog; // = 65535.0;
-    cog = round(100.0*(180/PI)*atan2(y[4],y[3]));
-    if(cog < 0) {
-        cog = cog + 36000.0;
-    }
+    double cog = round((100.0*180.0/PI)*atan2(100.0*y[4], 100.0*y[3])); //course over ground in degrees*100
     
     mavlink_message_t msg;
     uint8_t buf[MAVLINK_MAX_PACKET_LEN];

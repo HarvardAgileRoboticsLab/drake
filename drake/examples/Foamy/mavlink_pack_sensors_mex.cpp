@@ -26,8 +26,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     double *t = mxGetPr(prhs[1]);
     mwSize len_in = mxGetNumberOfElements(prhs[0]);
     
-    if(len_in < 17) {
-        mexErrMsgTxt("Input must be a double array with 17 elements.");
+    if(len_in < 18) {
+        mexErrMsgTxt("Input must be a double array with 18 elements.");
         return;
     }
     
@@ -45,10 +45,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     float abs_pressure = (float)y[15];
     float diff_pressure = (float)y[16];
-    float pressure_alt = (float)y[2];
-    float temperature = 15.0;
+    float pressure_alt = (float)y[17];
+    float temperature = 0.0;
     
-    uint32_t fields_updated = 0x0fff;
+    uint32_t fields_updated = 4095;
     
     mavlink_message_t msg;
     uint8_t buf[MAVLINK_MAX_PACKET_LEN];
