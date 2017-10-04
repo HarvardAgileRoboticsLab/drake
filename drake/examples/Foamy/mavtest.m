@@ -23,11 +23,12 @@ while true
     
     %Try to receive control inputs over MAVLink
     packet = step(receiver);
-    if ~isempty(packet)
+    while ~isempty(packet)
         unew = mavlink_parse_control_mex(packet);
         if ~isempty(unew)
             u = unew;
         end
+        packet = step(receiver);
     end
     
     %Simulate forward one timestep
@@ -37,13 +38,13 @@ while true
     now = toc(sim_timer);
     
     %Send updated state + sensor measurements over MAVLink
+    y = foamy_sensors(x,xdot);
     xdata = mavlink_pack_state_mex(x,y,now);
     step(sender, xdata);
     if (toc(sensor_timer) > 0.01)
         %Calculate sensor measurements and add noise
-        %(PX4 doesn't work without some noise)
-        y = foamy_sensors(x,xdot);
-        yn = y + [1e-7; 1e-7; 1e-3; 1e-5*ones(15,1)].*randn(18,1);
+        %(PX4 thinks the sensors aren't working without some noise)
+        yn = y + [0; 0; 0; 0; 0; 0; 1e-5*randn(12,1)];
         
         ydata = mavlink_pack_sensors_mex(yn,now);
         step(sender, ydata);

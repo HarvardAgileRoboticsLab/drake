@@ -12,8 +12,8 @@ BASEALT = 488.0; %413.0; %Base station altitude in meters
 RHO = 1.2754; %1.225; %Density of air in kg/m^3 at sea level and 15C
 %PRESS0 = 1013.2; %Sea level pressure in millibar
 
-%B0 = [0.21523; -0.00771; -0.42741]; %Taken from Pixhawk Gazebo code for Zurich in 10^5 nT, NWU
-B0 = [0.21523; 0.00771; 0.42741]; %Taken from Pixhawk Gazebo code for Zurich in 10^5 nT, NED (replicating a Gazebo bug)
+B0 = [0.21523; -0.00771; -0.42741]; %Taken from Pixhawk Gazebo code for Zurich in 10^5 nT, NWU
+%B0 = [0.21523; 0.00771; 0.42741]; %Taken from Pixhawk Gazebo code for Zurich in 10^5 nT, NED (replicating a Gazebo bug)
 
 g = [0; 0; -9.81]; %NWU gravity field vector
 
