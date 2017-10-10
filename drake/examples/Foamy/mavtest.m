@@ -41,7 +41,7 @@ while true
     y = foamy_sensors(x,xdot);
     xdata = mavlink_pack_state_mex(x,y,now);
     step(sender, xdata);
-    if (toc(sensor_timer) > 0.01)
+    if (toc(sensor_timer) > 0.01) %Sensor updates happen at 100 Hz
         %Calculate sensor measurements and add noise
         %(PX4 thinks the sensors aren't working without some noise)
         yn = y + [0; 0; 0; 0; 0; 0; 1e-5*randn(12,1)];
@@ -50,7 +50,7 @@ while true
         step(sender, ydata);
         sensor_timer = tic;
         
-        if (toc(gps_timer) > 0.2)
+        if (toc(gps_timer) > 0.1) %GPS updates happen at 10 Hz
             gdata = mavlink_pack_gps_mex(yn,now);
             step(sender, gdata);
             gps_timer = tic;
