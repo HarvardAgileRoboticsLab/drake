@@ -691,7 +691,7 @@
     <parent link="Chassis" />
     <child link="FLS1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
    </joint>
   
   <joint
@@ -727,7 +727,7 @@
     <parent link="Chassis" />
     <child link="FLL1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
    </joint>
   
   <joint name="FLql1" type="revolute">
@@ -769,7 +769,7 @@
     <parent link="Chassis" />
     <child link="RLS1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
   </joint>
 
   <joint name="RLqs1" type="revolute">
@@ -804,7 +804,7 @@
     <parent link="Chassis" />
     <child link="RLL1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
   </joint>
 
   <joint name="RLql1" type="revolute">
@@ -846,7 +846,7 @@
     <parent link="Chassis" />
     <child link="FRS1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
   </joint>
 
   <joint name="FRqs1" type="revolute">
@@ -881,7 +881,7 @@
     <parent link="Chassis" />
     <child link="FRL1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
   </joint>
 
   <joint name="FRql1" type="revolute">
@@ -924,7 +924,7 @@
     <parent link="Chassis" />
     <child link="RRS1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
   </joint>
 
   <joint name="RRqs1" type="revolute">
@@ -959,7 +959,7 @@
     <parent link="Chassis" />
     <child link="RRL1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.2" upper="0.2"/>
+    <limit lower="-0.25" upper="0.25"/>
    </joint>
 
   <joint name="RRql1" type="revolute">
@@ -1551,69 +1551,65 @@
 
 
 
-
-
-
+ 
 
 
 
  <!-- Actuator Springs --> 
 
   <force_element name="FL_ksact">
-    <linear_spring_damper stiffness="1.1556" damping="0.00">
-      <link1 link="chassis" xyz="13.284659815390 1.456684126580 -0.478250429210" rpy="0 0 0" />
-    <link2 link="FLS1" xyz="0 0 0"/>
-    </linear_spring_damper>
+    <prismatic_spring stiffness="1.1556" rest_length="0">
+      <joint name="FLqsact" />
+    </prismatic_spring>
   </force_element>
 
   <force_element name="FL_klact">
-    <linear_spring_damper stiffness="2.3452" damping="0.00">
-      <link1 link="chassis" xyz="10.504659815390 3.151779821480 -0.501688531240" rpy="0 0 0" />
-    <link2 link="FLL1" xyz="0 0 0"/>
-    </linear_spring_damper>
+     <prismatic_spring stiffness="2.3452" rest_length="0">
+      <joint name="FLqlact" />
+    </prismatic_spring>
   </force_element>
 
   <force_element name="RL_ksact">
-    <linear_spring_damper stiffness="1.1556" damping="0.00">
-      <link1 link="chassis" xyz="-13.284659815390 1.456684126580 -0.478250429210" rpy="0 0 0" />
-    <link2 link="RLS1" xyz="0 0 0"/>
-    </linear_spring_damper>
+    <prismatic_spring stiffness="1.1556" rest_length="0">
+      <joint name="RLqsact" />
+    </prismatic_spring>
   </force_element>
 
   <force_element name="RL_klact">
-    <linear_spring_damper stiffness="2.3452" damping="0.00">
-      <link1 link="chassis" xyz="-10.504659815390 4.791779821480 -0.501688531240" rpy="0 0 0" />
-    <link2 link="RLL1" xyz="0 0 0"/>
-    </linear_spring_damper>
+     <prismatic_spring stiffness="2.3452" rest_length="0">
+      <joint name="RLqlact" />
+    </prismatic_spring>
   </force_element>
 
   <force_element name="FR_ksact">
-    <linear_spring_damper stiffness="1.1556" damping="0.00">
-      <link1 link="chassis" xyz="13.284659815390 -1.456684126580 -0.478250429210" rpy="0 0 0" />
-    <link2 link="FRS1" xyz="0 0 0"/>
-    </linear_spring_damper>
+    <prismatic_spring stiffness="1.1556" rest_length="0">
+      <joint name="FRqsact" />
+    </prismatic_spring>
   </force_element>
 
   <force_element name="FR_klact">
-    <linear_spring_damper stiffness="2.3452" damping="0.00">
-      <link1 link="chassis" xyz="10.504659815390 -3.151779821480 -0.501688531240" rpy="0 0 0" />
-    <link2 link="FRL1" xyz="0 0 0"/>
-    </linear_spring_damper>
+     <prismatic_spring stiffness="2.3452" rest_length="0">
+      <joint name="FRqlact" />
+    </prismatic_spring>
   </force_element>
 
   <force_element name="RR_ksact">
-    <linear_spring_damper stiffness="1.1556" damping="0.00">
-      <link1 link="chassis" xyz="-13.284659815390 -1.456684126580 -0.478250429210" rpy="0 0 0" />
-    <link2 link="RRS1" xyz="0 0 0"/>
-    </linear_spring_damper>
+    <prismatic_spring stiffness="1.1556" rest_length="0">
+      <joint name="RRqsact" />
+    </prismatic_spring>
   </force_element>
 
   <force_element name="RR_klact">
-    <linear_spring_damper stiffness="2.3452" damping="0.00">
-      <link1 link="chassis" xyz="-10.504659815390 -4.791779821480 -0.501688531240" rpy="0 0 0" />
-    <link2 link="RRL1" xyz="0 0 0"/>
-    </linear_spring_damper>
+    <prismatic_spring stiffness="2.3452" rest_length="0">
+      <joint name="RRqlact" />
+    </prismatic_spring>
   </force_element>
+
+
+
+
+
+
 
 
 
@@ -1677,5 +1673,64 @@
     <joint name="RRqlact" />
     <mechanicalReduction>1</mechanicalReduction>
 </transmission>
+
+
+ <!-- Actuator Springs --> 
+
+  <!--<force_element name="FL_ksact">
+    <linear_spring_damper stiffness="1.1556" damping="0.00">
+      <link1 link="chassis" xyz="13.284659815390 1.456684126580 -0.478250429210" rpy="0 0 0" />
+    <link2 link="FLS1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element>
+
+  <force_element name="FL_klact">
+    <linear_spring_damper stiffness="2.3452" damping="0.00">
+      <link1 link="chassis" xyz="10.504659815390 3.151779821480 -0.501688531240" rpy="0 0 0" />
+    <link2 link="FLL1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element>
+
+  <force_element name="RL_ksact">
+    <linear_spring_damper stiffness="1.1556" damping="0.00">
+      <link1 link="chassis" xyz="-13.284659815390 1.456684126580 -0.478250429210" rpy="0 0 0" />
+    <link2 link="RLS1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element>
+
+  <force_element name="RL_klact">
+    <linear_spring_damper stiffness="2.3452" damping="0.00">
+      <link1 link="chassis" xyz="-10.504659815390 4.791779821480 -0.501688531240" rpy="0 0 0" />
+    <link2 link="RLL1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element>
+
+  <force_element name="FR_ksact">
+    <linear_spring_damper stiffness="1.1556" damping="0.00">
+      <link1 link="chassis" xyz="13.284659815390 -1.456684126580 -0.478250429210" rpy="0 0 0" />
+    <link2 link="FRS1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element>
+
+  <force_element name="FR_klact">
+    <linear_spring_damper stiffness="2.3452" damping="0.00">
+      <link1 link="chassis" xyz="10.504659815390 -3.151779821480 -0.501688531240" rpy="0 0 0" />
+    <link2 link="FRL1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element>
+
+  <force_element name="RR_ksact">
+    <linear_spring_damper stiffness="1.1556" damping="0.00">
+      <link1 link="chassis" xyz="-13.284659815390 -1.456684126580 -0.478250429210" rpy="0 0 0" />
+    <link2 link="RRS1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element>
+
+  <force_element name="RR_klact">
+    <linear_spring_damper stiffness="2.3452" damping="0.00">
+      <link1 link="chassis" xyz="-10.504659815390 -4.791779821480 -0.501688531240" rpy="0 0 0" />
+    <link2 link="RRL1" xyz="0 0 0"/>
+    </linear_spring_damper>
+  </force_element> -->
 
 </robot>
