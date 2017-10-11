@@ -14,12 +14,12 @@ drake::Matrix3<typename Derived::Scalar> VectorToSkewSymmetric(
                                            drake::kSpaceDimension);
   drake::Matrix3<typename Derived::Scalar> ret;
   ret.setZero();
-  ret(1) = -p(2);
-  ret(2) = p(1);
-  ret(3) = p(2);
-  ret(5) = -p(0);
-  ret(6) = -p(1);
-  ret(7) = p(0);
+  ret(1) = p(2);
+  ret(2) = -p(1);
+  ret(3) = -p(2);
+  ret(5) = p(0);
+  ret(6) = p(1);
+  ret(7) = -p(0);
   
   //ret << 0.0, -p(2), p(1), p(2), 0.0, -p(0), -p(1), p(0), 0.0;
   return ret;

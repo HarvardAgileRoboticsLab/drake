@@ -73,34 +73,34 @@ class RollPitchYawFloatingJoint
       Scalar sy = sin(yaw);
 
       dmotion_subspace->setZero();
-      (dmotion_subspace->transpose())(112) = sr * sy + cr * cy * sp;
-      (dmotion_subspace->transpose())(113) = cr*sy - cy*sp*sr;
-      (dmotion_subspace->transpose())(118) = cr*sy - cy*sp*sr;
-      (dmotion_subspace->transpose())(119) = -cr*cy - sp*sr*sy;
-      (dmotion_subspace->transpose())(124) = cp*cr;
-      (dmotion_subspace->transpose())(125) = -cp*sr;
-      (dmotion_subspace->transpose())(133) = -sr;
-      (dmotion_subspace->transpose())(134) = -cr;
-      (dmotion_subspace->transpose())(139) = cp*cr;
-      (dmotion_subspace->transpose())(140) = -cp*sr;
-      (dmotion_subspace->transpose())(147) = -cy*sp;
-      (dmotion_subspace->transpose())(148) = cp*cy*sr;
-      (dmotion_subspace->transpose())(149) = cp*cr*cy;
-      (dmotion_subspace->transpose())(153) = -sp*sy;
-      (dmotion_subspace->transpose())(154) = cp*sr*sy;
-      (dmotion_subspace->transpose())(155) = cp*cr*sy;
-      (dmotion_subspace->transpose())(159) = -cp;
-      (dmotion_subspace->transpose())(160) = -sp*sr;
-      (dmotion_subspace->transpose())(161) = -cr*sp;
-      (dmotion_subspace->transpose())(174) = -cp;
-      (dmotion_subspace->transpose())(175) = -sp*sr;
-      (dmotion_subspace->transpose())(176) = -cr*sp;
-      (dmotion_subspace->transpose())(183) = -cp*sy;
-      (dmotion_subspace->transpose())(184) = -cr*cy - sp*sr*sy;
-      (dmotion_subspace->transpose())(185) = cy*sr - cr*sp*sy;
-      (dmotion_subspace->transpose())(189) = cp*cy;
-      (dmotion_subspace->transpose())(190) = cy*sp*sr - cr*sy;
-      (dmotion_subspace->transpose())(191) = sr*sy + cr*cy*sp;
+      (*dmotion_subspace)(112) = sr * sy + cr * cy * sp;
+      (*dmotion_subspace)(113) = cr*sy - cy*sp*sr;
+      (*dmotion_subspace)(118) = cr*sy - cy*sp*sr;
+      (*dmotion_subspace)(119) = -cr*cy - sp*sr*sy;
+      (*dmotion_subspace)(124) = cp*cr;
+      (*dmotion_subspace)(125) = -cp*sr;
+      (*dmotion_subspace)(133) = -sr;
+      (*dmotion_subspace)(134) = -cr;
+      (*dmotion_subspace)(139) = cp*cr;
+      (*dmotion_subspace)(140) = -cp*sr;
+      (*dmotion_subspace)(147) = -cy*sp;
+      (*dmotion_subspace)(148) = cp*cy*sr;
+      (*dmotion_subspace)(149) = cp*cr*cy;
+      (*dmotion_subspace)(153) = -sp*sy;
+      (*dmotion_subspace)(154) = cp*sr*sy;
+      (*dmotion_subspace)(155) = cp*cr*sy;
+      (*dmotion_subspace)(159) = -cp;
+      (*dmotion_subspace)(160) = -sp*sr;
+      (*dmotion_subspace)(161) = -cr*sp;
+      (*dmotion_subspace)(174) = -cp;
+      (*dmotion_subspace)(175) = -sp*sr;
+      (*dmotion_subspace)(176) = -cr*sp;
+      (*dmotion_subspace)(183) = -cp*sy;
+      (*dmotion_subspace)(184) = -cr*cy - sp*sr*sy;
+      (*dmotion_subspace)(185) = cy*sr - cr*sp*sy;
+      (*dmotion_subspace)(189) = cp*cy;
+      (*dmotion_subspace)(190) = cy*sp*sr - cr*sy;
+      (*dmotion_subspace)(191) = sr*sy + cr*cy*sp;
 
 
       // dmotion_subspace->transpose() << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -188,38 +188,38 @@ class RollPitchYawFloatingJoint
                                              get_num_positions());
       dmotion_subspace_dot_times_vdq->setZero();
 
-      (dmotion_subspace_dot_times_vdq->transpose())(19) = -pitchd * rolld * cr - pitchd * yawd * cr * sp - rolld * yawd * cp * sr;
-      (dmotion_subspace_dot_times_vdq->transpose())(20) = pitchd * rolld * sr + pitchd * yawd * sp * sr - rolld * yawd * cp * cr;
-      (dmotion_subspace_dot_times_vdq->transpose())(22) = xd * (rolld * (cr * sy - cy * sp * sr) + yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
+      (*dmotion_subspace_dot_times_vdq)(19) = -pitchd * rolld * cr - pitchd * yawd * cr * sp - rolld * yawd * cp * sr;
+      (*dmotion_subspace_dot_times_vdq)(20) = pitchd * rolld * sr + pitchd * yawd * sp * sr - rolld * yawd * cp * cr;
+      (*dmotion_subspace_dot_times_vdq)(22) = xd * (rolld * (cr * sy - cy * sp * sr) + yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
                                                           zd * (pitchd * cr * sp + rolld * cp * sr) + yd * (-rolld * (cr * cy + sp * sr * sy) +
                                                           yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy);
-      (dmotion_subspace_dot_times_vdq->transpose())(23) = -zd * (rolld * cp * cr - pitchd * sp * sr) -
+      (*dmotion_subspace_dot_times_vdq)(23) = -zd * (rolld * cp * cr - pitchd * sp * sr) -
                                                           xd * (rolld * (sr * sy + cr * cy * sp) -
                                                                 yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
                                                           yd * (rolld * (cy * sr - cr * sp * sy) +
                                                                 yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy);
-      (dmotion_subspace_dot_times_vdq->transpose())(24) = pitchd * yawd * sp;
-      (dmotion_subspace_dot_times_vdq->transpose())(25) = -pitchd * yawd * cp * sr - rolld * yawd * cr * sp;
-      (dmotion_subspace_dot_times_vdq->transpose())(26) = rolld * yawd * sp * sr - pitchd * yawd * cp * cr;
-      (dmotion_subspace_dot_times_vdq->transpose())(27) = -xd * (pitchd * cp * cy - yawd * sp * sy) -
+      (*dmotion_subspace_dot_times_vdq)(24) = pitchd * yawd * sp;
+      (*dmotion_subspace_dot_times_vdq)(25) = -pitchd * yawd * cp * sr - rolld * yawd * cr * sp;
+      (*dmotion_subspace_dot_times_vdq)(26) = rolld * yawd * sp * sr - pitchd * yawd * cp * cr;
+      (*dmotion_subspace_dot_times_vdq)(27) = -xd * (pitchd * cp * cy - yawd * sp * sy) -
                                                            yd * (pitchd * cp * sy + yawd * cy * sp) + pitchd * zd * sp;
-      (dmotion_subspace_dot_times_vdq->transpose())(28) = -zd * (pitchd * cp * sr + rolld * cr * sp) -
+      (*dmotion_subspace_dot_times_vdq)(28) = -zd * (pitchd * cp * sr + rolld * cr * sp) -
                                                           xd * (-rolld * cp * cr * cy + pitchd * cy * sp * sr +
                                                                 yawd * cp * sr * sy) +
                                                           yd * (rolld * cp * cr * sy + yawd * cp * cy * sr -
                                                                 pitchd * sp * sr * sy);
-      (dmotion_subspace_dot_times_vdq->transpose())(29) = -zd * (pitchd * cp * cr - rolld * sp * sr) -
+      (*dmotion_subspace_dot_times_vdq)(29) = -zd * (pitchd * cp * cr - rolld * sp * sr) -
                                                           xd * (pitchd * cr * cy * sp + rolld * cp * cy * sr +
                                                                 yawd * cp * cr * sy) -
                                                           yd * (-yawd * cp * cr * cy + pitchd * cr * sp * sy +
                                                                 rolld * cp * sr * sy);
-      (dmotion_subspace_dot_times_vdq->transpose())(33) = -xd * (yawd * cp * cy - pitchd * sp * sy) -
+      (*dmotion_subspace_dot_times_vdq)(33) = -xd * (yawd * cp * cy - pitchd * sp * sy) -
                                                            yd * (pitchd * cy * sp + yawd * cp * sy);
-      (dmotion_subspace_dot_times_vdq->transpose())(34) = yd * (rolld * (sr * sy + cr * cy * sp) -
+      (*dmotion_subspace_dot_times_vdq)(34) = yd * (rolld * (sr * sy + cr * cy * sp) -
                                                           yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
                                                         xd * (rolld * (cy * sr - cr * sp * sy) +
                                                               yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy);
-      (dmotion_subspace_dot_times_vdq->transpose())(35) = yd * (rolld * (cr * sy - cy * sp * sr) +
+      (*dmotion_subspace_dot_times_vdq)(35) = yd * (rolld * (cr * sy - cy * sp * sr) +
                                                           yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
                                                         xd * (-rolld * (cr * cy + sp * sr * sy) +
                                                               yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy);
