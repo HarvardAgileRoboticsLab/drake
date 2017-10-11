@@ -234,7 +234,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         obj = obj.addCost(FunctionHandleObjective(length(obj.s_inds),@(s)scost(obj,s),1), obj.s_inds(:));
                         
                         if obj.options.add_ccost
-                            for ii=1:obj.N-1
+                            for ii=1:obj.N-2
                                 obj = obj.addCost(FunctionHandleObjective(obj.nC*2, @(c1,c2)ccost(obj,c1,c2)),{obj.c_inds(:,ii);obj.c_inds(:,ii+1)});
                             end
                         end
@@ -1063,21 +1063,23 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             nq = length(q2);
             nv = length(v);
             
-            [~,G,B,~,dG,dB] = obj.plant.manipulatorDynamics(q2, zeros(nv,1));
-            [dT,d2T] = obj.plant.kineticEnergyDerivatives(q2, v);
+            [M,G,B,dM,dG,dB] = obj.plant.manipulatorDynamics(q2, zeros(nv,1));
+            dM = reshape(dM,nq*nq,nq+nv);
+            dMdq = dM(:,1:nq);
+
+            [~,d2T] = obj.plant.kineticEnergyDerivatives(q2, v);
             
             dBdq = dB(:,1:nq);
             
-            D1L = dT(1:nq) - G;
-            D2L = dT(nq+(1:nv));
+            D1L = 0.5*dMdq'*kron(v,v) - G; 
+            D2L = M*v;
             
             D1D1L = d2T(1:nq,1:nq) - dG(:,1:nq);
-            D1D2L = d2T(1:nq,nq+(1:nv));
-            D2D2L = d2T(nq+(1:nv),nq+(1:nv));
+            D1D2L = kron(v',eye(nq))*dMdq;
+            D2D2L = M;
             
             
-%             dM = reshape(dM,nq*nq,nq+nv);
-%             dMdq = dM(:,1:nq);
+
             %D1D1L = -dG(:,1:nq); %throwing out second derivative of M terms here
             
             %             tic

@@ -1722,14 +1722,16 @@ Matrix<ScalarOut, Dynamic, 1> RigidBodyTree<T>::kineticEnergyGrad(
   Matrix<ADS, Dynamic, 1> vad = vs.template cast<ADS>();
   
   for(int k = 0; k < qad.rows(); ++k) {
-  	qad(k).derivatives().resize(qad.rows()+vad.rows());
+  	//qad(k).derivatives().resize(qad.rows()+vad.rows());
+  	qad(k).derivatives().resize(qad.rows());
   	qad(k).derivatives().setZero();
   	qad(k).derivatives()(k) = 1;
   }
   for(int k = 0; k < vad.rows(); ++k) {
-  	vad(k).derivatives().resize(qad.rows()+vad.rows());
+  	//vad(k).derivatives().resize(qad.rows()+vad.rows());
+  	vad(k).derivatives().resize(qad.rows());
   	vad(k).derivatives().setZero();
-  	vad(k).derivatives()(qad.rows() + k) = 1;
+  	//vad(k).derivatives()(qad.rows() + k) = 1;
   }
   
   auto ADcache = doKinematics(qad, vad);
