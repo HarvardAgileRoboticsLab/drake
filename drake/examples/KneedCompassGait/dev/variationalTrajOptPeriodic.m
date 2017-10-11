@@ -1,4 +1,4 @@
-function [xtraj,utraj,ctraj,btraj, psitraj,etatraj,jltraj, kltraj,straj, ...
+function [plant, xtraj,utraj,ctraj,btraj, psitraj,etatraj,jltraj, kltraj,straj, ...
     z,F,info,infeasible_constraint_name] = variationalTrajOptPeriodic()
 
 options.floating = true;
@@ -31,19 +31,6 @@ T_span = [1 T0];
 
 qf_min = [.4;-5*ones(5,1)];
 qf_max = [1; 5*ones(5,1)];
-
-
-load_traj = 0; 
-if load_traj
-    load('TrajOpt209-Sep-2017')
-    traj_init.x = xtraj; 
-%     traj_init.u = utraj; 
-%     traj_init.c = ctraj; 
-%     traj_init.b = btraj; 
-%     traj_init.psi = psitraj; 
-%     traj_init.eta = etatraj; 
-%     traj_init.s = straj; 
-end
 
 optimoptions.sweight = 1000;
 

@@ -1,22 +1,27 @@
 clear; clc; close all;
 
+LOAD = 0; 
 [hamr,xtraj,utraj,ctraj,btraj,...
-    psitraj,etatraj,jltraj, kltraj, straj] = runVariationalTrajOpt();
-save(['TrajOpt_', date], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
+    psitraj,etatraj,jltraj, kltraj, straj,z,F,info,infeasible_constraint_name]= runVariationalTrajOpt(1);
+
+save(['TrajOpt_', datestr(datetime)], 'hamr', 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
     'jltraj', 'kltraj', 'straj'); 
 
 %% Playback
 
 v = hamr.constructVisualizer();
-xtraj_scaled = PPTrajectory(foh(xtraj.getBreaks()*1e-3, xtraj.eval(xtraj.getBreaks())));
-xtraj_scaled = xtraj_scaled.setOutputFrame(xtraj.getOutputFrame());
-v.playback(xtraj_scaled, struct('slider', true));
+qq = xtraj.eval(xtraj.getBreaks()); qq = qq(1:50, :); 
+qtraj_scaled = PPTrajectory(foh(xtraj.getBreaks()*1e-3, qq));
+qtraj_scaled = qtraj_scaled.setOutputFrame(v.getInputFrame());
+v.playback(qtraj_scaled, struct('slider', true));
 
 
 %% Plotting
-load('NomTraj.mat')
-ttnom = tt; 
-uunom = yy(101:108,:);
+
+nq = hamr.getNumPositions();
+nv = hamr.getNumVelocities();
+nx = nq+nv;
+nu = hamr.getNumInputs();
 
 tt = xtraj.getBreaks();
 yy = xtraj.eval(tt);
@@ -32,28 +37,68 @@ title_str = {'Front Left Swing', 'Front Left Lift', ...
 figure(1); clf; hold on;
 for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str(i))
-    plot(tt, uu(i, :)*1e3); hold on;
-    plot(ttnom, uunom(i,:)*1e3);   
-    %yyaxis right; plot(tt, yy(act_dof(i), :)*1e3)
-    %legend('Force(mN)', 'Deflection(\mum)')
+    yyaxis left; hold on; plot(tt, uu(i,:)); ylabel('Force(N)')
+    yyaxis right; hold on; plot(tt, yy(act_dof(i), :)); ylabel('Deflection(mm)')
+%     legend('Force', 'Deflection')
 end
 
 figure(2); clf;
 title_str = {'com x', 'com y', 'com z', 'roll', 'pitch', 'yaw'};
 for i = 1:6
     subplot(3,2,i); hold on; title(title_str(i))
-    yyaxis left; hold on; plot(tt, yy(i,:))
-    yyaxis right; hold on; plot(tt, yy(i+nq, :))
-    legend('Position', 'Velocity')
+    yyaxis left; hold on; plot(tt, yy(i,:)); ylabel('Position')
+    yyaxis right; hold on; plot(tt, yy(i+nq, :)); ylabel('Velocity')
+%     legend('Position', 'Velocity')
 end
 
-% phi = zeros(4, numel(tt));
-% for i = 1:numel(tt)
-%     q = yy(1:ndof/2, i);
-%     qd = yy(ndof/2+1:ndof, i);
-%     kinsol = hamr.doKinematics(q, qd);
-%     phi(:,i) = hamr.contactConstraints(kinsol, false, contact_opt);
-% end
+phi = zeros(4, numel(tt));
+cc = ctraj.eval(ctraj.getBreaks);
+for i = 1:numel(tt)
+    q = yy(1:nq, i);
+    qd = yy(nq+1:nx, i);
+    kinsol = hamr.doKinematics(q, qd);
+    phi(:,i) = hamr.contactConstraints(kinsol, false);
+end
+
+
+legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
+
+figure(3); clf; hold on; 
+for i = 1:size(phi, 1)    
+    subplot(2,2,i); hold on; title(legs{i}); 
+    yyaxis left; plot(tt, phi(i,:)); ylabel('Distance (mm)'); ylim([0, 5])
+    yyaxis right; plot(tt, cc(i,:)); ylabel('Force (N)')
+%     plot(tt, straj.eval(straj.getBreaks()), 'k')
+end
+
+
+figure(4); clf; hold on; 
+for i = 1:size(phi, 1)    
+    subplot(2,2,i); hold on; title(legs{i}); 
+    plot(tt, phi(i,:).*cc(i,:));
+%     yyaxis right; plot(tt, cc(i,:)); ylabel('Force (N)')
+    plot(tt, straj.eval(straj.getBreaks()), 'k')
+end
+% lp_b = [0, 7.540, -11.350;
+%     0, 7.540, -11.350;
+%     0, -7.540, -11.350;
+%     0, -7.540, -11.350];
 % 
-% figure(3); clf; hold on;
-% plot(tt, phi);
+% 
+% lp_g = zeros([numel(tt), size(lp_b')]);
+% 
+% for j = 1:numel(tt)
+%     q = yy(1:nq, i);
+%     qd = yy(nq+1:nx, i);
+%     kinsol = hamr.doKinematics(q, qd);
+%     for i = 1:size(lp_b,1)
+%         lp_g(j,:,i) = hamr.forwardKin(kinsol, hamr.findLinkId(legs{i}),lp_b(i,:)');
+%     end
+% end
+% figure(4); clf; hold on;
+% title('Leg XZ')
+% for i = 1:size(lp_b,1)    
+%     plot(tt, lp_g(:,3,i))
+% end
+% legend(legs)
+% axis equal; 
