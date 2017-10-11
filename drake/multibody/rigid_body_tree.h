@@ -453,6 +453,13 @@ class RigidBodyTree {
     RigidBody<double> const*, drake::WrenchVector<T>>;
 #endif
 
+  template <typename Scalar>
+  Eigen::Matrix<Scalar, 1, 1> kineticEnergy(KinematicsCache<Scalar>& cache) const;
+
+  template <typename Scalar, typename ScalarOut>
+  Eigen::Matrix<ScalarOut, Eigen::Dynamic, 1> kineticEnergyGrad(KinematicsCache<Scalar>& cache) const;
+
+
   /** \brief Compute the term \f$ C(q, v, f_\text{ext}) \f$ in the manipulator
   *equations
   *  \f[

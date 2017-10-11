@@ -9,6 +9,7 @@
 
 #include "drake/common/drake_deprecated.h"
 #include "drake/common/eigen_types.h"
+#include "drake/common/eigen_autodiff_types.h"
 #include "drake/math/gradient.h"
 #include "drake/multibody/joints/floating_base_types.h"
 
@@ -77,6 +78,12 @@ class DrakeJoint {
       Eigen::Matrix<double, Eigen::Dynamic, 1, 0, 73, 1>>
       AutoDiffFixedMaxSize;  // 73 is number of states of quat-parameterized
                              // Atlas
+  typedef Eigen::AutoDiffScalar<
+      Eigen::Matrix<drake::AutoDiffXd, Eigen::Dynamic, 1>>
+      AutoDubDiffScalar;
+  typedef Eigen::AutoDiffScalar<
+      Eigen::Matrix<drake::AutoDiffUpTo73d, Eigen::Dynamic, 1>>
+      AutoDubDiffFixedScalar;
 
   /**
    * A constructor for use by concrete joints to define the joint's name, fixed
@@ -212,11 +219,10 @@ class DrakeJoint {
   virtual const Eigen::VectorXd& get_joint_limit_dissipation() const;
 
   POSITION_AND_VELOCITY_DEPENDENT_METHODS(double)
-
   POSITION_AND_VELOCITY_DEPENDENT_METHODS(AutoDiffFixedMaxSize)
+  POSITION_AND_VELOCITY_DEPENDENT_METHODS(Eigen::AutoDiffScalar<Eigen::VectorXd>)
+  POSITION_AND_VELOCITY_DEPENDENT_METHODS(AutoDubDiffScalar)
 
-  POSITION_AND_VELOCITY_DEPENDENT_METHODS(
-      Eigen::AutoDiffScalar<Eigen::VectorXd>)
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
