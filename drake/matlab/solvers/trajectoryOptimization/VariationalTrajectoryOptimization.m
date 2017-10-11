@@ -234,7 +234,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         obj = obj.addCost(FunctionHandleObjective(length(obj.s_inds),@(s)scost(obj,s),1), obj.s_inds(:));
                         
                         if obj.options.add_ccost
-                            for ii=1:obj.N-1
+                            for ii=1:obj.N-2
                                 obj = obj.addCost(FunctionHandleObjective(obj.nC*2, @(c1,c2)ccost(obj,c1,c2)),{obj.c_inds(:,ii);obj.c_inds(:,ii+1)});
                             end
                         end
