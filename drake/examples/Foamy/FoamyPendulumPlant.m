@@ -1,7 +1,7 @@
 classdef FoamyPendulumPlant < DrakeSystem
     
     properties
-        
+        plane_rbm
     end
     
     methods
@@ -13,6 +13,11 @@ classdef FoamyPendulumPlant < DrakeSystem
             obj = obj.setOutputFrame(obj.getStateFrame); %full state feedback
             %quaternion unit-norm constraint -- why doesn't the index input work?
             %obj = obj.addStateConstraint(QuadraticConstraint(.5,.5,blkdiag(zeros(3),eye(4),zeros(6)),zeros(13,1)));
+        
+             options.floating = 'quat';
+            urdf = 'FoamyPendulum.URDF';
+            rbm = RigidBodyManipulator(urdf,options);
+            obj.plane_rbm = rbm;
         end
         
         function [xdot, dxdot] = dynamics(obj,t,x,u)
@@ -77,8 +82,21 @@ classdef FoamyPendulumPlant < DrakeSystem
             [xtraj,utraj,~,~,info]=solveTraj(prog,t_init,traj_init);
             toc
 
+%             if nargin == 2 && display
+%                 %v = FoamyVisualizer(obj);
+%                 v = obj.constructVisualizer();
+%                 %v.playback(xtraj);
+%                  %quat_pend = xtraj(11:14);
+%                  %eul_pend = quat2eul(quat_pend);
+%                  %t2=[xtraj(1:7),eul_pend(1:2)];
+%                  t2=xtraj(1:9);
+%                  v.getInputFrame
+%                 t2 = t2.setOutputFrame(v.getInputFrame);
+%                 playback(v,t2,struct('slider',true));
+%             end
+
             if nargin == 2 && display
-                v = FoamyVisualizer(obj);
+                v = FoamyPendulumVisualizer(obj);
                 v.playback(xtraj);
             end
 
@@ -136,6 +154,13 @@ classdef FoamyPendulumPlant < DrakeSystem
             q(5) = 1; %Quaternion - plane oriented right-side up
             q(10) = -.35; %Pendulum position under airplane
             q(12) = 1; %Pendulum quaternion
+        end
+        
+        function v = constructVisualizer(obj)
+          
+          v = obj.plane_rbm.constructVisualizer;
+%           v = v.setInputFrame(obj.getStateFrame);
+
         end
     end
     
