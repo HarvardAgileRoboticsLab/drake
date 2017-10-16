@@ -1,0 +1,99 @@
+<robot
+  name="FoamyPendulum">
+  <link
+    name="airplane_body">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value=".484" />
+      <inertia
+        ixx="0.003922"
+        ixy="0.000303"
+        ixz="0.000441"
+        iyy="0.015940"
+        iyz="-0.000030"
+        izz="0.019340" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="-0.6 0.436 0"
+        rpy="0 0 0 "/>
+      <geometry>
+        <mesh
+          filename="./flat-plate.stl"
+          scale = "0.001"
+        />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.1 0.1 0.1 1" />
+      </material>
+    </visual>
+  </link>
+
+<link
+    name="pendulum_length">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.00001" />
+      <inertia
+        ixx="0.00001"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.00001"
+        iyz="0.0"
+        izz="0.00001" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 -0.25"
+        rpy="0 0 0" />
+      <geometry>
+        <cylinder length="0.5" radius="0.01"/>
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.1 0.1 0.1 1" />
+      </material>
+    </visual>
+  </link>
+
+    <link
+    name="pendulum_mass">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value=".4" />
+      <inertia
+        ixx="0.098"
+        ixy="0.00"
+        ixz="0.00"
+        iyy="0.098"
+        iyz="0.00"
+        izz="0.098" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.1"/>
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.1 0.1 0.1 1" />
+      </material>
+    </visual>
+  </link>
+
+</robot>
