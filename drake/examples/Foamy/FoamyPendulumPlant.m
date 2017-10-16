@@ -1,7 +1,7 @@
 classdef FoamyPendulumPlant < DrakeSystem
     
     properties
-        plane_rbm
+        
     end
     
     methods
@@ -13,11 +13,6 @@ classdef FoamyPendulumPlant < DrakeSystem
             obj = obj.setOutputFrame(obj.getStateFrame); %full state feedback
             %quaternion unit-norm constraint -- why doesn't the index input work?
             %obj = obj.addStateConstraint(QuadraticConstraint(.5,.5,blkdiag(zeros(3),eye(4),zeros(6)),zeros(13,1)));
-        
-             options.floating = 'quat';
-            urdf = 'FoamyPendulum.URDF';
-            rbm = RigidBodyManipulator(urdf,options);
-            obj.plane_rbm = rbm;
         end
         
         function [xdot, dxdot] = dynamics(obj,t,x,u)
@@ -156,12 +151,6 @@ classdef FoamyPendulumPlant < DrakeSystem
             q(12) = 1; %Pendulum quaternion
         end
         
-        function v = constructVisualizer(obj)
-          
-          v = obj.plane_rbm.constructVisualizer;
-%           v = v.setInputFrame(obj.getStateFrame);
-
-        end
     end
     
 end

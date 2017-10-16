@@ -1,9 +1,10 @@
 %--- Simulation Parameters ---%
-x = [0 0 0 0 -1/sqrt(2) 1/sqrt(2) 0 0 0 0 0 0 0]'; %Initial State (pointing East)
+
 u = [0 0 0 0]'; %Initial controls
 
-plant = FoamyPlant();
-vis = FoamyVisualizer(plant);
+plant = FoamyPendulumPlant();
+x = plant.getInitialState();
+vis = FoamyPendulumVisualizer(plant);
 vis.draw(0,x);
 
 %Setup RC Controller
@@ -18,7 +19,7 @@ while true
     
     %Simulate forward one timestep
     dt = toc(loop_timer);
-    [x, xdot] = foamy_rk4(x,u,dt);
+    [x, xdot] = foamy_pendulum_rk4(x,u,dt);
     loop_timer = tic;
     
     vis.draw(0,x);
