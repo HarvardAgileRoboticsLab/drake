@@ -3,10 +3,12 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
     %TODO: Add body aerodynamic forces
 
     %State vector:
-    %r = x(1:3); %Lab-frame position vector of fuselage
+    r = x(1:3); %Lab-frame position vector of fuselage
     q = x(4:7); %Quaternion rotation from body to lab frame for fuselage
-    %r_p = x(8:10); %Lab-frame position vector of pendulum
+    R = qtoR(q);
+    r_p = x(8:10); %Lab-frame position vector of pendulum
     q_p = x(11:14); %Quaternion rotation from body to lab frame for pendulum
+    R_p = qtoR(q_p);
     v = x(15:17); %Lab-frame velocity vector of fuselage
     w = x(18:20); %Body-frame angular velocity of fuselage
     v_p = x(21:23); %Lab-frame velocity vector of pendulum
@@ -41,7 +43,7 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
 
     % ---------- Aerodynamic Forces (body frame) ---------- %
 
-    v_body = qrotate(qconj(q),v); %body-frame velocity
+    v_body = R'*v; %body-frame velocity
     v_propwash = propwash(thr);
     v_rout = v_body + cross(w,[0; p.r_ail; 0]);
     v_lout = v_body + cross(w,[0; -p.r_ail; 0]);
@@ -128,25 +130,40 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
     % ---------- Add Everything Together ---------- %
 
     F_aero = F_rout + F_lout + F_rin + F_lin + F_elev + F_rud + F_fus + F_thr;
-    F = qrotate(q,F_aero) - [0; 0; p.m*p.g];
+    F = R*F_aero - [0; 0; p.m*p.g];
 
     T = T_rout + T_lout + T_rin + T_lin + T_elev + T_rud + T_fus + T_prop;
     T = T - cross(w,(p.J*w + p.Jprop*w_prop)); %gyroscopic torque
     
+    % ---------- Pendulum Constraint Stuff ---------- %
+    
+%     p1 = r + R*p.r1; %position of airplane pivot point
+%     p2 = r_p + R_p*p.r2; %position of pendulum pivot point
+%     
+%     d = p1 - p2;
+%     
+%     p1dot = v + R*cross(w,p.r1);
+%     p2dot = v_p + R_p*cross(w_p,p.r2);
+%     
+%     ddot = p1dot - p2dot;
+%     
+%     Fc = kp*d*[
+    
     % ---------- Compute Dynamics ---------- %
     
-    c = cross(w,cross(w,p.r1)) - cross(w_p,cross(w_p,p.r2));
+    c = R*cross(w,cross(w,p.r1)) - R_p*cross(w_p,cross(w_p,p.r2));
+    G = [eye(3), -R*hat(p.r1), -eye(3), R_p*hat(p.r2)];
     
-    lambda = p.GMGinv*(p.G*p.Minv*[F; T; zeros(6,1)] + c);
+    lambda = -(G*p.Minv*G')\(G*p.Minv*[F; T; zeros(6,1)] + c);
     
     xdot = [v;
             .5*[-q(2:4)'*w; q(1)*w + cross(q(2:4),w)];
             v_p;
             .5*[-q_p(2:4)'*w_p; q_p(1)*w_p + cross(q_p(2:4),w_p)];
-            (F + p.G(:,1:3)'*lambda)/p.m;
-            p.Jinv*(T + p.G(:,4:6)'*lambda);
-            (F_p + p.G(:,7:9)'*lambda)/p.m_p
-            p.J_pinv*(T_p + p.G(:,10:12)'*lambda)];
+            (F + lambda)/p.m;
+            p.Jinv*(T + G(:,4:6)'*lambda);
+            (F_p - lambda)/p.m_p
+            p.J_pinv*(T_p + G(:,10:12)'*lambda)];
 end
 
 function a = alpha(v)
@@ -167,6 +184,16 @@ end
 function qc = qconj(q)
     %Quaternion conjugate
     qc = [q(1); -q(2:4)];
+end
+
+function C = hat(x)
+    C = [ 0  -x(3) x(2);
+         x(3)  0  -x(1);
+        -x(2) x(1)  0];
+end
+
+function R = qtoR(q)
+    R = eye(3) + 2*hat(q(2:4))*(hat(q(2:4)) + q(1)*eye(3));
 end
 
 function rrot = arotate(a,r)

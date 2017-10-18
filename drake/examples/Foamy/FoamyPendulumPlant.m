@@ -49,20 +49,24 @@ classdef FoamyPendulumPlant < DrakeSystem
 
             tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
 
-            N = 7;
+            N = 15;
             prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
             prog = addStateConstraint(prog,ConstantConstraint(x0),1);
             prog = addStateConstraint(prog,ConstantConstraint(xf),N);
             prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,4:7);
             prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,11:14);
-            prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),1:N);
+            prog = addInputConstraint(prog,BoundingBoxConstraint([.001; -1; -1; -1], [1; 1; 1; 1]),1:N);
             prog = addRunningCost(prog,@cost);
+            prog = addStateConstraint(prog,ConstantConstraint(0.5),8,10);
             %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
 
             %--- snopt options ---%
             prog = setSolver(prog,'snopt');
-            prog = prog.setSolverOptions('snopt','majoroptimalitytolerance',1e-5);
-            prog = prog.setSolverOptions('snopt','majorfeasibilitytolerance',1e-5);
+            prog = prog.setSolverOptions('snopt','minoroptimalitytolerance',1e-4);
+            prog = prog.setSolverOptions('snopt','minorfeasibilitytolerance',1e-4);
+            prog = prog.setSolverOptions('snopt','majoroptimalitytolerance',1e-4);
+            prog = prog.setSolverOptions('snopt','majorfeasibilitytolerance',1e-4);
+            prog = prog.setSolverOptions('snopt','iterationslimit',100000);
 
             t_init = linspace(0,tf0,N);
 
@@ -76,19 +80,6 @@ classdef FoamyPendulumPlant < DrakeSystem
             tic
             [xtraj,utraj,~,~,info]=solveTraj(prog,t_init,traj_init);
             toc
-
-%             if nargin == 2 && display
-%                 %v = FoamyVisualizer(obj);
-%                 v = obj.constructVisualizer();
-%                 %v.playback(xtraj);
-%                  %quat_pend = xtraj(11:14);
-%                  %eul_pend = quat2eul(quat_pend);
-%                  %t2=[xtraj(1:7),eul_pend(1:2)];
-%                  t2=xtraj(1:9);
-%                  v.getInputFrame
-%                 t2 = t2.setOutputFrame(v.getInputFrame);
-%                 playback(v,t2,struct('slider',true));
-%             end
 
             if nargin == 2 && display
                 v = FoamyPendulumVisualizer(obj);

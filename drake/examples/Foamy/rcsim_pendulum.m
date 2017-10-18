@@ -19,7 +19,7 @@ while true
     
     %Simulate forward one timestep
     dt = toc(loop_timer);
-    [x, xdot] = foamy_pendulum_rk4(x,u,dt);
+    [x, xdot] = foamy_pendulum_midpoint(x,u,dt);
     loop_timer = tic;
     
     vis.draw(0,x);

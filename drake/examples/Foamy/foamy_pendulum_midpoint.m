@@ -1,6 +1,7 @@
 function [xn, xdot] = foamy_pendulum_midpoint(x,u,dt)
 
-xdot = foamy_pendulum_dynamics_mex(0,x,u);
+xdot = foamy_pendulum_dynamics(0,x,u);
+%xdot = foamy_pendulum_dynamics_mex(0,x,u);
 
 %Make sure we don't go through the ground
 if(x(3) < 0.05)
@@ -18,7 +19,8 @@ xm = x + (0.5*dt)*xdot;
 xm(4:7) = xm(4:7)/sqrt(xm(4:7)'*xm(4:7));
 xm(11:14) = xm(11:14)/sqrt(xm(11:14)'*xm(11:14));
 
-xdot = foamy_pendulum_dynamics_mex(0,xm,u);
+xdot = foamy_pendulum_dynamics(0,xm,u);
+%xdot = foamy_pendulum_dynamics_mex(0,xm,u);
 
 %Make sure we don't go through the ground
 if(x(3) < 0.05)

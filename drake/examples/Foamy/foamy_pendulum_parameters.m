@@ -90,8 +90,6 @@ J_pinv = inv(J_p);
 r1 = [0 0 .05]';
 r2 = [0 0 -.30]';
 Minv = blkdiag((1/m)*eye(3), Jinv, (1/m_p)*eye(3), J_pinv);
-G = [eye(3), -hat(r1), -eye(3), hat(r2)];
-GMGinv = inv(G*Minv*G');
 
 % --- Pack everything into a struct --- %
 p = struct();
@@ -159,12 +157,4 @@ p.J_pinv = J_pinv;
 p.r1 = r1;
 p.r2 = r2;
 p.Minv = Minv;
-p.G = G;
-p.GMGinv = GMGinv;
-end
-
-function C = hat(x)
-    C = [ 0  -x(3) x(2);
-         x(3)  0  -x(1);
-        -x(2) x(1)  0];
 end
