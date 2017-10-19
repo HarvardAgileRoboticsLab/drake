@@ -36,16 +36,16 @@ classdef FoamyPendulumPlant < DrakeSystem
         function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
-            x0(1) = -6;
-            x0(3) = 1.5;
-            x0(8) = -6;
-            x0(10) = 1.15;
+            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 8 m/s
+            x0(1) = x0(1)-6;
+            x0(3) = x0(3)+1.5;
+            x0(8) = x0(8)-6;
+            x0(10) = x0(10)+1.5;
 
             % final conditions:
             xf = x0;
-            xf(1) = 6; %translated in x
-            xf(8) = 6;
+            xf(1) = x0(1)+12; %translated in x
+            xf(8) = x0(8)+12;
 
             tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
 
@@ -100,7 +100,7 @@ classdef FoamyPendulumPlant < DrakeSystem
             v0 = [v 0 0]';
             w0 = [0 0 0]';
             q0 = [0 1 0 0]';
-            u0 = [.5; 0; 0; 0; 0; 0; 0];
+            u0 = [.5; 0; 0; 0; 0; 0; 0; 0; -.35];
 
             function r = trimResidual(x)
                 if isempty(varargin)
@@ -109,7 +109,7 @@ classdef FoamyPendulumPlant < DrakeSystem
                     q = [1 x(5) x(6) x(7)]';
                 end
                 q = q/sqrt(q'*q);
-                y = [0;0;0;q;0;0;-.35;q0;v0;w0;v0;w0];
+                y = [0;0;0;q;x(8);0;x(9);q0;v0;w0;v0;w0];
                 xdot = obj.dynamics(0,y,x(1:4));
                 r = [xdot(4:7); xdot(11:26)]; 
             end
@@ -123,7 +123,7 @@ classdef FoamyPendulumPlant < DrakeSystem
                 qtrim = [1 y(5) y(6) y(7)]';
             end
             qtrim = qtrim/sqrt(qtrim'*qtrim);
-            xtrim = [0;0;0;qtrim;0;0;-.35;q0;v0;w0;v0;w0];
+            xtrim = [0;0;0;qtrim;y(8);0;y(9);q0;v0;w0;v0;w0];
             utrim = y(1:4);
 
         end

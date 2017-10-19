@@ -107,9 +107,6 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
     w_prop = [2*pi*n_prop 0 0]';
     q_prop = p.rho*p.Cq*(n_prop^2)*(p.D_prop^5);
     T_prop = [-q_prop 0 0]';
-
-    % --- Pendulum --- %
-    F_p = [0 0 0]'; %TODO: model this
     
     % ---------- Aerodynamic Torques (body frame) ---------- %
 
@@ -125,7 +122,9 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
     
     T_fus = cross([-p.r_fus; 0; -p.z_fus],F_fus);
     
-    T_p = [0 0 0]'; %TODO: model this
+    % --- Pendulum --- %
+    F_p = [0 0 -p.m_p*p.g]'; %TODO: add aerodynamic forces
+    T_p = [0 0 0]'; %TODO: add aerodynamic torque
     
     % ---------- Add Everything Together ---------- %
 
@@ -137,24 +136,24 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
     
     % ---------- Pendulum Constraint Stuff ---------- %
     
-%     p1 = r + R*p.r1; %position of airplane pivot point
-%     p2 = r_p + R_p*p.r2; %position of pendulum pivot point
-%     
-%     d = p1 - p2;
-%     
-%     p1dot = v + R*cross(w,p.r1);
-%     p2dot = v_p + R_p*cross(w_p,p.r2);
-%     
-%     ddot = p1dot - p2dot;
-%     
-%     Fc = kp*d*[
+    kphi = 5; %this should be set to no higher than 1/dt
     
-    % ---------- Compute Dynamics ---------- %
+    p1 = r + R*p.r1; %position of airplane pivot point
+    p2 = r_p + R_p*p.r2; %position of pendulum pivot point
+    
+    phi = p1 - p2; %constraint violation
+    
+    p1dot = v + R*cross(w,p.r1);
+    p2dot = v_p + R_p*cross(w_p,p.r2);
+    
+    phidot = p1dot - p2dot; %derivative of constraint violation
     
     c = R*cross(w,cross(w,p.r1)) - R_p*cross(w_p,cross(w_p,p.r2));
     G = [eye(3), -R*hat(p.r1), -eye(3), R_p*hat(p.r2)];
     
-    lambda = -(G*p.Minv*G')\(G*p.Minv*[F; T; zeros(6,1)] + c);
+    lambda = -(G*p.Minv*G')\(G*p.Minv*[F; T; F_p; T_p] + c + kphi*kphi*phi + 2*kphi*phidot);
+
+    % ---------- Compute Dynamics ---------- %
     
     xdot = [v;
             .5*[-q(2:4)'*w; q(1)*w + cross(q(2:4),w)];
