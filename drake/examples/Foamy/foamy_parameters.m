@@ -32,7 +32,7 @@ Cq = Cp/(2*pi); %Torque coefficient
 
 % All lifting surfaces are modeled as unsweapt tapered wings
 b = 86.4/100; %wing span (m)
-l_in = 20/100; %inboard wing length covered by propwash (m)
+l_in = 10/100; %inboard wing length covered by propwash (m)
 cr = 26/100; %root chord (m)
 ct = 15.2/100; %tip chord (m)
 cm = (ct + cr)/2; %mean wing chord (m)
@@ -43,9 +43,9 @@ Ra = b^2/S; %wing aspect ratio (dimensionless)
 Rt = ct/cr; %wing taper ratio (dimensionless)
 r_ail = (b/6)*(1+2*Rt)/(1+Rt); %aileron moment arm (m)
 
-ep_ail = 0.8; %flap effectiveness (Phillips P.41)
+ep_ail = 0.6; %flap effectiveness (Phillips P.41)
 trim_ail = 0; %control input for zero deflection
-g_ail = (5*pi/180); %maps control input to deflection angle %TODO: Calibrate
+g_ail = (15*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_elev = 18.2/100; %elevator span (m)
 cr_elev = 15.2/100; %elevator root chord (m)
@@ -57,7 +57,7 @@ r_elev = 45/100; %elevator moment arm (m)
 
 ep_elev = 0.9; %flap effectiveness (Phillips P.41)
 trim_elev = 0; %control input for zero deflection
-g_elev = (10*pi/180); %maps control input to deflection angle %TODO: Calibrate
+g_elev = (30*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_rud = 21.6/100; %rudder span (m)
 cr_rud = 20.4/100; %rudder root chord (m)
@@ -70,7 +70,7 @@ z_rud = 3/100; %rudder moment arm along z-axis (m)
 
 ep_rud = 0.9; %flap effectiveness (Phillips P.41)
 trim_rud = 0; %control input for zero deflection
-g_rud = (10*pi/180); %maps from control input to deflection angle %TODO: Calibrate
+g_rud = (30*pi/180); %maps from control input to deflection angle %TODO: Calibrate
 
 b_fus = 14.6/100; %fuselage span (m)
 cm_fus = 64.2/100; %fuselage mean chord (m)
