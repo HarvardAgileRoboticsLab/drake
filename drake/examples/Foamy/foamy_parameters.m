@@ -43,9 +43,9 @@ Ra = b^2/S; %wing aspect ratio (dimensionless)
 Rt = ct/cr; %wing taper ratio (dimensionless)
 r_ail = (b/6)*(1+2*Rt)/(1+Rt); %aileron moment arm (m)
 
-ep_ail = 0.6; %flap effectiveness (Phillips P.41)
+ep_ail = 0.45; %flap effectiveness (Phillips P.41-44)
 trim_ail = 0; %control input for zero deflection
-g_ail = (15*pi/180); %maps control input to deflection angle %TODO: Calibrate
+g_ail = (30*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
 b_elev = 18.2/100; %elevator span (m)
 cr_elev = 15.2/100; %elevator root chord (m)
@@ -55,7 +55,7 @@ S_elev = b_elev*cm_elev; %planform area of elevator (m^2)
 Ra_elev = b_elev^2/S_elev; %elevator aspect ratio (dimensionless)
 r_elev = 45/100; %elevator moment arm (m)
 
-ep_elev = 0.9; %flap effectiveness (Phillips P.41)
+ep_elev = 0.8; %flap effectiveness (Phillips P.41-44)
 trim_elev = 0; %control input for zero deflection
 g_elev = (30*pi/180); %maps control input to deflection angle %TODO: Calibrate
 
@@ -68,7 +68,7 @@ Ra_rud = b_rud^2/S_rud; %rudder aspect ratio (dimensionless)
 r_rud = 48/100; %rudder moment arm along x-axis (m)
 z_rud = 3/100; %rudder moment arm along z-axis (m)
 
-ep_rud = 0.9; %flap effectiveness (Phillips P.41)
+ep_rud = 0.7; %flap effectiveness (Phillips P.41-44)
 trim_rud = 0; %control input for zero deflection
 g_rud = (30*pi/180); %maps from control input to deflection angle %TODO: Calibrate
 
