@@ -124,7 +124,7 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
     
     % --- Pendulum --- %
     F_p = [0 0 -p.m_p*p.g]'; %TODO: add aerodynamic forces
-    T_p = [0 0 0]'; %TODO: add aerodynamic torque
+    T_p = [0 0 0]'; %TODO: add a damper to the pendulum joint
     
     % ---------- Add Everything Together ---------- %
 
@@ -136,7 +136,7 @@ function xdot = foamy_pendulum_dynamics(t,x,u)
     
     % ---------- Pendulum Constraint Stuff ---------- %
     
-    kphi = 5; %this should be set to no higher than 1/dt
+    kphi = 25; %this should be set to no higher than 1/dt
     
     p1 = r + R*p.r1; %position of airplane pivot point
     p2 = r_p + R_p*p.r2; %position of pendulum pivot point
