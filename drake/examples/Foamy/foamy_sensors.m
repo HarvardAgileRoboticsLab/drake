@@ -4,16 +4,16 @@ function y = foamy_sensors(x,xdot)
 %we've replicated that here
 
 %Constants
-RE = 6353000.0; %6371000.0; %Earth radius in meters
-BASELAT = 47.397742*(pi/180); %42.467332; %Base station latitude
-BASELON = 8.545594*(pi/180); %-71.414699; %Base station longitude
-BASEALT = 488.0; %413.0; %Base station altitude in meters
+RE = 6371000.0; %6353000.0 %Earth radius in meters
+BASELAT = 42.467332*(pi/180); %47.397742; %Base station latitude
+BASELON = -71.414699*(pi/180); %8.545594; %Base station longitude
+BASEALT = 413.0; %488.0; %Base station altitude in meters
 
-RHO = 1.2754; %1.225; %Density of air in kg/m^3 at sea level and 15C
+RHO = 1.225; %1.2754; %Density of air in kg/m^3 at sea level and 15C
 %PRESS0 = 1013.2; %Sea level pressure in millibar
 
-B0 = [0.21523; -0.00771; -0.42741]; %Taken from Pixhawk Gazebo code for Zurich in 10^5 nT, NWU
-%B0 = [0.21523; 0.00771; 0.42741]; %Taken from Pixhawk Gazebo code for Zurich in 10^5 nT, NED (replicating a Gazebo bug)
+B0 = [0.194701; 0.050497; -0.480388]; %From NOAA for Concord flying field
+%B0 = [0.21523; -0.00771; -0.42741]; %Taken from Pixhawk Gazebo code for Zurich in 10^5 nT, NWU
 
 g = [0; 0; -9.81]; %NWU gravity field vector
 
