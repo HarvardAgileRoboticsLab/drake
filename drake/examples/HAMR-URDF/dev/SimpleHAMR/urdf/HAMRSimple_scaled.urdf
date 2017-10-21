@@ -1,0 +1,317 @@
+<?xml version="1.0"?>
+<robot name="Hamr">
+
+
+  <link name="Chassis">
+    <inertial>
+      <origin xyz="0 0 -0.379657560961688" rpy="0 0 0" />
+      <mass value=" 1.2066" />
+      <inertia ixx="49.0722" ixy="8.7197e-04" ixz="0.2372"
+        iyy="68.1039" iyz="-0.0032" izz="99.7537" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+ </link>
+
+ <link name="FL1">
+  <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0001" />
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <geometry>
+      <sphere radius="0.5"/>
+      </geometry>
+      <material name="Green"> 
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+ </link>
+
+ <link name="FL2">
+  <inertial>
+      <origin xyz="0.0261 0.9512 -1.6472" rpy="0 0 0" />
+      <mass value="0.0676" />
+      <inertia ixx="1.9112" ixy="0.0521" ixz="0.3478" 
+        iyy="1.4472" iyz="-0.4488" izz="1.3143" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 -7.485" rpy="0 0 0" />
+    <geometry>
+      <cylinder length="14.97" radius="0.5"/>
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -14.97"/>
+      <geometry>
+        <sphere radius="0" />
+      </geometry>
+    </collision>
+ </link>
+
+<link name="RL1">
+  <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0001" />
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <geometry>
+      <sphere radius="0.5"/>
+      </geometry>
+      <material name="Green"> 
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+ </link>
+
+ <link name="RL2">
+  <inertial>
+      <origin xyz="-0.06 1.0213 -1.7814" rpy="0 0 0" />
+      <mass value="0.0666" />
+      <inertia ixx="1.9339" ixy="-0.0342" ixz="-0.3488" 
+        iyy="1.5258" iyz="-0.4713" izz="1.2471" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 -7.485" rpy="0 0 0" />
+    <geometry>
+      <cylinder length="14.97" radius="0.5"/>
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -14.97"/>
+      <geometry>
+        <sphere radius="0" />
+      </geometry>
+    </collision>
+ </link>
+
+<link name="FR1">
+  <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0001" />
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <geometry>
+      <sphere radius="0.5"/>
+      </geometry>
+      <material name="Green"> 
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+ </link>
+
+ <link name="FR2">
+  <inertial>
+      <origin xyz="0.0261 -0.9512 -1.6472" rpy="0 0 0" />
+      <mass value="0.0676" />
+      <inertia ixx="1.9112" ixy="0.0521" ixz="0.3478" 
+        iyy="1.4472" iyz="-0.4488" izz="1.3143" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 -7.485" rpy="0 0 0" />
+    <geometry>
+      <cylinder length="14.97" radius="0.5"/>
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -14.97"/>
+      <geometry>
+        <sphere radius="0" />
+      </geometry>
+    </collision>
+ </link>
+
+ <link name="RR1">
+  <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0001" />
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <geometry>
+      <sphere radius="0.5"/>
+      </geometry>
+      <material name="Green"> 
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+ </link>
+
+ <link name="RR2">
+  <inertial>
+      <origin xyz="-0.06 -1.0213 -1.7814" rpy="0 0 0" />
+      <mass value="0.0666" />
+      <inertia ixx="1.9339" ixy="0.0342" ixz="-0.3488" 
+        iyy="1.5258" iyz="0.4713" izz="1.2471" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 -7.485" rpy="0 0 0" />
+    <geometry>
+      <cylinder length="14.97" radius="0.5"/>
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -14.97"/>
+      <geometry>
+        <sphere radius="0" />
+      </geometry>
+    </collision>
+ </link>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <joint name="FL_lift" type="continuous">
+    <origin xyz="12.75300579825,  9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="FL1" />
+    <axis xyz="1 0 0" />
+    <limit lower="0.1259" upper="0.9113"/>
+  </joint>
+
+  <joint name="FL_swing" type="continuous">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="FL1" />
+    <child link="FL2" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/6" upper="pi/6"/>
+  </joint>
+
+  <joint name="RL_lift" type="continuous">
+    <origin xyz="-12.75300579825,  9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="RL1" />
+    <axis xyz="1 0 0" />
+    <limit lower="0.1259" upper="0.9113"/>
+  </joint>
+
+  <joint name="RL_swing" type="continuous">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="RL1" />
+    <child link="RL2" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/6" upper="pi/6"/>
+  </joint>
+
+  <joint name="FR_lift" type="continuous">
+    <origin xyz="12.75300579825, -9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="FR1" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.9113" upper="-0.1259"/>
+  </joint>
+
+  <joint name="FR_swing" type="continuous">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="FR1" />
+    <child link="FR2" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/6" upper="pi/6"/>
+  </joint>
+
+  <joint name="RR_lift" type="continuous">
+    <origin xyz="-12.75300579825, -9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="RR1" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.9113" upper="-0.1259"/>
+  </joint>
+
+  <joint name="RR_swing" type="continuous">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="RR1" />
+    <child link="RR2" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/6" upper="pi/6"/>
+  </joint>
+
+
+<!--- Actuator Inputs -->
+
+<transmission type="SimpleTransmission" name="FLS">
+    <actuator name="uFLS" />
+    <joint name="FL_swing" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="FLL">
+    <actuator name="uFLL" />
+    <joint name="FL_lift" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="RLS">
+    <actuator name="uRLS" />
+    <joint name="RL_swing" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+    
+<transmission type="SimpleTransmission" name="RLL">
+    <actuator name="uRLL" />
+    <joint name="RL_lift" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="FRS">
+    <actuator name="uFRS" />
+    <joint name="FR_swing" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="FRL">
+    <actuator name="uFRL" />
+    <joint name="FR_lift" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="RRS">
+    <actuator name="uRRS" />
+    <joint name="RR_swing" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>   
+
+<transmission type="SimpleTransmission" name="RRL">
+    <actuator name="uRRL" />
+    <joint name="RR_lift" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+</robot>

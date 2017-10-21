@@ -1,28 +1,35 @@
 clear; clc; close all;
+global kl_traj c_traj beta_traj psi_traj eta_traj
+
 %% Load Rigid Body
 
 urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMRVariational_scaledV2.urdf');
+kl_traj = []; 
+c_traj = [];
+beta_traj = []; 
+psi_traj = []; 
+eta_traj = []; 
 
 % options
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
-options.z_inactive_guess_tol = 1;
+options.z_inactive_guess_tol = 0.1;
 options.use_bullet = false;
 
 % options to change
 options.dt = 1;
-options.mu = 1;
-gait = 'TROT';
+options.mu = 0.6;
+gait = 'none';
 SAVE_FLAG = 1;
 ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    %     load q0_biased.mat
+    load q0.mat
 %     x0 = [zeros(6,1); q0_biased(1:44); zeros(6,1); q0_biased(45:end)];
 %     x0(3) = 13.04;
-    x0 = zeros(100,1); x0(3) = 12.04;
+    x0 = zeros(100,1); x0(1:50) = q0; 
     options.terrain = RigidBodyFlatTerrain();
     
 else
@@ -37,25 +44,27 @@ end
 
 % Build robot + visualizer
 hamr = HamrVariationalTSRBM(urdf, options);
+hamr = hamr.setJointLimits(-Inf(hamr.getNumPositions(), 1), Inf(hamr.getNumPositions(), 1));
 hamr = compile(hamr);
+
 v = hamr.constructVisualizer();
 % v.inspector(x0);
 
 %% Build Actuators
-dp.Vb = 200;
+dp.Vb = 150;
 dp.Vg = 0;
 %
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'},  [1; 1; -1; -1; 1; 1; -1; -1], dp);
 
-% make lift's double thick
-tcfL = 2*hr_actuators.dummy_bender(1).tcf;
-for i = 1:numel(hr_actuators.dummy_bender)
-    if contains(hr_actuators.names{i}, 'lact')
-        hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(tcfL);
-    end
-end
+% % make lift's double thick
+% tcfL = 2*hr_actuators.dummy_bender(1).tcf;
+% for i = 1:numel(hr_actuators.dummy_bender)
+%     if contains(hr_actuators.names{i}, 'lact')
+%         hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(tcfL);
+%     end
+% end
 
 %% Connect system
 
@@ -91,7 +100,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 fd = 0.001;         % drive frequency (Hz)
-tsim = 2000;
+tsim = 500;
 
 t = 0:options.dt:tsim;
 
@@ -152,6 +161,7 @@ if tf
     disp('Valid initial condition: simulating...')
     tic;
     %     options = odeset('RelTol',1e-3,'AbsTol',1e-4);
+%     x1 = hamr.update(0, x0, Vact(:,1))
     xtraj = simulate(hamr_OL, [0 tsim], x0); %options);
     tlcp = toc;
     xtraj_scaled = PPTrajectory(foh(xtraj.getBreaks()*1e-3, xtraj.eval(xtraj.getBreaks())));
@@ -239,16 +249,31 @@ if ISFLOAT
         phi(:,i) = hamr.contactConstraints(kinsol, false, contact_opt);
     end
     
-    figure(5); clf; hold on;
-    plot(tt, phi);
+%     cc = zeros(4, numel(c_traj)); 
+%     for i = 1:numel(c_traj)
+%         z_inactive_ind = find(phi(:,i+1) > options.z_inactive_guess_tol)
+%         if isempty(z_inactive_ind)
+%             cc(:,i) = c_traj{i};
+%         else
+%             cc(:,i) = NaN*ones(4,1); 
+%         end       
+%     end
+    
+    figure(5); clf; 
+    for i = 1:size(phi, 1)
+        subplot(2,2,i); hold on; 
+        yyaxis right; plot(tt, phi(i,:)); ylabel('Leg Height')
+        yyaxis left; plot(tt, c_traj(i,:)); ylabel('Force')
+        plot(tt, beta_traj(4*(i-1)+(1:4), :), 'k'); 
+    end
 end
 
 %% saving
 savedir = '';
 
 if SAVE_FLAG
-    fname = [gait, '_baised_', num2str(dp.Vb) 'V_', num2str(1e3*fd), 'Hz_', num2str(options.mu*100), '.mat'];
-    save([savedir, fname],  'hamr', 'tt', 'xx', 'uu', 'Vact');
+    fname = [gait, '_var_', num2str(dp.Vb) 'V_', num2str(1e3*fd), 'Hz_', num2str(options.mu*100), '.mat'];
+    save([savedir, fname], 'tt', 'xx', 'uu', 'kl_traj', 'c_traj', 'beta_traj', 'eta_traj', 'psi_traj', 'Vact');
 end
 
 %%

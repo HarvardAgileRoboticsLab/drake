@@ -118,8 +118,8 @@ classdef DirtranTrajectoryOptimization < DirectTrajectoryOptimization
     
     function [f,df] = midpoint_constraint_fun(obj,h,x0,x1,u0,u1)
       nX = obj.plant.getNumStates();
-      [xdot,dxdot] = obj.plant.dynamics(0,.5*(x0+x1),.5*(u0+u1));
-      f = x1 - x0 - h*xdot;
+      [xdot,dxdot] = obj.plant.dynamics(0,.5*(x0+x1),.5*(u0+u1));      
+      f = x1 - x0 - h*xdot;   
       df = [-xdot (-eye(nX) - .5*h*dxdot(:,2:1+nX)) (eye(nX)- .5*h*dxdot(:,2:1+nX)) -.5*h*dxdot(:,nX+2:end) -.5*h*dxdot(:,nX+2:end)];
     end
     

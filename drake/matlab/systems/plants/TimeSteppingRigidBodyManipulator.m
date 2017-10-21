@@ -20,6 +20,10 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     multiple_contacts = false;
     gurobi_present = false;
     body
+%     c               % normal force multiplier 
+%     psi             % tangential velocity multiplier 
+%     beta            % friction multiplier 
+%     eta             % psi*e + P*q_dot 
   end
 
   methods
@@ -205,7 +209,6 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       else
         [obj,z,Mvn,wvn] = solveLCP(obj,t,x,u);
       end
-
       num_q = obj.manip.num_positions;
       q=x(1:num_q); v=x((num_q+1):end);
       h = obj.timestep;
@@ -287,6 +290,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     end
 
     function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u)
+        global c_traj beta_traj eta_traj psi_traj
       if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
         [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
         return;
@@ -420,10 +424,17 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             [phiC,normal,d,xA,xB,idxA,idxB,mu,n,D] = obj.manip.contactConstraints(kinsol, obj.multiple_contacts);
           end
           if ~isempty(phiC)
-              if isempty(possible_contact_indices)
-                possible_contact_indices = (phiC+h*n*qd) < obj.z_inactive_guess_tol;
-              end
-
+%               if isempty(possible_contact_indices)
+%                 possible_contact_indices = (phiC+h*n*qd) < obj.z_inactive_guess_tol;
+%               end
+%               
+%               if (t == 90)
+%                   disp('')
+%               end
+              
+              possible_contact_indices = logical(ones(nContactPairs, 1));
+              
+   
               nC = sum(possible_contact_indices);
               mC = length(D);
 
@@ -709,11 +720,37 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
             z = pathlcp(M,w,lb,ub);
             obj.LCP_cache.data.fastqp_active_set = [];
         end
-        % for debugging
-        %cN = z(nL+nP+(1:nC))
-        %beta1 = z(nL+nP+nC+(1:nC))
-        %beta2 = z(nL+nP+2*nC+(1:nC))
-        %lambda = z(nL+nP+3*nC+(1:nC))
+        
+        % for debugging NEEL
+        %z = [h*cL; h*cP; h*cN; h*beta{1}; ...; h*beta{mC}; lambda]
+%         jl_traj = [jl_traj, z(1:nL)/h]; 
+%         kl_traj = [kl_traj, z(nL+(1:nP))/h]; 
+        
+        if nC > 0         
+        
+            % Pass normal force
+%             ci = zeros(nContactPairs, 1);
+%             ci(possible_contact_indices) = z(nL+nP+(1:nC))/h;
+            c_traj = [c_traj, z(nL+nP+(1:nC))/h];
+            
+            % friction multiplier
+%             betai = zeros(nContactPairs*mC, 1);
+%             beta_inds = reshape((1:mC*nContactPairs)', nContactPairs, mC)';
+%             betai(reshape(beta_inds(possible_contact_indices, :)', [], 1)) = z(nL+nP+nC+(1:nC*mC))/h;
+            betai = reshape(z(nL+nP+nC+(1:nC*mC)), nC, mC)';
+            beta_traj = [beta_traj, betai(:)/h];
+            
+            % tangential velocity
+%             psii = zeros(nContactPairs, 1);
+%             psii(possible_contact_indices) = z(nL+nP+nC+nC*mC+(1:nC))/h;
+            psi_traj = [psi_traj, z(nL+nP+nC+nC*mC+(1:nC))/h];
+
+            % other multiplier            
+            Dperm = D(reshape(reshape((1:nC*mC), nC, mC)', nC*mC, 1), :);
+            etai = kron(eye(nContactPairs),ones(1,mC))'*z(nL+nP+nC+nC*mC+(1:nC)) + Dperm*v;
+            eta_traj = [eta_traj, etai/h];
+        end
+            
         % end debugging
         % more debugging
 %        path_convergence_tolerance = 1e-6; % default according to http://pages.cs.wisc.edu/~ferris/path/options.pdf

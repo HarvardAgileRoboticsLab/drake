@@ -1,24 +1,34 @@
 clear; clc; close all;
-% format long
+global kl_traj jl_traj c_traj beta_traj psi_traj eta_traj
 
 %% Load Rigid Body
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaled.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
+kl_traj = []; 
+jl_traj = []; 
+c_traj = [];
+beta_traj = []; 
+psi_traj = []; 
+eta_traj = []; 
 
 % options
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
-options.z_inactive_guess_tol = 1;
-options.dt = 0.1;  %time step
+options.z_inactive_guess_tol = 0.1;
 options.use_bullet = false;  
 
-% floating (gnd contact) or in air (not floating)
-ISFLOAT = false; 
-% ISFLOAT = true; 
+% options to change
+options.dt = 1;
+options.mu = 0.6;
+gait = 'TROT';
+SAVE_FLAG = 1;
+ISFLOAT = true; % floating (gnd contact) or in air (not floating)
+
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    x0 = zeros(76,1); x0(3) = 12;
+    load q0
+    x0 = q0; 
     options.terrain = RigidBodyFlatTerrain();
     
 else
@@ -34,14 +44,21 @@ hamr = compile(hamr);
 v = hamr.constructVisualizer();
 
 %% Build Actuators
-dp.Vb = 95;
+dp.Vb = 150;
 dp.Vg = 0;
 % 
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
-% % hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact'}, dp);
-% % hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact'}, dp);
+
+% % make lift's double thick
+% tcfL = 2*hr_actuators.dummy_bender(1).tcf;
+% for i = 1:numel(hr_actuators.dummy_bender)
+%     if contains(hr_actuators.names{i}, 'lact')
+%         hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(tcfL);
+%     end
+% end
+
 
 %% Connect system
 
@@ -76,8 +93,8 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Build (open-loop) control input
 
-fd = 0.065;         % drive frequency (Hz)
-tsim = 0.2e3; 
+fd = 0.001;         % drive frequency (Hz)
+tsim = 1e3; 
 
 t = 0:options.dt:tsim;
 
@@ -90,18 +107,31 @@ t = 0:options.dt:tsim;
 %     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2 - deg2rad(120));              % RRSwing
 %     0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + deg2rad(60))];                      % RRLift
 
-%TROT
-Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FLlift
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);              % RLSwing
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi);                       % RLLift
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);                % FRswing
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FRlift
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);              % RRSwing
-    0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi)];                      % RRLift
+switch gait
+    case 'TROT'
+        Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FLlift
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RLSwing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % RLLift
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);                % FRswing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FRlift
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RRSwing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                      % RRLift
+    case 'PRONK'
+        Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FLlift
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);                % RLSwing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi);                  % RLLift
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi/2);                % FRswing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi);                       % FRlift
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi/2);                % RRSwing
+            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                 % RRLift
+    otherwise
+        Vact = zeros(8, numel(t));
+end
 
 % ramp
-tramp = 3/fd;
+tramp = 1/fd;
 ramp = t/tramp; ramp(t >= tramp) = 1;
 
 Vact = bsxfun(@times, ramp, Vact) + 0.5*(dp.Vb - dp.Vg);
@@ -142,6 +172,8 @@ end
 %% Plotting
 tt = xtraj.getBreaks();
 yy = xtraj.eval(tt);
+xx = yy(1:2*nQ,:); 
+uu = yy(2*nQ+1:end,:);
 
 act_dof = hamr.getActuatedJoints();
 ndof = hamr.getNumDiscStates();
@@ -206,8 +238,22 @@ if ISFLOAT
         qd = yy(ndof/2+1:ndof, i);        
         kinsol = hamr.doKinematics(q, qd);  
         phi(:,i) = hamr.contactConstraints(kinsol, false, contact_opt); 
-    end
+    end    
     
-    figure(5); clf; hold on;
-    plot(tt, phi);
+    figure(5); clf; 
+    for i = 1:size(phi, 1)
+        subplot(2,2,i); hold on; 
+        yyaxis right; plot(tt, phi(i,:)); ylabel('Leg Height')
+        yyaxis left; plot(tt, c_traj(i,:)); ylabel('Force')
+        plot(tt, beta_traj(4*(i-1)+(1:4), :), 'k'); 
+    end
+end
+
+%% saving
+savedir = '';
+
+if SAVE_FLAG
+    fname = [gait, '_', num2str(dp.Vb) 'V_', num2str(1e3*fd), 'Hz_', num2str(options.mu*100), '.mat'];
+    disp(['Saving as ', fname]);
+    save([savedir, fname], 'tt', 'xx', 'uu', 'kl_traj', 'jl_traj', 'c_traj', 'beta_traj', 'eta_traj', 'psi_traj', 'Vact');
 end

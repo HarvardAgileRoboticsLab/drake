@@ -1,7 +1,7 @@
 classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
     
     properties (SetAccess = protected, GetAccess = public)
-        x0
+        xq0
         grav = [0; 0; -9.81e-3];
     end
     
@@ -11,18 +11,18 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
             
             typecheck(urdf,'char');
             
-            if nargin < 2
-                options = struct();
-            end
-            if ~isfield(options,'dt')
-                options.dt = 1;
-            end
-            if ~isfield(options,'floating')
-                options.floating = true;
-            end
-            if ~isfield(options,'terrain')
-                options.terrain = RigidBodyFlatTerrain;
-            end
+%             if nargin < 2
+%                 options = struct();
+%             end
+%             if ~isfield(options,'dt')
+%                 options.dt = 1;
+%             end
+%             if ~isfield(options,'floating')
+%                 options.floating = true;
+%             end
+%             if ~isfield(options,'terrain')
+%                 options.terrain = RigidBodyFlatTerrain;
+%             end
             
             obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
             obj.x0 = zeros(obj.getNumDiscStates(), 1);

@@ -152,7 +152,7 @@ classdef PZTBender < DrakeSystem
             %                 3*obj.tcf*obj.ap.tpzt + 2*obj.ap.tpzt^2)+ obj.ap.Ecf*obj.tcf^3/12)/(1 + 2*obj.lr));
             %             kact = kact*1e-3;
             fprintf([obj.name, ': %d s, %f \r'], t,  abs(q)/obj.df);
-            y = obj.orien*(Ft - Fb);
+            y = obj.orien*(Ft - Fb); % - obj.kact*q;
         end
         
     end

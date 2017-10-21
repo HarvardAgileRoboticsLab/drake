@@ -692,6 +692,7 @@
     <child link="FLS1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0.01" />
    </joint>
   
   <joint
@@ -728,6 +729,7 @@
     <child link="FLL1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0.01" />
    </joint>
   
   <joint name="FLql1" type="revolute">
@@ -770,6 +772,7 @@
     <child link="RLS1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0.01" />
   </joint>
 
   <joint name="RLqs1" type="revolute">
@@ -805,6 +808,7 @@
     <child link="RLL1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0.01" />
   </joint>
 
   <joint name="RLql1" type="revolute">
@@ -847,6 +851,7 @@
     <child link="FRS1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0.01" />
   </joint>
 
   <joint name="FRqs1" type="revolute">
@@ -882,6 +887,7 @@
     <child link="FRL1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0.01" />
   </joint>
 
   <joint name="FRql1" type="revolute">
@@ -925,6 +931,7 @@
     <child link="RRS1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0.01" />
   </joint>
 
   <joint name="RRqs1" type="revolute">
@@ -960,6 +967,7 @@
     <child link="RRL1" />
     <axis xyz="0 1 0" />
     <limit lower="-0.25" upper="0.25"/>
+    <dynamics damping="0" />
    </joint>
 
   <joint name="RRql1" type="revolute">

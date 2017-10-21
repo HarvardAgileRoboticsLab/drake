@@ -60,7 +60,9 @@ drake/doc/_build
 bazel-*
 xcode
 
-drake/examples/HAMR-URDF/dev/
+drake/examples/HAMR-URDF/dev/SingleLeg
+
+drake/examples/HAMR-URDF/dev/Actuator
 
 drake/examples/HAMR-URDF/Trajectories/
 

@@ -101,14 +101,14 @@ classdef HamrVariationalRBM < RigidBodyManipulator
             
             [f,df, df2] = kl_const(obj,x);
             
-            %             df_fd = zeros(size(df));
-            %             dx = 1e-6*eye(length(x));
-            %             for k = 1:length(x)
-            %                 df_fd(:,k) = (kl_const(obj,x+dx(:,k)) - kl_const(obj,x-dx(:,k)))/2e-6;
-            %             end
-            %
-            %             disp('Kinematic Loop Constraint derivative error:');
-            %             disp(max(abs(df_fd(:)-df(:))));
+%             df_fd = zeros(size(df));
+%             dx = 1e-6*eye(length(x));
+%             for k = 1:length(x)
+%                 df_fd(:,k) = (kl_const(obj,x+dx(:,k)) - kl_const(obj,x-dx(:,k)))/2e-6;
+%             end
+%             
+%             disp('Kinematic Loop Constraint derivative error:');
+%             disp(max(abs(df_fd(:)-df(:))));
             % %
         end
         
