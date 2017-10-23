@@ -45,17 +45,17 @@ classdef SLRBM < RigidBodyManipulator
             
             xin = [t; x; u];
             [f,df] = dynamics_fun(obj,xin);
-            %             fprintf('Dynamics: %f \r', max(abs(f)));
-            
-            %             df_fd = zeros(size(df));
-            %             step = sqrt(eps(max(xin)));
-            %             dxin = step*eye(length(xin));
-            %             for k = 1:length(xin)
-            %                 df_fd(:,k) = (dynamics_fun(obj, xin+dxin(:,k)) - dynamics_fun(obj, xin-dxin(:,k)))/(2*step);
-            %             end
-            %
-            %             disp('Dynamics Derivative Error:');
-            %             disp(max(abs(df_fd(:)-df(:))));
+%             fprintf('Dynamics: %f \r', max(abs(f)));
+%             
+%             df_fd = zeros(size(df));
+%             step = sqrt(eps(max(xin)));
+%             dxin = step*eye(length(xin));
+%             for k = 1:length(xin)
+%                 df_fd(:,k) = (dynamics_fun(obj, xin+dxin(:,k)) - dynamics_fun(obj, xin-dxin(:,k)))/(2*step);
+%             end
+%             
+%             disp('Dynamics Derivative Error:');
+%             disp(max(abs(df_fd(:)-df(:))));
             
         end
         

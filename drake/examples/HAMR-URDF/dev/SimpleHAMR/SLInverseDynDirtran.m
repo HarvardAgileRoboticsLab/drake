@@ -22,16 +22,15 @@ nl = SL.nl;
 nc = SL.nc;
 nd = SL.nd;
 
-
 %% Set up Trajectory Optimization
 T = tt(end);
 No = numel(tt);
 UPSAMPLE = 1;
 N = UPSAMPLE*(No-1) + 1;
 t_init = linspace(0, T, N);
-x0 = zeros(nx, 1); 
+x0 = zeros(nx, 1);
 
-optimopt.integration_method = 3;                            % Forward Euler
+optimopt.integration_method = 3;                            % Midpoint Euler
 optimopt.time_option = 1;                                   % all steps are constant
 traj_opt = DirtranTrajectoryOptimization(SL, N, T, optimopt);
 
@@ -41,21 +40,28 @@ traj_opt = traj_opt.addCost(FunctionHandleObjective(N*nx,@(x)objective_fun(SL,x)
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
 
 %input constraint
-cc = ctraj.eval(tt);
-cc = interp1(tt', cc', t_init')';
-cc = reshape(repmat(cc, UPSAMPLE,1), nc, []);
-cc = cc(:, 1:N);
-bb = btraj.eval(tt);
-bb = interp1(tt', bb', t_init')';
-bb = reshape(repmat(bb, UPSAMPLE,1), nc*nd, []);
-bb = bb(:,1:N);
-ulim = 0;
-umin = [-ulim*ones(nu, N-1), zeros(nu,1)];
-umax = [ulim*ones(nu, N-1), zeros(nu,1)];
-umin = [[-ulim*ones(nu-nc*(1+nd), N-1), zeros(nu-nc*(1+nd),1)]; cc; bb];
-umax = [[ulim*ones(nu-nc*(1+nd), N-1), zeros(nu-nc*(1+nd),1)]; cc; bb];
-traj_opt = traj_opt.addInputConstraint(ConstantConstraint(zeros(nu,1)), 1:N);
-% % traj_opt = traj_opt.addConstraint(BoundingBoxConstraint(umin(:), umax(:)), traj_opt.u_inds(:));
+% cc = ctraj.eval(tt);
+% cc = interp1(tt', cc', t_init')';
+% cc = reshape(repmat(cc, UPSAMPLE,1), nc, []);
+% cc = cc(:, 1:N);
+% bb = btraj.eval(tt);
+% bb = interp1(tt', bb', t_init')';
+% bb = reshape(repmat(bb, UPSAMPLE,1), nc*nd, []);
+% bb = bb(:,1:N);
+
+ulim = 0.3;
+
+for ind = 1:N
+    if ind < N
+        umini = [-ulim*ones(nu-nl-nc*(1+nd),1); -Inf(nl,1); cc(:,ind); bb(:,ind)];
+        umaxi = [ulim*ones(nu-nl-nc*(1+nd),1); Inf(nl,1); cc(:,ind); bb(:,ind)];
+        traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(umini, umaxi), ind);        
+    else
+        umini = [zeros(nu-nl-nc*(1+nd),1); -Inf(nl,1); cc(:,ind); bb(:,ind)];
+        umaxi = [zeros(nu-nl-nc*(1+nd),1); Inf(nl,1); cc(:,ind); bb(:,ind)];
+        traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(umini, umaxi), ind);
+    end
+end
 
 % state constraints
 [qmin, qmax] = SL.getJointLimits();
@@ -63,11 +69,11 @@ traj_opt = traj_opt.addStateConstraint(BoundingBoxConstraint(qmin, qmax), 1:N, 1
 traj_opt = traj_opt.addStateConstraint(ConstantConstraint(x0), 1);
 
 % loop const
-TOL = 1e-4;
-loop_const = SL.loop_const; 
+TOL = 1e-3;
+loop_const = SL.loop_const;
 for ind = 1:numel(loop_const)
     loopi = loop_const{ind};
-    lb = loopi.lb; ub = loopi.ub;       
+    lb = loopi.lb; ub = loopi.ub;
     loopi = loopi.setBounds(lb-TOL, ub+TOL);
     traj_opt = traj_opt.addStateConstraint(loopi, 2:N, 1:nq);
 end
@@ -96,10 +102,10 @@ xfoot = xfoot.eval(t_init);
 
     function [f,df] = running_cost_fun(h,x,u)
         
-        R = (1/ulim)^2*eye(nu);
-        g = (1/2)*u(1:(nu))'*R*u(1:(nu));
+        R = (1/ulim)^2*eye(nu-nl-nc*(1+nd));
+        g = (1/2)*u(1:(nu-nl-nc*(1+nd)))'*R*u(1:(nu-nl-nc*(1+nd)));
         f = h*g;
-        df = [g, zeros(1,nx), h*u'*R,];
+        df = [g, zeros(1,nx), h*u(1:nu-nl-nc*(1+nd))'*R, zeros(1,nl+nc*(1+nd))];
     end
 
     function [f, df] = objective_fun(obj, xin)

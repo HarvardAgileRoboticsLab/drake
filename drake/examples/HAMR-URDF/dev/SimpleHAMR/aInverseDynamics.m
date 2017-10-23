@@ -22,7 +22,7 @@ nd = 4; % pyramidal friction cone approx
 
 %% Load Trajectory
 
-fname = 'TrajOpt-FixedBody';
+fname = 'TrajOpt-MovingBody';
 td = load(fname);
 tt = td.xtraj.getBreaks(); 
 h = mean(diff(tt));

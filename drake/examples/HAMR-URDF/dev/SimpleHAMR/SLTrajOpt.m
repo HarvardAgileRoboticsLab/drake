@@ -1,19 +1,15 @@
 function [xtrajf,utraj,z,F,info,infeasible_constraint_name] = SLTrajOpt()
-close all; clc
 %% Build Single Leg
 sl_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
     'urdf','SL_scaled.urdf');
 
 % options
-% options.terrain = RigidBodyFlatTerrain();
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
 options.floating = false;
 
 SL = SLRBM(sl_urdf, options);
-% SLnc = SL.removeAllStateConstraints(); 
-
 v = SL.constructVisualizer();
 
 nq = SL.getNumPositions();
@@ -22,52 +18,17 @@ nx = nq + nv;
 nu = SL.getNumInputs();
 nl = SL.nl;
 
-%% Set up Forward Sim
+%% Set up IC
 
 T = 100;
 N = 21;
 t_init = linspace(0, T, N);
-% q0 = [  -1.1469e-06
-%     3.4464e-08
-%     -2.1919e-06
-%     -2.5376e-03
-%     -1.4714e-03
-%     1.5752e-04
-%     -2.6951e-03
-%     -2.1793e-06];
-
-% x0 = [q0; 0*q0];
-% fd = 0.002;
-% ul = 0.1*sin(2*pi*fd*t_init);
-% figure; clf; plot(t_init, ul);
-% us = zeros(size(ul));
-% utraj = zoh(t_init, [ul; us]);
-% 
-% SLTSRBM = TimeSteppingRigidBodyManipulator(SL, 0.05, options); 
 x0 = zeros(nx, 1);
-% utraj = PPTrajectory(zoh(t_init, zeros(nu, N)));
-% utraj = utraj.setOutputFrame(SLTSRBM.getInputFrame);
-% SLPassive = cascade(utraj, SLTSRBM);
-% xtraj = SLPassive.simulate(t_init, x0);
-% xx = xtraj.eval(xtraj.getBreaks());
-% qq = xtraj.eval(xtraj.getBreaks()); qq = qq(1:SL.getNumPositions(), :);
-% qtraj_scaled = PPTrajectory(foh(xtraj.getBreaks()*1e-3, qq));
-% qtraj_scaled = qtraj_scaled.setOutputFrame(v.getInputFrame());
-% v.playback(qtraj_scaled, struct('slider', true));
-
-% figure(1); clf; hold on;
-% act_dof = SL.getActuatedJoints();
-% plot(xtraj.getBreaks(), xx(act_dof(1),:));
-% plot(xtraj.getBreaks(), xx(act_dof(2),:));
-% legend('Swing', 'Lift');
-
 
 %% Set up Traj Opt
-optimopt.integration_method = 3;                            % Forward Euler
+% optimopt.integration_method = 3;                            % Midpoint Euler
 optimopt.time_option = 1;                                   % all steps are constant
 traj_opt = DirtranTrajectoryOptimization(SL, N, T, optimopt);
-% traj_opt = DircolTrajectoryOptimization(SL, N, T, optimopt);
-
 
 %input constraint
 ulim = [zeros(nu-nl, 1); Inf(nl, 1)]; 
@@ -79,24 +40,10 @@ traj_opt = traj_opt.addStateConstraint(BoundingBoxConstraint(qmin, qmax), 1:N, 1
 
 TOL = 1e-4;
 loop_const = SL.loop_const; 
-for ind = 1:6 %numel(loop_const)
+for ind = 1:numel(loop_const)
     loopi = loop_const{ind};
     lb = loopi.lb; ub = loopi.ub;
-%     if ind == 1
-%         TOL = [TOLi; TOLi; 10];
-%     elseif ind == 2
-%         TOL = [10; TOLi; TOLi];
-%     elseif ind == 3
-%         TOL = [TOLi; 10; TOLi];
-%     end
-        
-%         pci = pci.setBounds
     loopi = loopi.setBounds(lb-TOL, ub+TOL);
-%     name = cell(size(pci.name));
-%     for k = 1:numel(pci.name)
-%         name{k} = [pci.name{k}, '[',num2str(ind),']'];
-%     end
-%     pci = pci.setName(name);
     traj_opt = traj_opt.addStateConstraint(loopi, 2:N, 1:nq);
 end
 
@@ -109,7 +56,6 @@ traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',10000);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',6000000);
 traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
-% traj_opt = traj_opt.setSolverOptions('snopt','print','outputlog.txt');
 % 
 % traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-3);
 % traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-3);
