@@ -3,7 +3,7 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
   properties
     hand_name = 'iiwa_link_ee';
     disturbance_type = 1; % 1 ee-force, 2-state error, 3-torque
-    brick_id
+    ball_id
     left_finger_id
     right_finger_id
   end
@@ -65,9 +65,9 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       
       obj = obj.removeCollisionGroupsExcept({'manip'});
       options.floating = true;
-      obj = obj.addRobotFromURDF('urdf/box.urdf',[],[],options);
+      obj = obj.addRobotFromURDF('urdf/ball.urdf',[],[],options);
 
-      obj.brick_id = obj.findLinkId('brick');
+      obj.ball_id = obj.findLinkId('ball');
       obj.left_finger_id = obj.findLinkId('left_finger');
       obj.right_finger_id = obj.findLinkId('iiwa_link_7+iiwa_link_ee+base_link+right_finger+iiwa_link_ee_kuka');
       
@@ -199,20 +199,19 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
         kin_options = struct('compute_gradients', compute_kinematics_gradients);
         kinsol = doKinematics(obj, kinsol, [], kin_options);
       end
-      brick_size = 0.06;
+      ball_radius = 0.05;
       finger_contact_left = [0;0;.04];
       finger_contact_right = [-0.0001;  0.0400;  0.1225];
 
-      box_pose = obj.forwardKin(kinsol,obj.brick_id,[0;0;0],1);
+      ball_pose = obj.forwardKin(kinsol,obj.ball_id,[0;0;0],1);
       left_finger_tip = obj.forwardKin(kinsol,obj.left_finger_id,finger_contact_left,0);
       right_finger_tip = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right,0);
 
       xA = [finger_contact_right, finger_contact_left];
       idxA = [obj.right_finger_id; obj.left_finger_id];
-      idxB = [obj.brick_id; obj.brick_id];
+      idxB = [obj.ball_id; obj.ball_id];
       mu = 1.0;
       
-      R_box = rpy2rotmat(box_pose(4:6));
       right_normal = R_box*[1;0;0];
       left_normal = R_box*[-1;0;0];
       
@@ -231,9 +230,9 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       
       phi = [phi_right;phi_left];
       
-      if phi<0
-        keyboard
-      end
+%       if phi<0
+%         keyboard
+%       end
       if compute_kinematics_gradients
         [n, D, dn, dD] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, xB, d);
       elseif compute_first_derivative
