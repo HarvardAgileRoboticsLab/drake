@@ -998,6 +998,11 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
       varargout = cell(1,nargout);
       [varargout{:}] = manipulatorDynamics(obj.manip,varargin{:});
     end
+    
+    function varargout = kineticEnergyDerivatives(obj,varargin)
+        varargout = cell(1,nargout);
+        [varargout{:}] = kineticEnergyDerivatives(obj.manip,varargin{:});
+    end
 
     function varargout = contactConstraints(obj,varargin)
       varargout=cell(1,nargout);
