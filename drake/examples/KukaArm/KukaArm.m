@@ -204,35 +204,34 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       finger_contact_right = [-0.0001;  0.0400;  0.1225];
 
       ball_pose = obj.forwardKin(kinsol,obj.ball_id,[0;0;0],1);
+      R_ball = rpy2rotmat(ball_pose(4:6));
       left_finger_tip = obj.forwardKin(kinsol,obj.left_finger_id,finger_contact_left,0);
       right_finger_tip = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right,0);
 
-      xA = [finger_contact_right, finger_contact_left];
-      idxA = [obj.right_finger_id; obj.left_finger_id];
-      idxB = [obj.ball_id; obj.ball_id];
+      phi = [ball_pose(3)-ball_radius; norm(right_finger_tip-ball_pose(1:3))-ball_radius; norm(left_finger_tip-ball_pose(1:3))-ball_radius];
+      ball_normal = [0;0;-1];
+      right_normal = right_finger_tip - ball_pose(1:3);
+      right_normal = right_normal./sqrt(right_normal'*right_normal);
+      left_normal = left_finger_tip - ball_pose(1:3);
+      left_normal = left_normal./sqrt(left_normal'*left_normal);
+      normal = [ball_normal, right_normal, left_normal];
+      
+      d = cell(1,2);
+      Tr1 = cross(right_normal,[0;0;1]);
+      Tr1 = Tr1/norm(Tr1);
+      Tr2 = cross(right_normal,Tr1);
+      Tl1 = cross(left_normal,[0;0;1]);
+      Tl1 = Tl1/norm(Tl1);
+      Tl2 = cross(left_normal,Tl2);
+      d{1} = [[0;1;0],Tr1,Tl1];
+      d{2} = [[1;0;0],Tr2,Tl2];
+      
+      xA = [[ball_pose(1:2); 0], finger_contact_right, finger_contact_left];
+      xB = ball_radius*R_ball'*normal;
+      idxA = [0; obj.right_finger_id; obj.left_finger_id];
+      idxB = [obj.ball_id; obj.ball_id; obj.ball_id];
       mu = 1.0;
       
-      right_normal = R_box*[1;0;0];
-      left_normal = R_box*[-1;0;0];
-      
-      normal = [right_normal, left_normal];
-      d = cell(1,2);
-      d{1} = [R_box*[0;1;0],R_box*[0;1;0]];
-      d{2} = [R_box*[0;0;1],R_box*[0;0;1]];
-
-      right_finger_in_B = right_finger_tip-box_pose(1:3);
-      left_finger_in_B = left_finger_tip-box_pose(1:3);
-      
-      phi_right = right_finger_in_B'*right_normal - brick_size/2.0;
-      phi_left = left_finger_in_B'*left_normal - brick_size/2.0;
-      xB = [right_finger_in_B - right_finger_in_B'*right_normal *right_normal + [brick_size/2;0;0], ...
-        left_finger_in_B - left_finger_in_B'*left_normal * left_normal - [brick_size/2;0;0]];
-      
-      phi = [phi_right;phi_left];
-      
-%       if phi<0
-%         keyboard
-%       end
       if compute_kinematics_gradients
         [n, D, dn, dD] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, xB, d);
       elseif compute_first_derivative
