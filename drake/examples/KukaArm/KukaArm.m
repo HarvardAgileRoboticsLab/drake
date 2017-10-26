@@ -165,6 +165,18 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       df = [df,df(:,1+(1:obj.getNumStates))];
     end
     
+    function u0 = findTrim(obj,q0)
+        Nq = obj.getNumPositions();
+        Nq_arm = 8;
+        Nu = obj.getNumInputs();
+        Nv = obj.getNumVelocities();
+        Nx = Nq+Nv;
+
+        [H,C,B] = manipulatorDynamics(obj,q0,zeros(Nv,1));
+            
+        u0 = B(1:Nq_arm,:)\C(1:Nq_arm);
+    end
+    
     function c = getZeroConfiguration(obj)
       c=zeros(obj.getNumStates,1);
     end
@@ -199,7 +211,7 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
         kin_options = struct('compute_gradients', compute_kinematics_gradients);
         kinsol = doKinematics(obj, kinsol, [], kin_options);
       end
-      ball_radius = 0.05;
+      ball_radius = 0.03;
       finger_contact_left = [0;0;.04];
       finger_contact_right = [-0.0001;  0.0400;  0.1225];
 
@@ -222,7 +234,7 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       Tr2 = cross(right_normal,Tr1);
       Tl1 = cross(left_normal,[0;0;1]);
       Tl1 = Tl1/norm(Tl1);
-      Tl2 = cross(left_normal,Tl2);
+      Tl2 = cross(left_normal,Tl1);
       d{1} = [[0;1;0],Tr1,Tl1];
       d{2} = [[1;0;0],Tr2,Tl2];
       

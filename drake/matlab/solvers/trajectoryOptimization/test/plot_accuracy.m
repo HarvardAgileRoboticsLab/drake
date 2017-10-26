@@ -1,5 +1,7 @@
 close all
 
+NSamp = 10;
+
 options.terrain = RigidBodyFlatTerrain();
 options.floating = true;
 options.use_bullet = false;
@@ -19,9 +21,9 @@ v0 = zeros(6,1);
 v0(2) = 5.0;
 x0 = [q0;v0];
 
-x0samp = zeros(12,20);
+x0samp = zeros(12,NSamp);
 x0samp(:,1) = x0;
-for k = 2:20
+for k = 2:NSamp
     x0samp(:,k) = x0 + [.15*randn(6,1); zeros(6,1)];
 end
 
@@ -29,13 +31,13 @@ tf=2.0;
 
 ts_plant = TimeSteppingRigidBodyManipulator(plant,0.002,options);
 
-for k = 1:20
+for k = 1:NSamp
 sim_traj = ts_plant.simulate([0,tf],x0samp(:,k));
 sim_traj = PPTrajectory(foh(sim_traj.getBreaks(), sim_traj.eval(sim_traj.getBreaks())));
 true_traj{k} = sim_traj.setOutputFrame(plant.getStateFrame());
 end
 
-for k = 1:20
+for k = 1:NSamp
     v.playback(true_traj{k});
 end
 
@@ -44,12 +46,12 @@ save('random_true3.mat','true_traj');
 % load random_true2.mat
 
 N = 3:2:15;
-rms_pos1 = zeros(length(N),20);
-rms_pos2 = zeros(length(N),20);
+rms_pos1 = zeros(length(N),NSamp);
+rms_pos2 = zeros(length(N),NSamp);
 
 nq=plant.getNumPositions();
 
-for k = 1:20
+for k = 1:NSamp
 for i = 1:length(N)
   k
   N(i)

@@ -52,7 +52,7 @@ dt = tf/(N-1);
 t_init = linspace(0,tf,N);
 traj_init.x = PPTrajectory(foh([0 tf],[x0, x0]));
 % 
-% options.s_weight = 10;
+options.s_weight = 10;
 nq = plant.getNumPositions;
 % 
 traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);

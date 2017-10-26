@@ -5,19 +5,19 @@
   <link name="ball">
     <visual>
       <geometry>
-        <sphere radius="0.05"/>
+        <sphere radius="0.03"/>
       </geometry>
       <origin xyz="0 0 0"/>
     </visual>
     <collision>
       <geometry>
-        <sphere radius="0.05"/>
+        <sphere radius="0.03"/>
       </geometry>
       <origin xyz="0 0 0"/>
     </collision>
     <inertial>
-      <mass value="1"/>
-      <inertia ixx="0.002" ixy="0.0" ixz="0.0" iyy="0.002" iyz="0.0" izz="0.002"/>
+      <mass value="0.5"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
       <origin xyz="0 0 0"/>
     </inertial>
   </link>

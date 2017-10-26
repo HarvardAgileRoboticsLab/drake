@@ -48,6 +48,9 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             if ~isfield(options,'s_weight')
                 options.s_weight = 10;
             end
+            if ~isfield(options,'s0')
+                options.s0 = 1;
+            end
             if ~isfield(options, 'kl_weight')
                 options.kl_weight = 0;
             end
@@ -1397,8 +1400,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             if isfield(traj_init,'s')
                 z0(obj.s_inds) = traj_init.s.eval(t_init(:,1:end-1));
             else
-                z0(obj.s_inds(:)) = 1;
-                %                 z0(obj.s_inds(:)) = 0;
+                z0(obj.s_inds(:)) = obj.options.s0;
             end
         end
     end
