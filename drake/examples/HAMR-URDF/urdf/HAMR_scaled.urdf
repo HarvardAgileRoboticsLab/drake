@@ -803,30 +803,19 @@
     <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="1.657E-2" />
   </joint>
-  <link
-    name="RLL4">
+ <link name="RLL4">
     <inertial>
-      <origin
-        xyz="2.4877 1.5376 -1.509"
-        rpy="0 0 0" />
+      <origin xyz="1.0887 3.2212 -3.5924" rpy="0 0 0" />
       <mass
-        value="1.3954E-02" />
+        value="3.0948E-02" />
       <inertia
-        ixx="9.0239E-2"
-        ixy="1.1755E-2"
-        ixz="2.5436E-2"
-        iyy="8.3778E-2"
-        iyz="-2.6868E-2"
-        izz="1.2261E-1" />
+        ixx="4.7914E-1" ixy="7.1618E-2" ixz="-4.8644E-2"
+        iyy="3.5276E-1" iyz="1.5539E-1" izz="3.4257E-1" />
     </inertial>
     <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh
-          filename="../meshes/RLL4.obj"
-            scale="1000" />
+        <mesh filename="../meshes/RLL4.stl" scale="1000"/>
       </geometry>
       <material
         name="">
@@ -834,6 +823,12 @@
           rgba="0.69804 0.69804 0.69804 1" />
       </material>
     </visual>
+    <collision>
+      <origin xyz="0 7.58, -11.35"/>
+      <geometry>
+        <sphere radius="0" />
+      </geometry>
+    </collision>
   </link>
   <joint
     name="RLqfb3"
@@ -849,57 +844,6 @@
       xyz="0 0 1" />
     <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="1.657E-2" />
-  </joint>
-  <link
-    name="RLLeg">
-    <inertial>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <mass
-        value="1.6993E-02" />
-      <inertia
-        ixx="2.0657E-1"
-        ixy="9.954E-6"
-        ixz="-1.1711E-5"
-        iyy="1.0894E-1"
-        iyz="9.3123E-2"
-        izz="9.8198E-2" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="../meshes/Leg.obj"
-            scale="1000" />
-      </geometry>
-      <material
-        name="">
-        <color
-          rgba="1 1 1 1" />
-      </material>
-    </visual>
-      <collision>
-          <origin xyz="0 2.93632594836 -6.04673961322"/>
-          <geometry>
-              <sphere radius="0" />
-          </geometry>
-      </collision>
-    </link>
-  <joint
-    name="RLLegJoint"
-    type="Fixed">
-    <origin
-      xyz="-6E-02 4.64367405164 -4.80326038678"
-      rpy="0 0 0" />
-    <parent
-      link="RLL4" />
-    <child
-      link="RLLeg" />
-    <axis
-      xyz="0 0 0" />
   </joint>
 
 

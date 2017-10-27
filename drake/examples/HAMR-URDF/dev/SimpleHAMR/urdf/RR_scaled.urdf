@@ -1,0 +1,584 @@
+<?xml version="1.0"?>
+<robot
+  name="RearRightSingleLeg">
+
+  <link name="Chassis">
+    <inertial>
+      <origin xyz="0 0 -0.379657560961688" rpy="0 0 0" />
+      <mass value=" 1.2066" />
+      <inertia ixx="49.0722" ixy="8.7197e-04" ixz="0.2372"
+        iyy="68.1039" iyz="-0.0032" izz="99.7537" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+ </link>
+
+
+  <link
+    name="RRS1">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="8.9854E-04" />
+      <inertia
+        ixx="4.0531E-4"
+        ixy="0"
+        ixz="0"
+        iyy="1.8583E-4"
+        iyz="-1.1771E-5"
+        izz="2.281E-4" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/RRS1.obj"
+            scale="1000" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link
+    name="RRS2">
+    <inertial>
+      <origin
+        xyz="0 -3.8176 1.3953"
+        rpy="0 0 0" />
+      <mass
+        value="7.2648E-03" />
+      <inertia
+        ixx="3.894E-2"
+        ixy="0"
+        ixz="0"
+        iyy="8.899E-3"
+        iyz="-9.1382E-3"
+        izz="3.0111E-2" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/RRS2.obj"
+            scale="1000" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link
+    name="RRS3">
+    <inertial>
+      <origin
+        xyz="-0.70289 8.6332E-02 0.10242"
+        rpy="0 0 0" />
+      <mass
+        value="3.889E-03" />
+      <inertia
+        ixx="2.6158E-3"
+        ixy="5.7753E-4"
+        ixz="3.2642E-4"
+        iyy="4.7809E-3"
+        iyz="-8.2188E-5"
+        izz="3.1897E-3" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/RRS3.obj"
+            scale="1000" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+
+ <link
+    name="RRS4">
+    <inertial>
+      <origin
+        xyz="-1.4605 -1.8371 3.0882"
+        rpy="0 0 0" />
+      <mass
+        value="1.4269E-02" />
+      <inertia
+        ixx="1.206E-1"
+        ixy="-3.2785E-2"
+        ixz="2.9892E-2"
+        iyy="8.3598E-2"
+        iyz="2.1738E-2"
+        izz="9.8829E-2" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/RRS4.obj"
+            scale="1000" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+ 
+  <link
+    name="RRL1">
+    <inertial>
+      <origin
+        xyz="0.27638 -1.552 1.3427E-02"
+        rpy="0 0 0" />
+      <mass
+        value="3.4357E-03" />
+      <inertia
+        ixx="3.8161E-3"
+        ixy="-3.3823E-4"
+        ixz="-3.5123E-4"
+        iyy="2.1069E-3"
+        iyz="-1.4678E-4"
+        izz="4.1339E-3" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/RRL1.obj"
+            scale="1000" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link
+    name="RRL2">
+    <inertial>
+      <origin
+        xyz=" 0 -0.95907 0"
+        rpy="0 0 0" />
+      <mass
+        value="1.6211E-03" />
+      <inertia
+        ixx="9.976E-4"
+        ixy="0"
+        ixz="0"
+        iyy="2.561E-3"
+        iyz="0"
+        izz="3.5431E-3" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/RRL2.obj"
+            scale="1000" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  
+  <link
+    name="RRL3">
+    <inertial>
+      <origin
+        xyz="-0.11652 7.2167E-02 -0.5651"
+        rpy="0 0 0" />
+      <mass
+        value="4.2308E-03" />
+      <inertia
+        ixx="2.4566E-3"
+        ixy="9.4738E-5"
+        ixz="-3.1854E-4"
+        iyy="5.8098E-3"
+        iyz="4.7676E-4"
+        izz="4.4079E-3" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/RRL3.obj"
+            scale="1000" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+
+ <link name="RRL4">
+    <inertial>
+      <origin xyz="1.0887 -3.2212 -3.5924" rpy="0 0 0" />
+      <mass
+        value="3.0948E-02" />
+      <inertia
+        ixx="4.7914E-1" ixy="7.1618E-2" ixz="-4.8644E-2"
+        iyy="3.5276E-1" iyz="1.5539E-1" izz="3.4257E-1" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/RRL4.stl" scale="1000"/>
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 -7.58, -11.35"/>
+      <geometry>
+        <sphere radius="0" />
+      </geometry>
+    </collision>
+  </link>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <joint
+    name="RRqsact"
+    type="prismatic">
+    <origin
+      xyz="-13.284659815390 -1.456684126580 -0.478250429210"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="RRS1" />
+    <axis
+      xyz="0 1 0" />
+    <limit lower="-0.3" upper="0.3" />
+  </joint>
+
+  <joint
+    name="RRqs1"
+    type="revolute">
+    <origin
+      xyz="0 -0.77116874934 0.12648211488"
+      rpy="0 0 0" />
+    <parent
+      link="RRS1" />
+    <child
+      link="RRS2" />
+    <axis
+      xyz="0 0 1" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <dynamics damping="2.804E-2" />
+   </joint>
+
+  <joint
+    name="RRqs2"
+    type="revolute">
+    <origin
+      xyz="0 -7.44214712409 2.06176831433"
+      rpy="0 0 0" />
+    <parent
+      link="RRS2" />
+    <child
+      link="RRS3" />
+    <axis
+      xyz="0 0 1" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <dynamics damping="1.657E-2" />
+  </joint>
+
+  <joint
+    name="RRqfb1"
+    type="revolute">
+    <origin
+      xyz="-1.52236486487 -0.12 -1.25"
+      rpy="0 0 0" />
+    <parent
+      link="RRS3" />
+    <child
+      link="RRS4" />
+    <axis
+      xyz="1 0 0" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <dynamics damping="1.914E-2" />
+  </joint>
+
+  <joint
+    name="RRqlact"
+    type="prismatic">
+    <origin
+      xyz="-10.504659815390 -4.791779821480 -0.501688531240"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="RRL1" />
+    <axis
+      xyz="0 1 0" />
+    <limit lower="-0.3" upper="0.3" />
+  </joint>
+
+
+  <joint
+    name="RRql1"
+    type="revolute">
+    <origin
+      xyz="0 -2.93322017852 0.38168853124"
+      rpy="0 0 0" />
+    <parent
+      link="RRL1" />
+    <child
+      link="RRL2" />
+    <axis
+      xyz="1 0 0" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <dynamics damping="6.366E-2" />
+  </joint>
+
+  <joint
+    name="RRql2"
+    type="revolute">
+    <origin
+      xyz="0 -1.945 0"
+      rpy="0 0 0" />
+    <parent
+      link="RRL2" />
+    <child
+      link="RRL3" />
+    <axis
+      xyz="1 0 0" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <dynamics damping="1.657E-2" />
+  </joint>
+
+  <joint
+    name="RRqfb3"
+    type="revolute">
+    <origin
+      xyz="-2.25 -0.12 -1.07"
+      rpy="0 0 0" />
+    <parent
+      link="RRL3" />
+    <child
+      link="RRL4" />
+    <axis
+      xyz="0 0 1" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <dynamics damping="1.657E-2" />
+  </joint>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!--- Loop Joints -->
+
+  <loop_joint name="RRqs3" type="continuous">
+       <axis xyz="0 0 1" />
+       <link1 link="Chassis" rpy="0 0 0"
+           xyz="-12.754659815390 -9.790000000000 1.710000000000" />
+    <link2 link="RRS3" rpy="0 0 0" xyz= "0.53, -0.12, 0.0" />
+    <dynamics stiffness="3.4e-2"  damping="1.657E-2" />
+  </loop_joint>
+
+  <loop_joint name="RRql3" type="continuous">
+    <axis xyz="1 0 0" />
+    <link1 link="Chassis" rpy="0 0 0"
+        xyz="-10.504659815390 -9.790000000000 0.460000000000"/>
+    <link2 link="RRL3"  rpy="0 0 0" xyz= "0.0, -0.12, 0.58"/>
+    <dynamics stiffness="6.03e-2"  damping="1.914E-2" />
+  </loop_joint>
+
+  <loop_joint  name="RRqfb2"  type="continuous">
+    <axis xyz="0 1 0" />
+    <link1 link="RRS4" rpy="0 0 0" 
+      xyz="2.05236472111 -5.98079552649 0.0"/> 
+    <link2 link="RRL4" rpy="0 0 0"
+      xyz="0.0 -5.98079552649 1.64999985615" />
+    <dynamics stiffness="1.08e-2"  damping="4.34E-2" />
+  </loop_joint>  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Swing Springs -->
+
+<force_element name="RR_ks1">
+  <torsional_spring stiffness="9.2E-2" rest_angle="0">
+    <joint name="RRqs1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RR_ks2">
+  <torsional_spring stiffness="3.4E-2" rest_angle="0">
+    <joint name="RRqs2" />
+   </torsional_spring>
+ </force_element>
+
+<!--Lift Springs -->
+
+<force_element name="RR_kl1">
+  <torsional_spring stiffness="2E-1" rest_angle="0">
+    <joint name="RRql1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RR_kl2">
+  <torsional_spring stiffness="3.4E-2" rest_angle="0">
+    <joint name="RRql2" />
+   </torsional_spring>
+ </force_element> 
+
+<!--SFB Springs -->
+
+ <force_element name="RR_kfb1">
+  <torsional_spring stiffness="6E-2" rest_angle="0">
+    <joint name="RRqfb1" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RR_kfb3">
+  <torsional_spring stiffness="3.4E-2" rest_angle="0">
+    <joint name="RRqfb3" />
+  </torsional_spring>
+ </force_element>
+
+<!-- Actuator Springs --> 
+
+  <force_element name="RR_ksact">
+    <prismatic_spring stiffness="1.1556" rest_length="0">
+      <joint name="RRqsact" />
+    </prismatic_spring>
+  </force_element>
+
+  <force_element name="RR_klact">
+     <prismatic_spring stiffness="1.1556" rest_length="0">
+      <joint name="RRqlact" />
+    </prismatic_spring>
+  </force_element> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--- Actuator Inputs -->
+    
+<transmission type="SimpleTransmission" name="RRSwing">
+    <actuator name="RRsact" />
+    <joint name="RRqsact" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="RRLift">
+    <actuator name="RRlact" />
+    <joint name="RRqlact" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+</robot>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

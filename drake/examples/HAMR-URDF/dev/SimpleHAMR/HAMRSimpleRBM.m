@@ -19,7 +19,7 @@ classdef HAMRSimpleRBM < RigidBodyManipulator
             % Set initial state
             q0 = zeros(obj.getNumPositions, 1); 
             if options.floating
-                q0(3) = 12.2; 
+                q0(3) = 12.5417; 
                 q0(7) = 0.5186;
                 q0(9) = 0.5186;
                 q0(11) = -0.5186;

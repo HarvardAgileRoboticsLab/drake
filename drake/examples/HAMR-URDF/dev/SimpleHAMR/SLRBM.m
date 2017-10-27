@@ -3,6 +3,8 @@ classdef SLRBM < RigidBodyManipulator
     properties (SetAccess = protected, GetAccess = public)
         q0
         grav = [0; 0; -9.81e-3];
+        pf = [];        % Position of foot in local frame 
+        foot;           % name of foot link
         nu              % number of actual inputs
         loop_const      % loop constraints
         nl              % number of loop constraints
@@ -18,6 +20,10 @@ classdef SLRBM < RigidBodyManipulator
             obj = obj@RigidBodyManipulator(urdf,options);
             
             obj.nu = obj.getNumInputs();
+            
+            % leg position
+            obj.pf = options.pf;
+            obj.foot = options.foot; 
             
             % Change gravity
             obj = obj.setGravity(obj.grav);
@@ -101,7 +107,7 @@ classdef SLRBM < RigidBodyManipulator
                 [~, K((i-1)*nli+(1:nli),:), dK((i-1)*nli+(1:nli),:)] = loops{i}.eval(q); 
             end
             
-            if isempty(dK); 
+            if isempty(dK) 
                 dK = zeros(0, nq); 
             end
             dK = reshape(dK', nq, nl*nq)'; %

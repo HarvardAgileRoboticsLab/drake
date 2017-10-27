@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <robot
-  name="SingleLeg">
-
+  name="FrontRightSingleLeg">
 
   <link name="Chassis">
     <inertial>
@@ -21,28 +20,45 @@
     </visual>
  </link>
 
-  <link name="FLS1">
+
+ <link
+    name="FRS1">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="8.9854E-04" />
-      <inertia ixx="4.0531E-4" ixy="0" ixz="0" iyy="1.8583E-4" iyz="-1.1771E-5" izz="2.281E-4" />
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="8.9854E-04" />
+      <inertia
+        ixx="4.0531E-4"
+        ixy="0"
+        ixz="0"
+        iyy="1.8583E-4"
+        iyz="-1.1771E-5"
+        izz="2.281E-4" />
     </inertial>
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/FLS1.obj" scale="1000" />
+        <mesh
+          filename="../meshes/FRS1.obj" 
+            scale="1000" />
       </geometry>
-      <material name="">
-        <color rgba="0.69804 0.69804 0.69804 1" />
+      <material
+        name="">
+        <color
+          rgba="0.69804 0.69804 0.69804 1" />
       </material>
     </visual>
   </link>
 
   <link
-    name="FLS2">
+    name="FRS2">
     <inertial>
       <origin
-        xyz="0 3.8176 1.3953"
+        xyz="0 -3.8176 1.3953"
         rpy="0 0 0" />
       <mass
         value="7.2648E-03" />
@@ -60,7 +76,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLS2.obj" 
+          filename="../meshes/FRS2.obj" 
             scale="1000" />
       </geometry>
       <material
@@ -72,7 +88,7 @@
   </link>
 
   <link
-    name="FLS3">
+    name="FRS3">
     <inertial>
       <origin
         xyz="0.70289 -8.6332E-02 0.10242"
@@ -93,7 +109,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLS3.obj" 
+          filename="../meshes/FRS3.obj" 
             scale="1000" />
       </geometry>
       <material
@@ -103,12 +119,12 @@
       </material>
     </visual>
   </link>
-
- <link
-    name="FLS4">
+ 
+  <link
+    name="FRS4">
     <inertial>
       <origin
-        xyz="1.4605 1.8371 3.0882"
+        xyz="1.4605 -1.8371 3.0882"
         rpy="0 0 0" />
       <mass
         value="1.4269E-02" />
@@ -126,7 +142,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLS4.obj"
+          filename="../meshes/FRS4.obj"
             scale="1000" />
       </geometry>
       <material
@@ -138,10 +154,10 @@
   </link>
 
   <link
-    name="FLL1">
+    name="FRL1">
     <inertial>
       <origin
-        xyz="-0.2102 2.5512 -5.7375E-02"
+        xyz="-0.2102 -2.5512 -5.7375E-02"
         rpy="0 0 0" />
       <mass
         value="4.5174E-03" />
@@ -159,7 +175,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLL1.obj"
+          filename="../meshes/FRL1.obj"
             scale="1000" />
       </geometry>
       <material
@@ -169,12 +185,12 @@
       </material>
     </visual>
   </link>
-
+ 
   <link
-    name="FLL2">
+    name="FRL2">
     <inertial>
       <origin
-        xyz="0 0.95907 0"
+        xyz="0 -0.95907 0"
         rpy="0 0 0" />
       <mass
         value="1.6211E-03" />
@@ -192,7 +208,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLL2.obj"
+          filename="../meshes/FRL2.obj"
             scale="1000" />
       </geometry>
       <material
@@ -202,12 +218,12 @@
       </material>
     </visual>/
   </link>
-
+  
   <link
-    name="FLL3">
+    name="FRL3">
     <inertial>
       <origin
-        xyz="0.11652 -7.2167E-02 -0.5651"
+        xyz="0.11652 7.2167E-02 -0.5651"
         rpy="0 0 0" />
       <mass
         value="4.2308E-03" />
@@ -225,7 +241,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLL3.obj"
+          filename="../meshes/FRL3.obj"
             scale="1000" />
       </geometry>
       <material
@@ -236,9 +252,9 @@
     </visual>
   </link>
 
-  <link name="FLL4">
+   <link name="FRL4">
     <inertial>
-      <origin xyz="-1.1371 3.3487 3.3706" rpy="0 0 0" />
+      <origin xyz="-1.1371 -3.3487 3.3706" rpy="0 0 0" />
       <mass
         value="3.0037E-02" />
       <inertia ixx="4.3948E-1" ixy="-7.7594E-2" ixz="4.1457E-2"
@@ -247,7 +263,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/FLL4.stl" scale="1000"/>
+        <mesh filename="../meshes/FRL4.obj" scale="1000"/>
       </geometry>
       <material
         name="">
@@ -256,7 +272,7 @@
       </material>
     </visual>
     <collision>
-      <origin xyz="0 7.58, -11.35"/>
+      <origin xyz="0 -7.58, -11.35"/>
       <geometry>
         <sphere radius="0" />
       </geometry>
@@ -280,82 +296,132 @@
 
 
 
-  <joint name="FLqsact" type="prismatic">
-    <origin xyz="13.284659815390 1.456684126580 -0.478250429210" rpy="0 0 0" />
-    <parent link="Chassis" />
-    <child link="FLS1" />
-    <axis xyz="0 1 0" />
+
+  <joint
+    name="FRqsact"
+    type="prismatic">
+    <origin
+      xyz="13.284659815390 -1.456684126580 -0.478250429210"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="FRS1" />
+    <axis
+      xyz="0 1 0" />
     <limit lower="-0.3" upper="0.3" />
-    <dynamics damping="0.01" />
   </joint>
 
-  <joint name="FLqs1" type="revolute">
-    <origin xyz="0 0.77116874934 0.12648211488" rpy="0 0 0" />
-    <parent link="FLS1" />
-    <child link="FLS2" />
-    <axis xyz="0 0 1" />
-    <limit lower="-pi/3" upper="pi/3" />
+  <joint
+    name="FRqs1"
+    type="revolute">
+    <origin
+      xyz="0 -0.77116874934 0.12648211488"
+      rpy="0 0 0" />
+    <parent
+      link="FRS1" />
+    <child
+      link="FRS2" />
+    <axis
+      xyz="0 0 1" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="2.804E-2" />
-   </joint>
+  </joint>
 
-  <joint name="FLqs2" type="revolute">
-    <origin xyz="0 7.44214712409 2.06176831433" rpy="0 0 0" />
-    <parent link="FLS2" />
-    <child link="FLS3" />
-    <axis xyz="0 0 1" />
-    <limit lower="-pi/3" upper="pi/3" />
+  <joint
+    name="FRqs2"
+    type="revolute">
+    <origin
+      xyz="0 -7.44214712409 2.06176831433"
+      rpy="0 0 0" />
+    <parent
+      link="FRS2" />
+    <child
+      link="FRS3" />
+    <axis
+      xyz="0 0 1" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="1.657E-2" />
   </joint>
 
-  <joint name="FLqfb1" type="revolute">
-    <origin xyz="1.52236486487 0.12 -1.25" rpy="0 0 0" />
-    <parent link="FLS3" />
-    <child link="FLS4" />
-    <axis xyz="1 0 0" />
-    <limit lower="-pi/3" upper="pi/3" />
+  <joint
+    name="FRqfb1"
+    type="revolute">
+    <origin
+      xyz="1.52236486487 -0.12 -1.25"
+      rpy="0 0 0" />
+    <parent
+      link="FRS3" />
+    <child
+      link="FRS4" />
+    <axis
+      xyz="1 0 0" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="1.914E-2" />
   </joint> 
 
-  <joint name="FLqlact" type="prismatic">
-    <origin xyz="10.504659815390 3.151779821480 -0.501688531240" rpy="0 0 0" />
-    <parent link="Chassis" />
-    <child link="FLL1" />
-    <axis xyz="0 1 0" />
+  <joint
+    name="FRqlact"
+    type="prismatic">
+    <origin
+      xyz="10.504659815390 -3.151779821480 -0.501688531240"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis" />
+    <child
+      link="FRL1" />
+    <axis
+      xyz="0 1 0" />
     <limit lower="-0.3" upper="0.3" />
-    <dynamics damping="0.01" />
-   </joint>
+  </joint>
 
-  <joint name="FLql1" type="revolute">
-    <origin xyz="0 4.57322017852 0.38168853124" rpy="0 0 0" />
-    <parent link="FLL1" />
-    <child link="FLL2" />
-    <axis xyz="1 0 0" />
-    <limit lower="-pi/3" upper="pi/3" />
+  <joint
+    name="FRql1"
+    type="revolute">
+    <origin
+      xyz="0 -4.57322017852 0.38168853124"
+      rpy="0 0 0" />
+    <parent
+      link="FRL1" />
+    <child
+      link="FRL2" />
+    <axis
+      xyz="1 0 0" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="6.366E-2" />
   </joint>
 
-  <joint name="FLql2" type="revolute">
-    <origin xyz="0 1.945 0" rpy="0 0 0" />
-    <parent link="FLL2" />
-    <child link="FLL3" />
-    <axis xyz="1 0 0" />
-    <limit lower="-pi/3" upper="pi/3" />
+  <joint
+    name="FRql2"
+    type="revolute">
+    <origin
+      xyz="0 -1.945 0"
+      rpy="0 0 0" />
+    <parent
+      link="FRL2" />
+    <child
+      link="FRL3" />
+    <axis
+      xyz="1 0 0" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="1.657E-2" />
   </joint>
 
-  <joint name="FLqfb3" type="revolute">
-    <origin xyz="2.25 0.12 -1.07" rpy="0 0 0" />
-    <parent link="FLL3" />
-    <child link="FLL4" />
-    <axis xyz="0 0 1" />
-    <limit lower="-pi/4" upper="pi/4" />
+  <joint
+    name="FRqfb3"
+    type="revolute">
+    <origin
+      xyz="2.25 -0.12 -1.07"
+      rpy="0 0 0" />
+    <parent
+      link="FRL3" />
+    <child
+      link="FRL4" />
+    <axis
+      xyz="0 0 1" />
+    <!--<limit lower="-pi/3" upper="pi/3" />-->
     <dynamics damping="1.657E-2" />
   </joint>
-
-
-
-
-
 
 
 
@@ -367,28 +433,32 @@
 
   <!--- Loop Joints -->
 
-  <loop_joint name="FLqs3" type="continuous">
+  <loop_joint name="FRqs3" type="continuous">
     <axis xyz="0 0 1" />
     <link1 link="Chassis" rpy="0 0 0" 
-      xyz="12.754659815390  9.790000000000   1.710000000000" />
-    <link2 link="FLS3" rpy="0 0 0" xyz= "-0.53, 0.12, 0.0" />
+      xyz="12.754659815390 -9.790000000000 1.710000000000" />
+    <link2 link="FRS3" rpy="0 0 0" xyz= "-0.53, -0.12, 0.0" />
+    <dynamics stiffness="3.4e-2"  damping="1.657E-2" />
   </loop_joint>
 
-  <loop_joint name="FLql3" type="continuous">
+  <loop_joint name="FRql3" type="continuous">
     <axis xyz="1 0 0" />
     <link1 link="Chassis" rpy="0 0 0"
-        xyz="10.504659815390  9.790000000000   0.460000000000"/>
-    <link2 link="FLL3"  rpy="0 0 0" xyz= "0.0, 0.12, 0.58"/>
+        xyz="10.504659815390 -9.790000000000 0.460000000000"/>
+    <link2 link="FRL3"  rpy="0 0 0" xyz= "0.0, -0.12, 0.58"/>
+    <dynamics stiffness="6.03e-2"  damping="1.914E-2" />
   </loop_joint>
 
-  <loop_joint  name="FLqfb2"  type="continuous">
+  <loop_joint  name="FRqfb2"  type="continuous">
     <axis xyz="0 1 0" />
-    <link1 link="FLS4" rpy="0 0 0" 
-      xyz="-2.05236472111 5.98079552649 0.0"/> 
-    <link2 link="FLL4" rpy="0 0 0"
-      xyz="0.0 5.98079552649 1.64999985615" />
+    <link1 link="FRS4" rpy="0 0 0" 
+      xyz="-2.05236472111 -5.98079552649 0.0"/> 
+    <link2 link="FRL4" rpy="0 0 0"
+      xyz="0.0 -5.98079552649 1.64999985615" />
+    <dynamics stiffness="1.08e-2"  damping="4.34E-2" /> 
   </loop_joint>
- 
+
+
 
 
 
@@ -400,73 +470,84 @@
 
 <!-- Swing Springs -->
 
-<force_element name="FL_ks1">
+<force_element name="FR_ks1">
   <torsional_spring stiffness="9.2E-2" rest_angle="0">
-  	<joint name="FLqs1" />
+  	<joint name="FRqs1" />
    </torsional_spring>
  </force_element>
 
- <force_element name="FL_ks2">
+ <force_element name="FR_ks2">
   <torsional_spring stiffness="3.4E-2" rest_angle="0">
-  	<joint name="FLqs2" />
+  	<joint name="FRqs2" />
    </torsional_spring>
  </force_element>
 
 <!--Lift Springs -->
 
-<force_element name="FL_kl1">
+<force_element name="FR_kl1">
   <torsional_spring stiffness="2E-1" rest_angle="0">
-  	<joint name="FLql1" />
+  	<joint name="FRql1" />
    </torsional_spring>
  </force_element>
 
- <force_element name="FL_kl2">
+ <force_element name="FR_kl2">
   <torsional_spring stiffness="3.4E-2" rest_angle="0">
-  	<joint name="FLql2" />
+  	<joint name="FRql2" />
    </torsional_spring>
  </force_element>
 
 <!--SFB Springs -->
 
- <force_element name="FL_kfb1">
+ <force_element name="FR_kfb1">
   <torsional_spring stiffness="6E-2" rest_angle="0">
-  	<joint name="FLqfb1" />
+  	<joint name="FRqfb1" />
    </torsional_spring>
  </force_element>
 
- <force_element name="FL_kfb3">
+ <force_element name="FR_kfb3">
   <torsional_spring stiffness="3.4E-2" rest_angle="0">
-  	<joint name="FLqfb3" />
+  	<joint name="FRqfb3" />
   </torsional_spring>
  </force_element>
 
-  <!-- Actuator Springs --> 
+ <!-- Actuator Springs --> 
 
-  <force_element name="FL_ksact">
+   <force_element name="FR_ksact">
     <prismatic_spring stiffness="1.1556" rest_length="0">
-      <joint name="FLqsact" />
+      <joint name="FRqsact" />
     </prismatic_spring>
   </force_element>
 
-  <force_element name="FL_klact">
+  <force_element name="FR_klact">
      <prismatic_spring stiffness="1.1556" rest_length="0">
-      <joint name="FLqlact" />
+      <joint name="FRqlact" />
     </prismatic_spring>
   </force_element> 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 <!--- Actuator Inputs -->
 
-<transmission type="SimpleTransmission" name="FLSwing">
-    <actuator name="FLsact" />
-    <joint name="FLqsact" />
+<transmission type="SimpleTransmission" name="FRSwing">
+    <actuator name="FRsact" />
+    <joint name="FRqsact" />
     <mechanicalReduction>1</mechanicalReduction>
 </transmission>
 
-<transmission type="SimpleTransmission" name="FLLift">
-    <actuator name="FLlact" />
-    <joint name="FLqlact" />
+<transmission type="SimpleTransmission" name="FRLift">
+    <actuator name="FRlact" />
+    <joint name="FRqlact" />
     <mechanicalReduction>1</mechanicalReduction>
 </transmission>
     

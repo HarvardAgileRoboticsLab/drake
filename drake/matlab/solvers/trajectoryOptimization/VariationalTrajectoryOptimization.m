@@ -234,7 +234,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         obj = obj.addCost(FunctionHandleObjective(length(obj.s_inds),@(s)scost(obj,s),1), obj.s_inds(:));
                         
                         if obj.options.add_ccost
-                            for ii=1:obj.N-1
+                            for ii=1:obj.N-2
                                 obj = obj.addCost(FunctionHandleObjective(obj.nC*2, @(c1,c2)ccost(obj,c1,c2)),{obj.c_inds(:,ii);obj.c_inds(:,ii+1)});
                             end
                         end
@@ -419,7 +419,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;v0;q1;u;c;b;jl;kl];
             %             tic
             [f,df] = midpoint_first_step(obj,xin);
-            %             fprintf('First Step: %f \r',  max(abs(f)));
+            fprintf('First Step: %f \r',  max(abs(f)));
             %             tdisp = toc; disp(['First Step: ', num2str(tdisp)])
             % %
             %             df_fd = zeros(size(df));
@@ -525,7 +525,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl];     %NDD: added joint limit forces
             %             tic
             [f,df] = obj.midpoint_dynamics(xin);
-            %             fprintf('Dynamics: %f \r',  max(abs(f)));
+            fprintf('Dynamics: %f \r',  max(abs(f)));
             
             %             tdisp=toc; disp(['Dynamics: ', num2str(tdisp)])
             % %
@@ -641,19 +641,20 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q1;q2;psi;eta;c;b;s];
             %             tic
             [f,df] = obj.midpoint_contact(xin);
-            %             fprintf('Contact: %f \r',  min(f));
+            fprintf('Maximum Slack: %f \r', max(s)); 
+%             fprintf('Contact: %f \r',  min(f));
             
-            %             tdisp=toc; disp(['Contact: ', num2str(tdisp)])
-            
-            %             df_fd = zeros(size(df));
-            %             dxin = 1e-6*eye(length(xin));
-            %             for k = 1:length(xin)
-            %                 df_fd(:,k) = (obj.midpoint_contact(xin+dxin(:,k)) - obj.midpoint_contact(xin-dxin(:,k)))/2e-6;
-            %             end
-            %
-            %             disp('Contact Derivative Error:');
-            %             disp(max(abs(df_fd(:)-df(:))));
-            
+%                         tdisp=toc; disp(['Contact: ', num2str(tdisp)])
+% % 
+%             df_fd = zeros(size(df));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 df_fd(:,k) = (obj.midpoint_contact(xin+dxin(:,k)) - obj.midpoint_contact(xin-dxin(:,k)))/2e-6;
+%             end
+% 
+%             disp('Contact Derivative Error:');
+%             disp(max(abs(df_fd(:)-df(:))));
+%             
         end
         
         function [f,df] = midpoint_contact(obj,xin)
@@ -701,10 +702,10 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             l1 = phi'*c - s; % <= 0
             
             %Tangential velocity complementarity
-            l2 = (mu*c - E*b)'*psi - s; % <= 0
+            l2 = h*(mu*c - E*b)'*psi - s; % <= 0
             
             %Friction complementarity
-            l3 = eta'*b - s; % <= 0
+            l3 = h*eta'*b - s; % <= 0
             
             f = [f1; g1; g2; l1; l2; l3];
             
@@ -712,9 +713,9 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             df = [-D*vm/h, -D/h, D/h + kron(vm', eye(nD*nC))*dD, E', -eye(nD*nC), zeros(nD*nC,nC), zeros(nD*nC,nD*nC), zeros(nD*nC,1);
                 zeros(nC,1), zeros(nC,nQ), n, zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,1);
                 zeros(nC,1), zeros(nC,nQ), zeros(nC,nQ), zeros(nC,nD*nC), zeros(nC,nC), mu*eye(nC), -E, zeros(nC,1);
-                zeros(1,1), zeros(1,nQ), c'*n, zeros(1,nC), zeros(1,nD*nC), phi', zeros(1,nD*nC), -1;
-                zeros(1,1), zeros(1,nQ), zeros(1,nQ), (mu*c - E*b)', zeros(1,nD*nC), psi'*mu, -psi'*E, -1;
-                zeros(1,1), zeros(1,nQ), zeros(1,nQ), zeros(1,nC), b', zeros(1,nC), eta', -1];
+                0, zeros(1,nQ), c'*n, zeros(1,nC), zeros(1,nD*nC), phi', zeros(1,nD*nC), -1;
+                (mu*c - E*b)'*psi, zeros(1,nQ), zeros(1,nQ), h*(mu*c - E*b)', zeros(1,nD*nC), h*psi'*mu, -h*psi'*E, -1;
+                eta'*b, zeros(1,nQ), zeros(1,nQ), zeros(1,nC), h*b', zeros(1,nC), h*eta', -1];
         end
         
         function [f,df] = midpoint_joint_limit_constraint_fun(obj,q2,jl,s)
@@ -1085,7 +1086,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             D2L = M*v;            
 %             D1D1L = -dG(:,1:nq); %throwing out second derivative of M terms here
             
-            tic
+%             tic
             D1D1L = zeros(nq);
             step = sqrt(eps(max(q2)));
             deltaq = step*eye(nq);

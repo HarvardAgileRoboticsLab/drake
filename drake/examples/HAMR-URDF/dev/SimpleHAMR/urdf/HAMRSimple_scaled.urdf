@@ -204,7 +204,7 @@
     <parent link="Chassis" />
     <child link="FL1" />
     <axis xyz="1 0 0" />
-    <limit lower="0.1259" upper="0.9113"/>
+    <limit lower="0.1695" upper="0.8677"/>
   </joint>
 
   <joint name="FL_swing" type="continuous">
@@ -212,7 +212,7 @@
     <parent link="FL1" />
     <child link="FL2" />
     <axis xyz="0 1 0" />
-    <limit lower="-pi/6" upper="pi/6"/>
+    <limit lower="-pi/9" upper="pi/9"/>
   </joint>
 
   <joint name="RL_lift" type="continuous">
@@ -220,7 +220,7 @@
     <parent link="Chassis" />
     <child link="RL1" />
     <axis xyz="1 0 0" />
-    <limit lower="0.1259" upper="0.9113"/>
+    <limit lower="0.1695" upper="0.8677"/>
   </joint>
 
   <joint name="RL_swing" type="continuous">
@@ -228,7 +228,7 @@
     <parent link="RL1" />
     <child link="RL2" />
     <axis xyz="0 1 0" />
-    <limit lower="-pi/6" upper="pi/6"/>
+    <limit lower="-pi/9" upper="pi/9"/>
   </joint>
 
   <joint name="FR_lift" type="continuous">
@@ -236,7 +236,7 @@
     <parent link="Chassis" />
     <child link="FR1" />
     <axis xyz="1 0 0" />
-    <limit lower="-0.9113" upper="-0.1259"/>
+    <limit lower="-0.8677" upper="-0.1695"/>
   </joint>
 
   <joint name="FR_swing" type="continuous">
@@ -244,7 +244,7 @@
     <parent link="FR1" />
     <child link="FR2" />
     <axis xyz="0 1 0" />
-    <limit lower="-pi/6" upper="pi/6"/>
+    <limit lower="-pi/9" upper="pi/9"/>
   </joint>
 
   <joint name="RR_lift" type="continuous">
@@ -252,7 +252,7 @@
     <parent link="Chassis" />
     <child link="RR1" />
     <axis xyz="1 0 0" />
-    <limit lower="-0.9113" upper="-0.1259"/>
+    <limit lower="-0.8677" upper="-0.1695"/>
   </joint>
 
   <joint name="RR_swing" type="continuous">
@@ -260,7 +260,7 @@
     <parent link="RR1" />
     <child link="RR2" />
     <axis xyz="0 1 0" />
-    <limit lower="-pi/6" upper="pi/6"/>
+    <limit lower="-pi/9" upper="pi/9"/>
   </joint>
 
 
