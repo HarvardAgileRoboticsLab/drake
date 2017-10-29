@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+        <mesh filename="../../../meshes/Chassis.obj" scale="1000" />
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
@@ -47,14 +47,14 @@
   <visual>
     <origin xyz="0 0 -7.485" rpy="0 0 0" />
     <geometry>
-      <cylinder length="14.97" radius="0.5"/>
+      <cylinder length="14.988382167532292" radius="0.5"/>
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 -14.97"/>
+      <origin xyz="0 0 -14.988382167532292"/>
       <geometry>
         <sphere radius="0" />
       </geometry>
@@ -88,14 +88,14 @@
   <visual>
     <origin xyz="0 0 -7.485" rpy="0 0 0" />
     <geometry>
-      <cylinder length="14.97" radius="0.5"/>
+      <cylinder length="14.988382167532292" radius="0.5"/>
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 -14.97"/>
+      <origin xyz="0 0 -14.988382167532292"/>
       <geometry>
         <sphere radius="0" />
       </geometry>
@@ -129,14 +129,14 @@
   <visual>
     <origin xyz="0 0 -7.485" rpy="0 0 0" />
     <geometry>
-      <cylinder length="14.97" radius="0.5"/>
+      <cylinder length="14.988382167532292" radius="0.5"/>
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 -14.97"/>
+      <origin xyz="0 0 -14.988382167532292"/>
       <geometry>
         <sphere radius="0" />
       </geometry>
@@ -170,14 +170,14 @@
   <visual>
     <origin xyz="0 0 -7.485" rpy="0 0 0" />
     <geometry>
-      <cylinder length="14.97" radius="0.5"/>
+      <cylinder length="14.988382167532292" radius="0.5"/>
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 -14.97"/>
+      <origin xyz="0 0 -14.988382167532292"/>
       <geometry>
         <sphere radius="0" />
       </geometry>
@@ -200,7 +200,7 @@
 
 
   <joint name="FL_lift" type="continuous">
-    <origin xyz="12.75300579825,  9.91, 0.46" rpy="0 0 0" />
+    <origin xyz="12.754659815389999,  9.91, 0.46" rpy="0 0 0" />
     <parent link="Chassis" />
     <child link="FL1" />
     <axis xyz="1 0 0" />
@@ -216,7 +216,7 @@
   </joint>
 
   <joint name="RL_lift" type="continuous">
-    <origin xyz="-12.75300579825,  9.91, 0.46" rpy="0 0 0" />
+    <origin xyz="-12.754659815389999,  9.91, 0.46" rpy="0 0 0" />
     <parent link="Chassis" />
     <child link="RL1" />
     <axis xyz="1 0 0" />
@@ -232,7 +232,7 @@
   </joint>
 
   <joint name="FR_lift" type="continuous">
-    <origin xyz="12.75300579825, -9.91, 0.46" rpy="0 0 0" />
+    <origin xyz="12.754659815389999, -9.91, 0.46" rpy="0 0 0" />
     <parent link="Chassis" />
     <child link="FR1" />
     <axis xyz="1 0 0" />
@@ -248,7 +248,7 @@
   </joint>
 
   <joint name="RR_lift" type="continuous">
-    <origin xyz="-12.75300579825, -9.91, 0.46" rpy="0 0 0" />
+    <origin xyz="-12.754659815389999, -9.91, 0.46" rpy="0 0 0" />
     <parent link="Chassis" />
     <child link="RR1" />
     <axis xyz="1 0 0" />

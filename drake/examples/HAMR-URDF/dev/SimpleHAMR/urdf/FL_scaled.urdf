@@ -13,7 +13,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+        <mesh filename="../../../meshes/Chassis.obj" scale="1000" />
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
@@ -30,7 +30,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/FLS1.obj" scale="1000" />
+        <mesh filename="../../../meshes/FLS1.obj" scale="1000" />
       </geometry>
       <material name="">
         <color rgba="0.69804 0.69804 0.69804 1" />
@@ -60,7 +60,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLS2.obj" 
+          filename="../../../meshes/FLS2.obj" 
             scale="1000" />
       </geometry>
       <material
@@ -93,7 +93,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLS3.obj" 
+          filename="../../../meshes/FLS3.obj" 
             scale="1000" />
       </geometry>
       <material
@@ -126,7 +126,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLS4.obj"
+          filename="../../../meshes/FLS4.obj"
             scale="1000" />
       </geometry>
       <material
@@ -159,7 +159,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLL1.obj"
+          filename="../../../meshes/FLL1.obj"
             scale="1000" />
       </geometry>
       <material
@@ -192,7 +192,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLL2.obj"
+          filename="../../../meshes/FLL2.obj"
             scale="1000" />
       </geometry>
       <material
@@ -225,7 +225,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FLL3.obj"
+          filename="../../../meshes/FLL3.obj"
             scale="1000" />
       </geometry>
       <material
@@ -247,7 +247,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/FLL4.stl" scale="1000"/>
+        <mesh filename="../../../meshes/FLL4.obj" scale="1000"/>
       </geometry>
       <material
         name="">

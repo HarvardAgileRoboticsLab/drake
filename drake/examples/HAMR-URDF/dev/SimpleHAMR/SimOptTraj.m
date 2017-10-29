@@ -2,7 +2,7 @@ clear; clc; close all;
 
 %% Build (open-loop) control input
 
-fname = 'TrajOpt_26-Oct-2017_6';
+fname = 'TrajOpt-FixedBody';
 traj_COM = load(fname);
 traj_full = load([fname, '_fullRobot']);
 
@@ -41,12 +41,12 @@ uu = [uuFull(1:2, :); uuFull(nut+(1:2),:); uuFull(2*nut+(1:2),:); uuFull(3*nut+(
 
 %% Model Options
 
-options.terrain = RigidBodyFlatTerrain();
+options.terrain = []; %RigidBodyFlatTerrain();
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
-options.floating = true;
-options.collision = true;
+options.floating = false;
+options.collision = false;
 
 %% Build Simpel Model
 urdf_simple = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
@@ -81,7 +81,7 @@ urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urd
 
 % options
 options.z_inactive_guess_tol = 0.1;
-options.dt = 0.1; %mean(diff(tt)); %0.1;
+options.dt = 0.1; %0.1; %mean(diff(tt)); %0.1;
 
 % Build robot + visualizer
 hamr = HamrTSRBM(urdf, options);
@@ -177,8 +177,8 @@ for i = 1:nc
     plot(tt, pfSimpleW(:,2,i));
     
     subplot(nc,3,3*(i-1)+3); hold on;  ylabel('Foot Z'); title(legs{i})
-    yyaxis left;  plot(tt_sol, pfFullW(:,3,i)); ylim([0, 1.2*max(pfFullW(:,3,i))]);
-    yyaxis right; plot(tt, pfSimpleW(:,3,i)); ylim([0, 1.2*max(pfSimpleW(:,3,i))]);
+    yyaxis left;  plot(tt_sol, pfFullW(:,3,i)); %ylim([0, 1.2*max(pfFullW(:,3,i))]);
+    yyaxis right; plot(tt, pfSimpleW(:,3,i));% ylim([0, 1.2*max(pfSimpleW(:,3,i))]);
     
 end
 

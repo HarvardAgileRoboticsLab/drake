@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+        <mesh filename="../../../meshes/Chassis.obj" scale="1000" />
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
@@ -29,7 +29,7 @@
         rpy="0 0 0" />
       <mass
         value="8.9854E-04" />
-      <inertia
+      <inertia..
         ixx="4.0531E-4"
         ixy="0"
         ixz="0"
@@ -43,7 +43,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RRS1.obj"
+          filename="../../../meshes/RRS1.obj"
             scale="1000" />
       </geometry>
       <material
@@ -76,7 +76,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RRS2.obj"
+          filename="../../../meshes/RRS2.obj"
             scale="1000" />
       </geometry>
       <material
@@ -109,7 +109,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RRS3.obj"
+          filename="../../../meshes/RRS3.obj"
             scale="1000" />
       </geometry>
       <material
@@ -142,7 +142,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RRS4.obj"
+          filename="../../../meshes/RRS4.obj"
             scale="1000" />
       </geometry>
       <material
@@ -175,7 +175,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RRL1.obj"
+          filename="../../../meshes/RRL1.obj"
             scale="1000" />
       </geometry>
       <material
@@ -208,7 +208,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RRL2.obj"
+          filename="../../../meshes/RRL2.obj"
             scale="1000" />
       </geometry>
       <material
@@ -241,7 +241,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RRL3.obj"
+          filename="../../../meshes/RRL3.obj"
             scale="1000" />
       </geometry>
       <material
@@ -264,7 +264,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/RRL4.stl" scale="1000"/>
+        <mesh filename="../../../meshes/RRL4.stl" scale="1000"/>
       </geometry>
       <material
         name="">

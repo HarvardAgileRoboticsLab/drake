@@ -27,7 +27,7 @@ nd = SL.nd;
 %% Set up Trajectory Optimization
 T = tt(end);
 No = numel(tt);
-UPSAMPLE = 2;
+UPSAMPLE = 1;
 N = UPSAMPLE*(No-1) + 1;
 t_init = linspace(0, T, N);
 x0 = zeros(nx, 1);

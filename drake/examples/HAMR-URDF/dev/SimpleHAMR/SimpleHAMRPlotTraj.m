@@ -1,6 +1,6 @@
 clear; clc; close all; 
 
-fname = 'TrajOpt_26-Oct-2017_2'; 
+fname = 'TrajOpt-FixedBody'; 
 
 %% Build Robot 
 
@@ -12,7 +12,7 @@ options.terrain = RigidBodyFlatTerrain();
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
-options.floating = true;
+options.floating = false;
 options.collision = true;
 
 hamr = HAMRSimpleRBM(urdf,options);
@@ -59,30 +59,30 @@ for i = 1:6
 %     legend('Position', 'Velocity')
 end
 
-phi = zeros(4, numel(tt));
-cc = ctraj.eval(ctraj.getBreaks);
-for i = 1:numel(tt)
-    q = xx(1:nq, i);
-    qd = vv(nq+1:nx, i);
-    kinsol = hamr.doKinematics(q, qd);
-    phi(:,i) = hamr.contactConstraints(kinsol, false);
-end
+% phi = zeros(4, numel(tt));
+% cc = ctraj.eval(ctraj.getBreaks);
+% for i = 1:numel(tt)
+%     q = xx(1:nq, i);
+%     qd = vv(nq+1:nx, i);
+%     kinsol = hamr.doKinematics(q, qd);
+%     phi(:,i) = hamr.contactConstraints(kinsol, false);
+% end
+% 
+% 
+% legs = {'FL2', 'RL2', 'FR2', 'RR2'};
+% 
+% figure(3); clf; hold on; 
+% for i = 1:size(phi, 1)    
+%     subplot(2,2,i); hold on; title(legs{i}); 
+%     yyaxis left; plot(tt, phi(i,:)); ylabel('Z-Distance(mm)');
+%     yyaxis right; plot(tt, cc(i,:)); ylabel('Force (N)'); ylim([0, 10e-3])
+% end
 
-
-legs = {'FL2', 'RL2', 'FR2', 'RR2'};
-
-figure(3); clf; hold on; 
-for i = 1:size(phi, 1)    
-    subplot(2,2,i); hold on; title(legs{i}); 
-    yyaxis left; plot(tt, phi(i,:)); ylabel('Z-Distance(mm)');
-    yyaxis right; plot(tt, cc(i,:)); ylabel('Force (N)'); ylim([0, 10e-3])
-end
-
-% normal_const = zeros(size(
-figure(4); clf; hold on; 
-plot(tt, diag(phi'*cc));
-plot(tt, ss)
-legend('Normal Constraint', 'S')
+% % normal_const = zeros(size(
+% figure(4); clf; hold on; 
+% plot(tt, diag(phi'*cc));
+% plot(tt, ss)
+% legend('Normal Constraint', 'S')
 
 
 lp_b = [0, 0, -14.97;

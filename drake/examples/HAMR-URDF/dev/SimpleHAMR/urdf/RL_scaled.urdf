@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+        <mesh filename="../../../meshes/Chassis.obj" scale="1000" />
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
@@ -34,7 +34,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RLS1.obj"
+          filename="../../../meshes/RLS1.obj"
             scale="1000" />
       </geometry>
       <material
@@ -67,7 +67,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RLS2.obj"
+          filename="../../../meshes/RLS2.obj"
             scale="1000" />
       </geometry>
       <material
@@ -100,7 +100,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RLS3.obj"
+          filename="../../../meshes/RLS3.obj"
             scale="1000" />
       </geometry>
       <material
@@ -133,7 +133,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RLS4.obj"
+          filename="../../../meshes/RLS4.obj"
             scale="1000" />
       </geometry>
       <material
@@ -166,7 +166,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RLL1.obj"
+          filename="../../../meshes/RLL1.obj"
             scale="1000" />
       </geometry>
       <material
@@ -199,7 +199,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RLL2.obj"
+          filename="../../../meshes/RLL2.obj"
             scale="1000" />
       </geometry>
       <material
@@ -232,7 +232,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/RLL3.obj"
+          filename="../../../meshes/RLL3.obj"
             scale="1000" />
       </geometry>
       <material
@@ -255,7 +255,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/RLL4.stl" scale="1000"/>
+        <mesh filename="../../../meshes/RLL4.obj" scale="1000"/>
       </geometry>
       <material
         name="">

@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+        <mesh filename="../../../meshes/Chassis.obj" scale="1000" />
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
@@ -43,7 +43,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FRS1.obj" 
+          filename="../../../meshes/FRS1.obj" 
             scale="1000" />
       </geometry>
       <material
@@ -76,7 +76,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FRS2.obj" 
+          filename="../../../meshes/FRS2.obj" 
             scale="1000" />
       </geometry>
       <material
@@ -109,7 +109,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FRS3.obj" 
+          filename="../../../meshes/FRS3.obj" 
             scale="1000" />
       </geometry>
       <material
@@ -142,7 +142,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FRS4.obj"
+          filename="../../../meshes/FRS4.obj"
             scale="1000" />
       </geometry>
       <material
@@ -175,7 +175,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FRL1.obj"
+          filename="../../../meshes/FRL1.obj"
             scale="1000" />
       </geometry>
       <material
@@ -208,7 +208,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FRL2.obj"
+          filename="../../../meshes/FRL2.obj"
             scale="1000" />
       </geometry>
       <material
@@ -241,7 +241,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../meshes/FRL3.obj"
+          filename="../../../meshes/FRL3.obj"
             scale="1000" />
       </geometry>
       <material
@@ -263,7 +263,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/FRL4.obj" scale="1000"/>
+        <mesh filename="../../../meshes/FRL4.obj" scale="1000"/>
       </geometry>
       <material
         name="">

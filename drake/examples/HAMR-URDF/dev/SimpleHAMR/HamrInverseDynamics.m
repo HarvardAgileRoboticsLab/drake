@@ -10,7 +10,7 @@ options.terrain = RigidBodyFlatTerrain();
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
-options.floating = true;
+options.floating = false;       % CHANGE
 options.collision = true;
 
 hamr = HAMRSimpleRBM(hamr_urdf,options);
@@ -22,7 +22,7 @@ nd = 4; % pyramidal friction cone approx
 
 %% Load Trajectory
 
-fname = 'TrajOpt_26-Oct-2017_4';
+fname = 'TrajOpt-FixedBody';
 td = load(fname);
 tt = td.xtraj.getBreaks();
 h = mean(diff(tt));
@@ -94,19 +94,25 @@ for j = 1:nc
         xfootf(:,i) = SL.(urdf{j}).forwardKin(kinsoli, SL.(urdf{j}).findLinkId(foot{j}), pfSL(:,j));
     end
     
+    if options.floating 
+        nfb = 6; 
+    else
+        nfb = 0;
+    end
+    
     % Plot
     figure(3*(j-1)+1); clf;
     subplot(2,2,1); hold on; ylabel('Lift Angle')
-    plot(tt, rad2deg(xx(6+2*j-1,:)));
+    plot(tt, rad2deg(xx(nfb+2*j-1,:)));
     plot(tf, rad2deg(xf(7,:)), '--');
     subplot(2,2,2); hold on; ylabel('Swing Angle')
-    plot(tt, rad2deg(xx(6+2*j,:)));
+    plot(tt, rad2deg(xx(nfb+2*j,:)));
     plot(tf, rad2deg(xf(3,:)), '--');
     subplot(2,2,3); hold on; ylabel('Lift Velocity')
-    plot(tt+h/2, rad2deg(xx(nq+6+2*j-1,:)));
+    plot(tt+h/2, rad2deg(xx(nq+nfb+2*j-1,:)));
     plot(tf+h/2, rad2deg(vf(SL.(urdf{j}).getNumPositions()+7,:)), '--');
     subplot(2,2,4); hold on; ylabel('SwingVelocity')
-    plot(tt+h/2, rad2deg(xx(nq+6+2*j,:)));
+    plot(tt+h/2, rad2deg(xx(nq+nfb+2*j,:)));
     plot(tf+h/2, rad2deg(vf(SL.(urdf{j}).getNumPositions()+3,:)), '--');
     
     figure(3*(j-1)+2); clf;
@@ -137,6 +143,4 @@ for j = 1:nc
     plot(tf, xfootf(3,:), '--');
 end
 
-ctraj = td.ctraj;
-btraj = td.btraj; 
 save([fname, '_fullRobot'], 'xtraj', 'utraj')
