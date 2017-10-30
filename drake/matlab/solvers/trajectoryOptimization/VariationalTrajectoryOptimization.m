@@ -51,6 +51,12 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             if ~isfield(options,'s0')
                 options.s0 = 1;
             end
+            if ~isfield(options,'s_max')
+                options.s_max = 1;
+            end
+            if ~isfield(options,'s_min')
+                options.s_max = 1e-6;
+            end
             if ~isfield(options, 'kl_weight')
                 options.kl_weight = 0;
             end
@@ -59,7 +65,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             end
             
             if ~isfield(options, 'joint_limit_collisions')
-                options.joint_limit_collisions = true;
+                options.joint_limit_collisions = false;
             end
             
 %             if~isfield(options, 'periodic')
@@ -219,7 +225,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                             @obj.midpoint_contact_constraint_fun, cnstr_opts);
                         
                         cnstr3 = BoundingBoxConstraint(zeros(obj.nL-1,1), inf*ones(obj.nL-1,1));
-                        cnstr4 = BoundingBoxConstraint(1e-6, 1);                                        % one slack variable
+                        cnstr4 = BoundingBoxConstraint(obj.options.s_min, obj.options.s_max); % one slack variable
                         
                         for i = 1:obj.N-1
                             cont_inds{i} = {obj.h_inds(i); obj.x_inds(:,i); obj.x_inds(:,i+1); ...

@@ -33,10 +33,14 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       if ~isfield(options,'with_shelf_and_boxes')
         options.with_shelf_and_boxes = false;
       end
+      if ~isfield(options,'floor_off')
+          options.floor_off = false;
+      end
       if options.with_weight
         options.urdf = 'urdf/iiwa14_fixed_gripper.urdf';
       end
-
+      
+      
       warning('off','Drake:RigidBodyManipulator:UnsupportedVelocityLimits');
       warning('off','Drake:RigidBodyManipulator:UnsupportedContactPoints');
       warning('off','Drake:RigidBodyManipulator:WeldedLinkInd');
@@ -211,38 +215,73 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
         kin_options = struct('compute_gradients', compute_kinematics_gradients);
         kinsol = doKinematics(obj, kinsol, [], kin_options);
       end
-      ball_radius = 0.03;
-      finger_contact_left = [0;0;.04];
-      finger_contact_right = [-0.0001;  0.0400;  0.1225];
+      ball_radius = 0.025;
+%       finger_contact_left1 = [.015;0;.04];
+%       finger_contact_left2 = [-.015;0;.04];
+%       finger_contact_right1 = [0;  0.0400;  0.1225-.015];
+%       finger_contact_right2 = [0;  0.0400;  0.1225+.015];
 
       ball_pose = obj.forwardKin(kinsol,obj.ball_id,[0;0;0],1);
       R_ball = rpy2rotmat(ball_pose(4:6));
-      left_finger_tip = obj.forwardKin(kinsol,obj.left_finger_id,finger_contact_left,0);
-      right_finger_tip = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right,0);
+%       left_finger_tip1 = obj.forwardKin(kinsol,obj.left_finger_id,finger_contact_left1,0);
+%       left_finger_tip2 = obj.forwardKin(kinsol,obj.left_finger_id,finger_contact_left2,0);
+%       right_finger_tip1 = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right1,0);
+%       right_finger_tip2 = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right2,0);
 
-      phi = [ball_pose(3)-ball_radius; norm(right_finger_tip-ball_pose(1:3))-ball_radius; norm(left_finger_tip-ball_pose(1:3))-ball_radius];
+      phi = [ball_pose(3)-ball_radius];
+      %phi = [ball_pose(3)-ball_radius; norm(right_finger_tip1-ball_pose(1:3))-ball_radius; norm(right_finger_tip2-ball_pose(1:3))-ball_radius; norm(left_finger_tip1-ball_pose(1:3))-ball_radius; norm(left_finger_tip2-ball_pose(1:3))-ball_radius];
       ball_normal = [0;0;-1];
-      right_normal = right_finger_tip - ball_pose(1:3);
-      right_normal = right_normal./sqrt(right_normal'*right_normal);
-      left_normal = left_finger_tip - ball_pose(1:3);
-      left_normal = left_normal./sqrt(left_normal'*left_normal);
-      normal = [ball_normal, right_normal, left_normal];
+%       right_normal1 = right_finger_tip1 - ball_pose(1:3);
+%       right_normal1 = right_normal1./sqrt(right_normal1'*right_normal1);
+%       right_normal2 = right_finger_tip2 - ball_pose(1:3);
+%       right_normal2 = right_normal2./sqrt(right_normal2'*right_normal2);
+%       left_normal1 = left_finger_tip1 - ball_pose(1:3);
+%       left_normal1 = left_normal1./sqrt(left_normal1'*left_normal1);
+%       left_normal2 = left_finger_tip2 - ball_pose(1:3);
+%       left_normal2 = left_normal2./sqrt(left_normal2'*left_normal2);
+    normal = [ball_normal];
+    %normal = [ball_normal, right_normal1, right_normal2, left_normal1, left_normal2];
+      
       
       d = cell(1,2);
-      Tr1 = cross(right_normal,[0;0;1]);
-      Tr1 = Tr1/norm(Tr1);
-      Tr2 = cross(right_normal,Tr1);
-      Tl1 = cross(left_normal,[0;0;1]);
-      Tl1 = Tl1/norm(Tl1);
-      Tl2 = cross(left_normal,Tl1);
-      d{1} = [[0;1;0],Tr1,Tl1];
-      d{2} = [[1;0;0],Tr2,Tl2];
+%       Tr1 = cross(right_normal1,[0;0;1]);
+%       Tr1 = Tr1/norm(Tr1);
+%       Tr2 = cross(right_normal1,Tr1);
+%       Tr3 = cross(right_normal2,[0;0;1]);
+%       Tr3 = Tr3/norm(Tr3);
+%       Tr4 = cross(right_normal2,Tr3);
+%       Tl1 = cross(left_normal1,[0;0;1]);
+%       Tl1 = Tl1/norm(Tl1);
+%       Tl2 = cross(left_normal1,Tl1);
+%       Tl3 = cross(left_normal2,[0;0;1]);
+%       Tl3 = Tl3/norm(Tl3);
+%       Tl4 = cross(left_normal2,Tl3);
+      d{1} = [[0;1;0]];
+      d{2} = [[1;0;0]];
+%       d{1} = [[0;1;0],Tr1,Tr3,Tl1,Tl3];
+%       d{2} = [[1;0;0],Tr2,Tr4,Tl2,Tl4];
       
-      xA = [[ball_pose(1:2); 0], finger_contact_right, finger_contact_left];
+
+      xA = [[ball_pose(1:2); 0]];
       xB = ball_radius*R_ball'*normal;
-      idxA = [0; obj.right_finger_id; obj.left_finger_id];
-      idxB = [obj.ball_id; obj.ball_id; obj.ball_id];
+      idxA = [0];
+      idxB = [obj.ball_id];
+%       xA = [[ball_pose(1:2); 0], finger_contact_right1, finger_contact_right2, finger_contact_left1, finger_contact_left2];
+%       xB = ball_radius*R_ball'*normal;
+%       idxA = [0; obj.right_finger_id; obj.right_finger_id; obj.left_finger_id; obj.left_finger_id];
+%       idxB = [obj.ball_id; obj.ball_id; obj.ball_id; obj.ball_id; obj.ball_id];
       mu = 1.0;
+      
+%       if obj.options.floor_off
+%           phi = phi(2:end);
+%           normal = normal(:,2:end);
+%           d{1} = d{1}(:,2:end);
+%           d{2} = d{2}(:,2:end);
+%           xA = xA(:,2:end);
+%           xB = xB(:,2:end);
+%           idxA = idxA(2:end);
+%           idxB = idxB(2:end);
+%       end
       
       if compute_kinematics_gradients
         [n, D, dn, dD] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, xB, d);
