@@ -236,7 +236,6 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       left_normal = left_normal./sqrt(left_normal'*left_normal);
       normal = [ball_normal, right_normal1, right_normal2, left_normal];
       
-      
       d = cell(1,2);
       Tr1 = cross(right_normal1,[0;0;1]);
       Tr1 = Tr1/norm(Tr1);
@@ -255,33 +254,43 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       idxA = [0; obj.right_finger_id; obj.right_finger_id; obj.left_finger_id];
       idxB = [obj.ball_id; obj.ball_id; obj.ball_id; obj.ball_id];
       mu = 1.0;
+%       xA = [[b(1:2); 0]];
+%       xB = ball_radius*R_ball'*normal;
+%       idxA = [0];
+%       idxB = [obj.ball_id];
       
-      [n, D, dn, dD] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, xB, d);
+      if compute_kinematics_gradients
+          [n, D, dn, dD] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, kron(ones(1,length(idxB)),[0 0 0]'), d);
+      elseif compute_first_derivative
+          [n, D] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, kron(ones(1,length(idxB)),[0 0 0]'), d);
+      end
       
-      n_ball = [0 0 0 0 0 0 0 0 0 0 1 0 0 0];
-      dn_ball = zeros(14,14);
-      D_ball = {[0 0 0 0 0 0 0 0 -1 0 0 0 0 0],[0 0 0 0 0 0 0 0 0 -1 0 0 0 0],[0 0 0 0 0 0 0 0 1 0 0 0 0 0],[0 0 0 0 0 0 0 0 0 1 0 0 0 0]};
-      dD_ball = {zeros(14,14),zeros(14,14),zeros(14,14),zeros(14,14)};
+%       n_ball = [0 0 0 0 0 0 0 0 0 0 1 0 0 0];
+%       dn_ball = zeros(14,14);
+%       D_ball = {[0 0 0 0 0 0 0 0 -1 0 0 0 0 0],[0 0 0 0 0 0 0 0 0 -1 0 0 0 0],[0 0 0 0 0 0 0 0 1 0 0 0 0 0],[0 0 0 0 0 0 0 0 0 1 0 0 0 0]};
+%       dD_ball = {zeros(14,14),zeros(14,14),zeros(14,14),zeros(14,14)};
+%       
+%       n_right1 = dR1(1:3,:)'*normal(:,2);
+%       n_right1 = (1/norm(tr1(1:3)-b(1:3)))*(tr1(1:3)-b(1:3))'*(dR1(1:3,:) - dB(1:3,:));
       
-      n_right1 = (1/norm(tr1(1:3)-b(1:3)))*(tr1(1:3)-b(1:3))'*(dR1 - dB);
-      dn_right1 = (1/norm(tr1(1:3)-b(1:3)))*((dR1-dB)'*(dR1-dB) - (dR1-dB)'*(tr1(1:3)-b(1:3))*(tr1(1:3)-b(1:3))'*(dR1-dB)/((tr1(1:3)-b(1:3))'*(tr1(1:3)-b(1:3))) + kron((tr1-b)',eye(14))*comm(3,14)*(d2R1-d2B));
-      D_right1 = {[],[],[],[]}
-      dD_right1
+%       dn_right1 = (1/norm(tr1(1:3)-b(1:3)))*((dR1(1:3,:)-dB(1:3,:))'*(dR1(1:3,:)-dB(1:3,:)) - (dR1(1:3,:)-dB(1:3,:))'*(tr1(1:3)-b(1:3))*(tr1(1:3)-b(1:3))'*(dR1(1:3,:)-dB(1:3,:))/((tr1(1:3)-b(1:3))'*(tr1(1:3)-b(1:3))) + kron((tr1-b)',eye(14))*comm(3,14)*(d2R1-d2B));
+%       D_right1 = {[],[],[],[]}
+%       dD_right1
       
-      n_right2 = (1/norm(tr2(1:3)-b(1:3)))*(tr2(1:3)-b(1:3))'*(dR2 - dB);
-      dn_right2 = (1/norm(tr2(1:3)-b(1:3)))*((dR2-dB)'*(dR2-dB) - (dR2-dB)'*(tr2(1:3)-b(1:3))*(tr2(1:3)-b(1:3))'*(dR2-dB)/((tr2(1:3)-b(1:3))'*(tr2(1:3)-b(1:3))) + kron((tr2-b)',eye(14))*comm(3,14)*(d2R2-d2B));
-      D_right2
-      dD_right2
-      
-      n_left = (1/norm(left_finger_tip1(1:3)-b(1:3)))*(left_finger_tip1(1:3)-b(1:3))'*(dL - dB);
-      dn_left = (1/norm(tl(1:3)-b(1:3)))*((dL-dB)'*(dL-dB) - (dL-dB)'*(tl(1:3)-b(1:3))*(tl(1:3)-b(1:3))'*(dL-dB)/((tl(1:3)-b(1:3))'*(tl(1:3)-b(1:3))) + kron((tl-b)',eye(14))*comm(3,14)*(d2L-d2B));
-      D_left
-      dD_left
-
-      n = [n_ball; n_right1; n_right2; n_left];
-      dn = comm(3,14)*[dn_ball; dn_right1; dn_right2; dn_left];
-      D = {[D_ball{1}; D_right1{1}; D_right2{1}; D_left{1}], [D_ball{2}; D_right1{2}; D_right2{2}; D_left{2}], [D_ball{3}; D_right1{3}; D_right2{3}; D_left{3}], [D_ball{3}; D_right1{3}; D_right2{3}; D_left{3}]};
-      dD = {comm(3,14)*[dD_ball{1}; dD_right1{1}; dD_right2{1}; dD_left{1}], comm(3,14)*[dD_ball{2}; dD_right1{2}; dD_right2{2}; dD_left{2}], comm(3,14)*[dD_ball{3}; dD_right1{3}; dD_right2{3}; dD_left{3}], comm(3,14)*[dD_ball{3}; dD_right1{3}; dD_right2{3}; dD_left{3}]};
+%       n_right2 = (1/norm(tr2(1:3)-b(1:3)))*(tr2(1:3)-b(1:3))'*(dR2 - dB);
+%       dn_right2 = (1/norm(tr2(1:3)-b(1:3)))*((dR2-dB)'*(dR2-dB) - (dR2-dB)'*(tr2(1:3)-b(1:3))*(tr2(1:3)-b(1:3))'*(dR2-dB)/((tr2(1:3)-b(1:3))'*(tr2(1:3)-b(1:3))) + kron((tr2-b)',eye(14))*comm(3,14)*(d2R2-d2B));
+%       D_right2
+%       dD_right2
+%       
+%       n_left = (1/norm(left_finger_tip1(1:3)-b(1:3)))*(left_finger_tip1(1:3)-b(1:3))'*(dL - dB);
+%       dn_left = (1/norm(tl(1:3)-b(1:3)))*((dL-dB)'*(dL-dB) - (dL-dB)'*(tl(1:3)-b(1:3))*(tl(1:3)-b(1:3))'*(dL-dB)/((tl(1:3)-b(1:3))'*(tl(1:3)-b(1:3))) + kron((tl-b)',eye(14))*comm(3,14)*(d2L-d2B));
+%       D_left
+%       dD_left
+% 
+%       n = [n_ball; n_right1; n_right2; n_left];
+%       dn = comm(3,14)*[dn_ball; dn_right1; dn_right2; dn_left];
+%       D = {[D_ball{1}; D_right1{1}; D_right2{1}; D_left{1}], [D_ball{2}; D_right1{2}; D_right2{2}; D_left{2}], [D_ball{3}; D_right1{3}; D_right2{3}; D_left{3}], [D_ball{3}; D_right1{3}; D_right2{3}; D_left{3}]};
+%       dD = {comm(3,14)*[dD_ball{1}; dD_right1{1}; dD_right2{1}; dD_left{1}], comm(3,14)*[dD_ball{2}; dD_right1{2}; dD_right2{2}; dD_left{2}], comm(3,14)*[dD_ball{3}; dD_right1{3}; dD_right2{3}; dD_left{3}], comm(3,14)*[dD_ball{3}; dD_right1{3}; dD_right2{3}; dD_left{3}]};
 
     end
     

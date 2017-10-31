@@ -17,7 +17,7 @@ nu = r.getNumInputs();
 v=r.constructVisualizer;
 
 q0 = [-1.57;-1.1;0;1.57;0.0;0.1;0;0.08; ...
-      .5;0.66;0.025;0;0;0];
+      0;0.66;0.025;0;0;0];
 x0 = [q0;zeros(nq,1)];
 v.draw(0,x0);
 
@@ -53,8 +53,8 @@ else
 end
 
 options.s_weight = 100;
-options.s0 = 0.1;
-options.s_max = .1;
+options.s0 = 0.0001;
+options.s_max = .001;
 options.s_min = 1e-6;
 
 traj_opt = VariationalTrajectoryOptimization(r,N,T_span,options);
@@ -84,8 +84,8 @@ Q = 100*eye(28); %diag(state_cost);
 
 % traj_opt = traj_opt.setSolver('ipopt');
 
-traj_opt = traj_opt.setSolverOptions('snopt','majorfeasibilitytolerance',1e-4);
-traj_opt = traj_opt.setSolverOptions('snopt','minorfeasibilitytolerance',1e-4);
+traj_opt = traj_opt.setSolverOptions('snopt','majorfeasibilitytolerance',1e-3);
+traj_opt = traj_opt.setSolverOptions('snopt','minorfeasibilitytolerance',1e-3);
 traj_opt = traj_opt.setSolverOptions('snopt','minoroptimalitytolerance',1e-4);
 traj_opt = traj_opt.setSolverOptions('snopt','majoroptimalitytolerance',1e-4);
 traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',100000);
