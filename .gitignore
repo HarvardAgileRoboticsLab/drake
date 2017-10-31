@@ -62,8 +62,6 @@ xcode
 
 drake/examples/HAMR-URDF/dev/SingleLeg
 
-drake/examples/HAMR-URDF/dev/Actuator
-
 drake/examples/HAMR-URDF/Trajectories/
 
 drake/examples/HAMR-URDF/TrajOpt_21-Sep-2017 17:16:44\.mat
