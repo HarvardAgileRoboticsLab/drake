@@ -215,7 +215,7 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
         kin_options = struct('compute_gradients', compute_kinematics_gradients);
         kinsol = doKinematics(obj, kinsol, [], kin_options);
       end
-      ball_radius = 0.025;
+      ball_radius = 0.03;
       finger_contact_left = [0;0;.04];
       finger_contact_right1 = [0;  0.0400;  0.1225-.01];
       finger_contact_right2 = [0;  0.0400;  0.1225+.01];
