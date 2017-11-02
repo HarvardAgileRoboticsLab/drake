@@ -61,7 +61,7 @@ classdef LittleDog < RigidBodyManipulator %& LeggedRobot
     
     function runPDhome
       r = LittleDog;
-      sys = TimeSteppingRigidBodyManipulator(r,0.0015);
+      sys = TimeSteppingRigidBodyManipulator(r,0.001);
       v = constructVisualizer(sys);
       
       % construct PD control 
@@ -75,13 +75,73 @@ classdef LittleDog < RigidBodyManipulator %& LeggedRobot
       % send in constant position reference
       sys = cascade(setOutputFrame(ConstOrPassthroughSystem(qa0),getInputFrame(sys)),sys);
 
-      if (1)
+      if (0)
         sys = cascade(sys,v);
-        simulate(sys,[0 4],double(x0));
+        simulate(sys,[0 3],double(x0));
       else
-        xtraj = simulate(sys,[0 4],double(x0));
+        xtraj = simulate(sys,[0 3],double(x0));
         playback(v,xtraj);
       end
+    end
+    
+    function [e, rmse, esamp] = runPDTraj(xtraj)
+      r = LittleDog;
+      sys = TimeSteppingRigidBodyManipulator(r,0.0002);
+      v = constructVisualizer(sys);
+      
+      % construct PD control 
+      Kp = 3*eye(12);
+      Kd = .2*diag([1; 1; .5; 1; 1; .5; 1; 1; .5; 1; 1; .5]);
+      
+      sys = pdcontrol(sys,Kp,Kd);
+      
+      qatraj = xtraj(getActuatedJoints(r));
+
+      % send in joint angle reference
+      sys = cascade(setOutputFrame(qatraj,getInputFrame(sys)),sys);
+      
+      x0 = xtraj.eval(0);
+      phi = r.contactConstraints(x0(1:18));
+      while min(phi) < 0
+        x0(3) = x0(3) + 0.01;
+        phi = r.contactConstraints(x0(1:18));
+      end
+
+      cltraj = simulate(sys,[xtraj.tspan(1), xtraj.tspan(2)+.05],x0);
+      playback(v,cltraj,struct('slider',true));
+      
+      tsamp = floor(1000*linspace(cltraj.tspan(1),cltraj.tspan(2),100))/1000;
+      esamp = zeros(36,100);
+      rmse = zeros(100,1);
+      for k = 1:length(tsamp)
+          if tsamp(k) <= xtraj.tspan(2)
+              xk = xtraj.eval(tsamp(k));
+          else
+              xk = xtraj.eval(xtraj.tspan(2));
+          end
+          esamp(:,k) = xk - cltraj.eval(tsamp(k));
+          rmse(k) = sqrt(esamp(:,k)'*esamp(:,k))/36;
+      end
+      e = sum(rmse)/100;
+      
+    end
+    
+    function runOLTraj(xtraj,utraj)
+      r = LittleDog;
+      sys = TimeSteppingRigidBodyManipulator(r,0.0002);
+      v = constructVisualizer(sys);
+
+      sys = cascade(setOutputFrame(utraj,getInputFrame(sys)),sys);
+      
+      x0 = xtraj.eval(0);
+      phi = r.contactConstraints(x0(1:18));
+      while min(phi) < 0
+        x0(3) = x0(3) + 0.01;
+        phi = r.contactConstraints(x0(1:18));
+      end
+
+      cltraj = simulate(sys,[xtraj.tspan(1), xtraj.tspan(2)+.1],x0);
+      playback(v,cltraj,struct('slider',true));
     end
   end
 end

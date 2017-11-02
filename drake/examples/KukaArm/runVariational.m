@@ -22,23 +22,28 @@ x0 = [q0;zeros(nq,1)];
 v.draw(0,x0);
 
 q1 = q0;
-q1(11) = q0(11)+0.1;
+q1(11) = q0(11)+0.02;
 x1 = [q1;zeros(nq,1)];
 
 u0 = r.findTrim(q0);
+u0(8) = -10;
 
 T0 = 1;
-N = 3;
-T_span = [0.5 T0];
+N = 5;
+T_span = [.5 T0];
 
 if nargin > 0
     traj_init.x = x_guess;
     traj_init.u = u_guess;
     traj_init.c = c_guess;
     traj_init.b = b_guess;
-    traj_init.psi = psi_guess;
-    traj_init.eta = eta_guess;
-    traj_init.s = s_guess;
+    if nargin > 4
+        traj_init.psi = psi_guess;
+        traj_init.eta = eta_guess;
+    end
+    if nargin > 6
+        traj_init.s = s_guess;
+    end
     if length(x_guess.getBreaks()) == N
         t_init = x_guess.getBreaks();
     else
@@ -48,23 +53,25 @@ else
     t_init = linspace(0,T0,N);
     traj_init.x = PPTrajectory(foh([0 T0],[x0, x0]));
     traj_init.u = PPTrajectory(zoh([0 T0],[u0, u0]));
+    traj_init.c = PPTrajectory(zoh([0 T0],[[10*9.81; 0; 0; 0], [10*9.81; 0; 0; 0]]));
 end
 
-options.s_weight = 100;
-options.s0 = 0.01;
+options.lambda_weight = 0.01;
+options.s_weight = 1000;
+options.s0 = .01;
 options.s_max = .01;
 options.s_min = 1e-6;
 
 traj_opt = VariationalTrajectoryOptimization(r,N,T_span,options);
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
-% traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q0),1); 
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q0),1); 
 %traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q0),N); 
-%traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x1(9:11)),1:N,9:11);
-%traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x1(9:11)),N,9:11);
+%traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q1(9:11)),1:N,9:11);
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q1(9:11)),N,9:11);
 
 [q_lb, q_ub] = getJointLimits(r);
-% q_lb(9:14) = -0.2*ones(6,1);
-% q_ub(9:14) = 0.2*ones(6,1);
+q_lb = max([q_lb, q0-0.2*ones(14,1)]')';
+q_ub = min([q_ub, q0+0.2*ones(14,1)]')';
 traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(q_lb,q_ub),1:N);
 
 % ub_N = q1;
@@ -79,14 +86,16 @@ traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(q_lb,q_ub),1:N);
 % state_cost.base_y = 10;
 % state_cost.base_z = 10;
 % state_cost = double(state_cost);
-Q = 1*eye(28); %diag(state_cost); 
+Q = blkdiag(1*eye(8),0*eye(6),10*eye(14)); %diag(state_cost); 
+R = 1*eye(nu);
 
+%traj_opt = traj_opt.setSolver('fmincon');
 % traj_opt = traj_opt.setSolver('ipopt');
 
-traj_opt = traj_opt.setSolverOptions('snopt','majorfeasibilitytolerance',1e-3);
-traj_opt = traj_opt.setSolverOptions('snopt','minorfeasibilitytolerance',1e-3);
-traj_opt = traj_opt.setSolverOptions('snopt','minoroptimalitytolerance',1e-3);
-traj_opt = traj_opt.setSolverOptions('snopt','majoroptimalitytolerance',1e-3);
+traj_opt = traj_opt.setSolverOptions('snopt','majorfeasibilitytolerance',1e-4);
+traj_opt = traj_opt.setSolverOptions('snopt','minorfeasibilitytolerance',1e-4);
+traj_opt = traj_opt.setSolverOptions('snopt','minoroptimalitytolerance',1e-4);
+traj_opt = traj_opt.setSolverOptions('snopt','majoroptimalitytolerance',1e-4);
 traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',100000);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',2000000);
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',10000000);
@@ -101,7 +110,6 @@ toc
 v.playback(xtraj,struct('slider',true));
 
 function [f,df] = running_cost_fun(h,x,u)
-  R = .1*eye(nu);
   g = (1/2)*(x-x0)'*Q*(x-x0) + (1/2)*(u-u0)'*R*(u-u0);
   f = h*g;
   df = [g, h*(x-x0)'*Q, h*(u-u0)'*R];

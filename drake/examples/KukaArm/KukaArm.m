@@ -191,7 +191,66 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
       df = [df,df(:,1+obj.getNumStates+(1:obj.getNumInputs))];
     end 
     
+    function [phi,normal,d,xA,xB,idxA,idxB,mu] = worldContactConstraints(obj,kinsol)
+        
+        if ~isstruct(kinsol)
+            % treat input as contactPositions(obj,q)
+            kinsol = doKinematics(obj, kinsol, []);
+        end
+        
+        ball_radius = 0.03;
+        finger_contact_left = [0;0;.04];
+        finger_contact_right1 = [-.01;  0.0400;  0.1225];
+        finger_contact_right2 = [.01;  0.0400;  0.1225];
+        
+        b = obj.forwardKin(kinsol,obj.ball_id,[0;0;0],1);
+        R_ball = rpy2rotmat(b(4:6));
+        fl = obj.forwardKin(kinsol,obj.left_finger_id,finger_contact_left,1);
+        fr1 = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right1,1);
+        fr2 = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right2,1);
+        
+        phi = [b(3)-ball_radius; norm(fr1(1:3)-b(1:3))-ball_radius; norm(fr2(1:3)-b(1:3))-ball_radius; norm(fl(1:3)-b(1:3))-ball_radius];
+        ball_normal = [0;0;-1];
+        right_normal1 = fr1(1:3) - b(1:3);
+        right_normal1 = right_normal1./sqrt(right_normal1'*right_normal1);
+        right_normal2 = fr2(1:3) - b(1:3);
+        right_normal2 = right_normal2./sqrt(right_normal2'*right_normal2);
+        left_normal = fl(1:3) - b(1:3);
+        left_normal = left_normal./sqrt(left_normal'*left_normal);
+        normal = [ball_normal, right_normal1, right_normal2, left_normal];
+        
+        d = cell(1,2);
+        Tr1 = cross(right_normal1,[0;0;1]);
+        Tr1 = Tr1/norm(Tr1);
+        Tr2 = cross(right_normal1,Tr1);
+        Tr3 = cross(right_normal2,[0;0;1]);
+        Tr3 = Tr3/norm(Tr3);
+        Tr4 = cross(right_normal2,Tr3);
+        Tl1 = cross(left_normal,[0;0;1]);
+        Tl1 = Tl1/norm(Tl1);
+        Tl2 = cross(left_normal,Tl1);
+        d{1} = [[0;1;0],Tr1,Tr3,Tl1];
+        d{2} = [[1;0;0],Tr2,Tr4,Tl2];
+        
+        xA = [[b(1:2); 0], finger_contact_right1, finger_contact_right2, finger_contact_left];
+        xB = ball_radius*R_ball'*normal;
+        idxA = [0; obj.right_finger_id; obj.right_finger_id; obj.left_finger_id];
+        idxB = [obj.ball_id; obj.ball_id; obj.ball_id; obj.ball_id];
+        mu = 1.0;
+    end
       
+    function [n,D] = jointContactJacobians(obj,kinsol)
+        
+        if ~isstruct(kinsol)
+            % treat input as contactPositions(obj,q)
+            kinsol = doKinematics(obj, kinsol, []);
+        end
+        
+        [~,normal,d,xA,xB,idxA,idxB,mu] = worldContactConstraints(obj,kinsol);
+        
+        [n, D] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, xB, d);
+    end
+    
     function [phi,normal,d,xA,xB,idxA,idxB,mu,n,D,dn,dD] = contactConstraints(obj,kinsol,allow_multiple_contacts,active_collision_options)
 
       % @retval phi (m x 1) Vector of gap function values (typically contact distance), for m possible contacts
@@ -209,60 +268,37 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
 
       compute_first_derivative = nargout > 8;
       compute_kinematics_gradients = nargout > 10;
-
+      
       if ~isstruct(kinsol)
-        % treat input as contactPositions(obj,q)
-        kin_options = struct('compute_gradients', compute_kinematics_gradients);
-        kinsol = doKinematics(obj, kinsol, [], kin_options);
+          % treat input as contactPositions(obj,q)
+          kinsol = doKinematics(obj, kinsol, []);
       end
-      ball_radius = 0.03;
-      finger_contact_left = [0;0;.04];
-      finger_contact_right1 = [0;  0.0400;  0.1225-.01];
-      finger_contact_right2 = [0;  0.0400;  0.1225+.01];
-
-      [b, dB] = obj.forwardKin(kinsol,obj.ball_id,[0;0;0],1);
-      R_ball = rpy2rotmat(b(4:6));
-      [tl, dL] = obj.forwardKin(kinsol,obj.left_finger_id,finger_contact_left,1);
-      [tr1, dR1] = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right1,1);
-      [tr2, dR2] = obj.forwardKin(kinsol,obj.right_finger_id,finger_contact_right2,1);
-
-      phi = [b(3)-ball_radius; norm(tr1(1:3)-b(1:3))-ball_radius; norm(tr2(1:3)-b(1:3))-ball_radius; norm(tl(1:3)-b(1:3))-ball_radius];
-      ball_normal = [0;0;-1];
-      right_normal1 = tr1(1:3) - b(1:3);
-      right_normal1 = right_normal1./sqrt(right_normal1'*right_normal1);
-      right_normal2 = tr2(1:3) - b(1:3);
-      right_normal2 = right_normal2./sqrt(right_normal2'*right_normal2);
-      left_normal = tl(1:3) - b(1:3);
-      left_normal = left_normal./sqrt(left_normal'*left_normal);
-      normal = [ball_normal, right_normal1, right_normal2, left_normal];
       
-      d = cell(1,2);
-      Tr1 = cross(right_normal1,[0;0;1]);
-      Tr1 = Tr1/norm(Tr1);
-      Tr2 = cross(right_normal1,Tr1);
-      Tr3 = cross(right_normal2,[0;0;1]);
-      Tr3 = Tr3/norm(Tr3);
-      Tr4 = cross(right_normal2,Tr3);
-      Tl1 = cross(left_normal,[0;0;1]);
-      Tl1 = Tl1/norm(Tl1);
-      Tl2 = cross(left_normal,Tl1);
-      d{1} = [[0;1;0],Tr1,Tr3,Tl1];
-      d{2} = [[1;0;0],Tr2,Tr4,Tl2];
+      [phi,normal,d,xA,xB,idxA,idxB,mu] = worldContactConstraints(obj,kinsol);
       
-      xA = [[b(1:2); 0], finger_contact_right1, finger_contact_right2, finger_contact_left];
-      xB = ball_radius*R_ball'*normal;
-      idxA = [0; obj.right_finger_id; obj.right_finger_id; obj.left_finger_id];
-      idxB = [obj.ball_id; obj.ball_id; obj.ball_id; obj.ball_id];
-      mu = 1.0;
-%       xA = [[b(1:2); 0]];
-%       xB = ball_radius*R_ball'*normal;
-%       idxA = [0];
-%       idxB = [obj.ball_id];
-      
+      if compute_first_derivative
+          [n,D] = jointContactJacobians(obj,kinsol);
+      end
       if compute_kinematics_gradients
-          [n, D, dn, dD] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, kron(ones(1,length(idxB)),[0 0 0]'), d);
-      elseif compute_first_derivative
-          [n, D] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, kron(ones(1,length(idxB)),[0 0 0]'), d);
+          %finite diff since we don't trust this
+          %[~, ~, dn, dD] = contactConstraintDerivatives(obj, normal, kinsol, idxA, idxB, xA, xB, d);
+          
+          dn = zeros(numel(n),size(n,2));
+          dD = cell(1,4);
+          dD{1} = dn;
+          dD{2} = dn;
+          dD{3} = dn;
+          dD{4} = dn;
+          dq = diag(sqrt(eps(kinsol.q)));
+          for k = 1:14
+              [np,Dp] = jointContactJacobians(obj,kinsol.q+dq(:,k));
+              [nm,Dm] = jointContactJacobians(obj,kinsol.q-dq(:,k));
+              dn(:,k) = vec(np-nm)/1e-6;
+              dD{1}(:,k) = vec(Dp{1}-Dm{1})/(2*dq(k,k));
+              dD{2}(:,k) = vec(Dp{2}-Dm{2})/(2*dq(k,k));
+              dD{3}(:,k) = vec(Dp{3}-Dm{3})/(2*dq(k,k));
+              dD{4}(:,k) = vec(Dp{4}-Dm{4})/(2*dq(k,k));
+          end
       end
       
 %       n_ball = [0 0 0 0 0 0 0 0 0 0 1 0 0 0];
@@ -293,6 +329,7 @@ classdef KukaArm < TimeSteppingRigidBodyManipulator
 %       dD = {comm(3,14)*[dD_ball{1}; dD_right1{1}; dD_right2{1}; dD_left{1}], comm(3,14)*[dD_ball{2}; dD_right1{2}; dD_right2{2}; dD_left{2}], comm(3,14)*[dD_ball{3}; dD_right1{3}; dD_right2{3}; dD_left{3}], comm(3,14)*[dD_ball{3}; dD_right1{3}; dD_right2{3}; dD_left{3}]};
 
     end
+
     
   end
   
