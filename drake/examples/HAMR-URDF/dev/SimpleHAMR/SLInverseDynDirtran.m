@@ -11,7 +11,7 @@ options.collision_meshes = false;
 options.use_bullet = false;
 options.floating = false;
 options.pf = pf;
-options.foot = foot; 
+options.foot = foot;
 
 SL = SLRBM(sl_urdf, options);
 v = SL.constructVisualizer();
@@ -32,7 +32,6 @@ N = UPSAMPLE*(No-1) + 1;
 t_init = linspace(0, T, N);
 x0 = zeros(nx, 1);
 
-
 optimopt.integration_method = 3;                            % Midpoint Euler
 optimopt.time_option = 1;                                   % all steps are constant
 traj_opt = DirtranTrajectoryOptimization(SL, N, T, optimopt);
@@ -46,30 +45,24 @@ traj_opt = traj_opt.addCost(FunctionHandleObjective(N*nx,@(x)objective_fun(SL,x)
 cc = ctraj.eval(t_init);
 cc = cc(:, 1:N-1);
 
-
 bb = btraj.eval(t_init);
-% bb = interp1(tt', bb', t_init')';
-% bb = reshape(repmat(bb, UPSAMPLE,1), nc*nd, []);
 bb = bb(:,1:N-1);
 
 Aperm = spdiags(0.5*ones(N, 2), 0:1, N-1, N);
-uc = (Aperm\cc')'; 
-% uc = interp1(tt', uc', t_init')';
-
+uc = (Aperm\cc')';
 ub = (Aperm\bb')';
-% ub = interp1(tt', ub', t_init')';
 
 ulim = 0.4;
 
 for ind = 1:N
     if ind < N
-        umini = [-ulim*ones(nu-nl-nc*(1+nd),1); -Inf(nl,1); uc(:,ind); ub(:,ind)];
-        umaxi = [ulim*ones(nu-nl-nc*(1+nd),1); Inf(nl,1); uc(:,ind); ub(:,ind)];        
+        Vmini = [-ulim*ones(nu-nl-nc*(1+nd),1); -Inf(nl,1); uc(:,ind); ub(:,ind)];
+        Vmaxi = [ulim*ones(nu-nl-nc*(1+nd),1); Inf(nl,1); uc(:,ind); ub(:,ind)];
     else
-        umini = [zeros(nu-nl-nc*(1+nd),1); -Inf(nl,1); uc(:,ind); ub(:,ind)];
-        umaxi = [zeros(nu-nl-nc*(1+nd),1); Inf(nl,1); uc(:,ind); ub(:,ind)];    
+        Vmini = [zeros(nu-nl-nc*(1+nd),1); -Inf(nl,1); uc(:,ind); ub(:,ind)];
+        Vmaxi = [zeros(nu-nl-nc*(1+nd),1); Inf(nl,1); uc(:,ind); ub(:,ind)];
     end
-    traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(umini, umaxi), ind);
+    traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(Vmini, Vmaxi), ind);
 end
 
 % joint limit constraint
@@ -106,7 +99,7 @@ traj_opt = traj_opt.setSolverOptions('snopt','constraint_err_tol',1e-4);
 %% Init and Solve
 
 traj_init.x = PPTrajectory(zoh([0, T], [x0, x0]));
-traj_init.u = PPTrajectory(zoh(t_init, zeros(nu,N)));
+traj_init.u = PPTrajectory(zoh(t_init, 0.01*rand(nu,N)));
 
 xfoot = xfoot.eval(t_init);
 
@@ -162,7 +155,6 @@ xfoot = xfoot.eval(t_init);
     end
 
     function displayTraj(h,x,u)
-        disp('Displaying Trajectory...')
         h = h/1e3;
         ts = [0;cumsum(h)];
         for i=1:length(ts)

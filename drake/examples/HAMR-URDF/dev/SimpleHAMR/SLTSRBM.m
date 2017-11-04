@@ -1,4 +1,4 @@
-classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
+classdef SLTSRBM < TimeSteppingRigidBodyManipulator
     
     properties (SetAccess = protected, GetAccess = public)
         q0
@@ -7,13 +7,12 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
     
     methods
         
-        function obj=HamrTSRBM(urdf,options)
+        function obj = SLTSRBM(urdf,options)
             
             typecheck(urdf,'char');
 
             obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
-            obj.q0 = zeros(obj.getNumPositions(), 1);
-            
+            obj.q0 = zeros(obj.getNumPositions(), 1);            
                                     
             %set gravity
             obj.manip = obj.manip.setGravity(obj.grav); 
@@ -40,7 +39,6 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
         
         function obj = compile(obj)
             obj = compile@TimeSteppingRigidBodyManipulator(obj);
-
             
             %Add Ouputs
             joint_names = obj.getJointNames();

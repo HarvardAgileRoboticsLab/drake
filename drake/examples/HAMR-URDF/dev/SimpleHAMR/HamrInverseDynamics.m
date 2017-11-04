@@ -143,4 +143,4 @@ for j = 1:nc
     plot(tf, xfootf(3,:), '--');
 end
 
-save([fname, '_fullRobot'], 'xtraj', 'utraj')
+save([fname, '_fullRobotPlusAct'], 'xtraj', 'utraj')
