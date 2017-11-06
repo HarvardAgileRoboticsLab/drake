@@ -34,7 +34,7 @@ classdef SLSimpleRBM < RigidBodyManipulator
             obj = obj.setNumInputs(obj.nu+nc+nd);
             
             % Initial state
-            obj.q0 = [0.5186; 0];
+            obj.q0 = [0; 0.5186];
             
         end
         
@@ -42,7 +42,7 @@ classdef SLSimpleRBM < RigidBodyManipulator
             
             xin = [t; x; u];
             [f,df] = dynamics_fun(obj,xin);
-            %             fprintf('Dynamics: %f \r', max(abs(f)));
+            fprintf('Time: %f \r', t);
             
             %             df_fd = zeros(size(df));
             %             step = sqrt(eps(max(xin)));
@@ -114,33 +114,32 @@ classdef SLSimpleRBM < RigidBodyManipulator
         
         function [xdot, dxdot_dK, dxdot_dP] = dynamics_sd_fit_fun(obj, xin)
             
-            % load in parameters
-            nq = obj.getNumPositions();
-            nv = obj.getNumVelocities();
-            nu = obj.nu;
-            
             
             [xdot, dxdot_dK, dxdot_dP] = dynamics_sd_fit(obj,xin);
             
+            % load in parameters
+            %             nq = obj.getNumPositions();
+            %             nv = obj.getNumVelocities();
+            %             nu = obj.nu;
             
-            dxdot_dKd = zeros(size(dxdot_dK));
-            dxdot_dPd = zeros(size(dxdot_dP));
+            %             dxdot_dKd = zeros(size(dxdot_dK));
+            %             dxdot_dPd = zeros(size(dxdot_dP));
             
-            ind0 = 1+nq+nv+nu;            
-            step = sqrt(eps(max(xin(ind0:end))));            
-            dxin = step*eye(length(xin));
-            
-            for k = ind0 +(1:nq^2)
-                dxdot_dKd(:, k-ind0) = (dynamics_sd_fit(obj, xin+dxin(:,k)) - ...
-                    dynamics_sd_fit(obj, xin-dxin(:,k)))/(2*step);
-                dxdot_dPd(:, k-ind0) = (dynamics_sd_fit(obj, xin+dxin(:,k+nq^2)) - ...
-                    dynamics_sd_fit(obj, xin-dxin(:,k+nq^2)))/(2*step);
-                
-            end
-            
-            disp('Dynamics Derivative Error:');
-            disp(max(abs(dxdot_dKd(:)-dxdot_dK(:))));
-            disp(max(abs(dxdot_dPd(:)-dxdot_dP(:))));
+            %             ind0 = 1+nq+nv+nu;
+            %             step = sqrt(eps(max(xin(ind0:end))));
+            %             dxin = step*eye(length(xin));
+            %
+            %             for k = ind0 +(1:nq^2)
+            %                 dxdot_dKd(:, k-ind0) = (dynamics_sd_fit(obj, xin+dxin(:,k)) - ...
+            %                     dynamics_sd_fit(obj, xin-dxin(:,k)))/(2*step);
+            %                 dxdot_dPd(:, k-ind0) = (dynamics_sd_fit(obj, xin+dxin(:,k+nq^2)) - ...
+            %                     dynamics_sd_fit(obj, xin-dxin(:,k+nq^2)))/(2*step);
+            %
+            %             end
+            %
+            %             disp('Dynamics Derivative Error:');
+            %             disp(max(abs(dxdot_dKd(:)-dxdot_dK(:))));
+            %             disp(max(abs(dxdot_dPd(:)-dxdot_dP(:))));
             
         end
         
@@ -185,7 +184,21 @@ classdef SLSimpleRBM < RigidBodyManipulator
             
         end
         
-        %
+        function obj = setK(obj, K)
+            if sizecheck(K, size(obj.K))
+                obj.K = K;
+            else
+                error('Wrongsize K')
+            end
+        end
+        
+        function obj = setP(obj, P)
+            if sizecheck(P, size(obj.P))
+                obj.P = P;
+            else
+                error('Wrongsize P')
+            end
+        end     
         
         function nActuatedDOF = getNumActuatedDOF(obj)
             nActuatedDOF = numel(obj.getActuatedJoints());

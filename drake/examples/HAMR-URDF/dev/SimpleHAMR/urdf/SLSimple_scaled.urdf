@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+        <mesh filename="../../../meshes/Chassis.obj" scale="1000" />
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
@@ -71,24 +71,22 @@
 
 
 
-  <joint name="FL_lift" type="continuous">
+  <joint name="FL_swing" type="continuous">
     <origin xyz="12.75300579825,  9.91, 0.46" rpy="0 0 0" />
     <parent link="Chassis" />
     <child link="FL1" />
-    <axis xyz="1 0 0" />
-    <limit lower="0.1259" upper="0.9113"/>
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/6" upper="pi/6"/>
+    
   </joint>
 
-  <joint name="FL_swing" type="continuous">
+  <joint name="FL_lift" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="FL1" />
     <child link="FL2" />
-    <axis xyz="0 1 0" />
-    <limit lower="-pi/6" upper="pi/6"/>
+    <axis xyz="1 0 0" />
+    <limit lower="0.1259" upper="0.9113"/>
   </joint>
-
-
-
 
 
 <!--- Actuator Inputs -->
