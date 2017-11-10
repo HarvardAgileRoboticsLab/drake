@@ -3,13 +3,14 @@ classdef SLRBM < RigidBodyManipulator
     properties (SetAccess = protected, GetAccess = public)
         q0
         grav = [0; 0; -9.81e-3];
-        pf = [];        % Position of foot in local frame 
+        pf = [];        % Position of foot in local frame
         foot;           % name of foot link
         nu              % number of actual inputs
         loop_const      % loop constraints
         nl              % number of loop constraints
         nc              % number of contact pairs
         nd              % number of basis vectors in polyhedral friction cone
+        valid_loops     % valid loop constraints
     end
     
     methods
@@ -23,7 +24,7 @@ classdef SLRBM < RigidBodyManipulator
             
             % leg position
             obj.pf = options.pf;
-            obj.foot = options.foot; 
+            obj.foot = options.foot;
             
             % Change gravity
             obj = obj.setGravity(obj.grav);
@@ -32,15 +33,15 @@ classdef SLRBM < RigidBodyManipulator
             % contact forces
             [phi,~,d] = obj.contactConstraints(getZeroConfiguration(obj));
             nc = length(phi); obj.nc = nc;
-            nd = 2*length(d); obj.nd = nd;                     
+            nd = 2*length(d); obj.nd = nd;
             
             % loop const
-            [k, ~] = obj.positionConstraints(getZeroConfiguration(obj));
-            nl = length(k); obj.nl = nl;
-            obj.loop_const = obj.position_constraints; 
+            obj.valid_loops = [1;2;8;9;13;15];
+            nl = length(obj.valid_loops); obj.nl = nl;
+            obj.loop_const = obj.position_constraints;
             
             % Add contact and loop const as inputs
-            obj = obj.setNumInputs(obj.nu + nc + nc*nd + nl); 
+            obj = obj.setNumInputs(obj.nu + nc + nc*nd + nl);
             
             % Initial state
             obj.q0 = zeros(obj.getNumPositions, 1);
@@ -51,17 +52,17 @@ classdef SLRBM < RigidBodyManipulator
             
             xin = [t; x; u];
             [f,df] = dynamics_fun(obj,xin);
-%             fprintf('Dynamics: %f \r', max(abs(f)));
-%             
-%             df_fd = zeros(size(df));
-%             step = sqrt(eps(max(xin)));
-%             dxin = step*eye(length(xin));
-%             for k = 1:length(xin)
-%                 df_fd(:,k) = (dynamics_fun(obj, xin+dxin(:,k)) - dynamics_fun(obj, xin-dxin(:,k)))/(2*step);
-%             end
-%             
-%             disp('Dynamics Derivative Error:');
-%             disp(max(abs(df_fd(:)-df(:))));
+            %             fprintf('Dynamics: %f \r', max(abs(f)));
+            %
+            %             df_fd = zeros(size(df));
+            %             step = sqrt(eps(max(xin)));
+            %             dxin = step*eye(length(xin));
+            %             for k = 1:length(xin)
+            %                 df_fd(:,k) = (dynamics_fun(obj, xin+dxin(:,k)) - dynamics_fun(obj, xin-dxin(:,k)))/(2*step);
+            %             end
+            %
+            %             disp('Dynamics Derivative Error:');
+            %             disp(max(abs(df_fd(:)-df(:))));
             
         end
         
@@ -72,7 +73,7 @@ classdef SLRBM < RigidBodyManipulator
             nv = obj.getNumVelocities();
             nu = obj.nu;
             nc = obj.nc;
-            nl = obj.nl; 
+            nl = obj.nl;
             nd = obj.nd;
             
             t = xin(1);
@@ -89,7 +90,7 @@ classdef SLRBM < RigidBodyManipulator
             kin = obj.doKinematics(q, v, kinopts);
             [~,~,~,~,~,~,~,~,n,D,dn,dD] = obj.contactConstraints(kin);
             
-            if isempty(n) 
+            if isempty(n)
                 n = zeros(0,nq);
                 dn = zeros(0,nq);
             end
@@ -97,18 +98,26 @@ classdef SLRBM < RigidBodyManipulator
             D = reshape(cell2mat(D')',nq,nc*nd)';
             dD = reshape(cell2mat(dD)',nq,nc*nd*nq)';
             
-            % loop constraints            
+            % loop constraints
             K = zeros(nl, nq);
-            dK = zeros(nl, nq*nq); 
+            dK = zeros(nl, nq*nq);
             
             loops = obj.loop_const;
-            nli = nl/numel(loops); 
+            ct = 1;            
             for i = 1:numel(loops)
-                [~, K((i-1)*nli+(1:nli),:), dK((i-1)*nli+(1:nli),:)] = loops{i}.eval(q); 
+                [~, Ki, dKi] = loops{i}.eval(q);
+                for j = 1:size(Ki, 1)
+                    ind = (i-1)*size(Ki,1) + j;
+                    if ismember(ind, obj.valid_loops)
+                        K(ct, :) = Ki(j,:);
+                        dK(ct, :) = dKi(j,:);
+                        ct = ct+1; 
+                    end
+                end
             end
             
-            if isempty(dK) 
-                dK = zeros(0, nq); 
+            if isempty(dK)
+                dK = zeros(0, nq);
             end
             dK = reshape(dK', nq, nl*nq)'; %
             

@@ -69,7 +69,7 @@ classdef HamrActuators < DrakeSystem
                 y(i) = obj.dummy_bender(i).output(t, x, [u(i);...
                     u(i+obj.nact)]);
             end
-%             fprintf('Time: %f \n', t);
+            fprintf('Time: %f \n', t);
             
         end
         

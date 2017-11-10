@@ -1,4 +1,4 @@
-function [xf,objval,exitflag,infeasible_constraint_name] = inverse_dynamics(x0, qf, vf)
+function [xf,objval,exitflag,infeasible_constraint_name] = InverseDynamics(x0, qf, vf)
 %% Build Single Leg
 
 sl_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', 'SLSimple_scaled.urdf');

@@ -350,7 +350,8 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
           nL = sum([obj.manip.joint_limit_min~=-inf;obj.manip.joint_limit_max~=inf]); % number of joint limits
         end
         nContactPairs = obj.manip.getNumContactPairs;
-        nP = obj.manip.num_position_constraints;  % number of position constraints
+%         nP = obj.manip.num_position_constraints;  % number of position constraints
+        nP = numel(obj.valid_loops); 
         nV = obj.manip.num_velocity_constraints;
         Big = 1e20;
 
@@ -545,8 +546,11 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
           %   phiP + h*JP*qdn >= 0 && -phiP - h*JP*qdn >= 0
           if (nargout<5)
             [phiP,JP] = obj.manip.positionConstraints(q);
+            phiP = phiP(obj.valid_loops);
+            JP = JP(obj.valid_loops, :);
           else
             [phiP,JP,dJP] = obj.manip.positionConstraints(q);
+            [phiP,JP,dJP] = obj.manip.positionConstraints(q);            
           end
           J(nL+(1:nP),:) = JP;
           lb(nL+(1:nP),1) = -Big;

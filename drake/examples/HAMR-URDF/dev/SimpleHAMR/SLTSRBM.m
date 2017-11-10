@@ -3,6 +3,8 @@ classdef SLTSRBM < TimeSteppingRigidBodyManipulator
     properties (SetAccess = protected, GetAccess = public)
         q0
         grav = [0; 0; -9.81e-3];
+        nl
+        valid_loops     % valid loop constraints
     end
     
     methods
@@ -17,6 +19,10 @@ classdef SLTSRBM < TimeSteppingRigidBodyManipulator
             %set gravity
             obj.manip = obj.manip.setGravity(obj.grav); 
             obj.manip = compile(obj.manip); 
+            
+            % loop const
+            obj.valid_loops = [1;2;8;9;13;15];
+            nl = length(obj.valid_loops); obj.nl = nl;
         end
         
         

@@ -1,5 +1,4 @@
 clear; clc; close all;
-load('sysid_traj.mat')
 %% Build Full Single Leg
 
 % options
@@ -56,6 +55,10 @@ i_end = i_start+1000;
 SLSimple_OL0 = cascade(tau_traj, SLSimple);
 xtraj0 = simulate(SLSimple_OL0, [t(1), t(i_end)], xi([sfb_inputs; nq+sfb_inputs], 1));
 xx0 = xtraj0.eval(t);
+xtraj0_scaled = PPTrajectory(foh(t*1e-3, xx0));
+xtraj0_scaled = xtraj0_scaled.setOutputFrame(xtraj0.getOutputFrame());
+viz.playback(xtraj0_scaled, struct('slider', true));
+
 
 %% Fitting
 
