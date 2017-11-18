@@ -10,19 +10,20 @@ options.terrain = RigidBodyFlatTerrain();
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
-options.floating = false;       % CHANGE
+options.floating = true;       % CHANGE
 options.collision = true;
 
 hamr = HAMRSimpleRBM(hamr_urdf,options);
 
 nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();
+nu = hamr.getNumInputs();
 nc = hamr.getNumContactPairs();
 nd = 4; % pyramidal friction cone approx
 
 %% Load Trajectory
 
-fname = 'TrajOpt-FixedBody';
+fname = 'TrajOpt_MovingBody_SimpleSprings3';
 td = load(fname);
 tt = td.xtraj.getBreaks();
 h = mean(diff(tt));
@@ -40,6 +41,16 @@ uu = td.utraj.eval(tt);
 cc = td.ctraj.eval(tt);
 bb = td.btraj.eval(tt);
 
+%% Form body position
+
+if options.floating
+    nfb = 6;
+%     xfloating_base = xx(1:nfb, :); 
+else
+    nfb = 0;
+%     xfloating_base = []; %zeros(6, numel(tt)); 
+end
+
 %% Form foot positions
 
 leg_links = {'FL2', 'RL2', 'FR2', 'RR2'};     % leg links
@@ -47,10 +58,14 @@ leg_links = {'FL2', 'RL2', 'FR2', 'RR2'};     % leg links
 pfhamr = [0 0 -14.97]'; % position of foot in local frame
 
 xfoot_body = zeros(numel(pfhamr), numel(tt), nc);
-fkopt.base_or_frame_id = hamr.findLinkId('Chassis');
-
+fkopt = struct();
+fkopt.base_or_frame_id = hamr.findLinkId('Chassis'); 
 for i = 1:numel(tt)
     kinsol = hamr.doKinematics(xx(1:nq, i), zeros(nv,1));
+%     [phi,normal, d] = hamr.contactConstraints(kinsol);
+%     normal
+%     d{1}
+%     d{2}
     for j = 1:nc
         xfoot_body(:,i,j) = hamr.forwardKin(kinsol, hamr.findLinkId(leg_links{j}), pfhamr, fkopt);
     end
@@ -63,6 +78,7 @@ pfSL = [0, 7.58, -11.35;
     0, 7.58, -11.35;
     0, -7.58, -11.35;
     0, -7.58, -11.35]';
+
 for j = 1:nc
     xfoot_traj = PPTrajectory(foh(tt, xfoot_body(:,:,j)));
     tic;
@@ -70,7 +86,7 @@ for j = 1:nc
         = SLInverseDynDirtran(tt, urdf{j}, foot{j}, pfSL(:,j), xfoot_traj, ...
         td.ctraj(j), td.btraj((j-1)*nd+(1:nd)));
     toc
-
+    
     v = SL.(urdf{j}).constructVisualizer();
     tf = xtraj.(urdf{j}).getBreaks();
     qq = xtraj.(urdf{j}).eval(tf); qq = qq(1:SL.(urdf{j}).getNumPositions(), :);
@@ -94,34 +110,29 @@ for j = 1:nc
         xfootf(:,i) = SL.(urdf{j}).forwardKin(kinsoli, SL.(urdf{j}).findLinkId(foot{j}), pfSL(:,j));
     end
     
-    if options.floating 
-        nfb = 6; 
-    else
-        nfb = 0;
-    end
-    
+    x0 = hamr.getInitialState();
     % Plot
     figure(3*(j-1)+1); clf;
-    subplot(2,2,1); hold on; ylabel('Lift Angle')
+    subplot(2,2,1); hold on; ylabel('Swing Angle')
     plot(tt, rad2deg(xx(nfb+2*j-1,:)));
-    plot(tf, rad2deg(xf(7,:)), '--');
-    subplot(2,2,2); hold on; ylabel('Swing Angle')
-    plot(tt, rad2deg(xx(nfb+2*j,:)));
     plot(tf, rad2deg(xf(3,:)), '--');
-    subplot(2,2,3); hold on; ylabel('Lift Velocity')
+    subplot(2,2,2); hold on; ylabel('Lift Angle')
+    plot(tt, rad2deg(xx(nfb+2*j,:) - x0(2*j)));
+    plot(tf, rad2deg(xf(7,:)), '--');
+    subplot(2,2,3); hold on; ylabel('Swing Velocity')
     plot(tt+h/2, rad2deg(xx(nq+nfb+2*j-1,:)));
-    plot(tf+h/2, rad2deg(vf(SL.(urdf{j}).getNumPositions()+7,:)), '--');
-    subplot(2,2,4); hold on; ylabel('SwingVelocity')
-    plot(tt+h/2, rad2deg(xx(nq+nfb+2*j,:)));
     plot(tf+h/2, rad2deg(vf(SL.(urdf{j}).getNumPositions()+3,:)), '--');
+    subplot(2,2,4); hold on; ylabel('Lift Velocity')
+    plot(tt+h/2, rad2deg(xx(nq+nfb+2*j,:)));
+    plot(tf+h/2, rad2deg(vf(SL.(urdf{j}).getNumPositions()+7,:)), '--');
     
     figure(3*(j-1)+2); clf;
-    subplot(2,2,1); hold on; ylabel('Lift Force')
-    yyaxis left; plot(tt+h/2, uu(j,:));
-    yyaxis right; plot(tf+h/2, uf(1,:), '--');
-    subplot(2,2,2); hold on; ylabel('Swing Force')
-    yyaxis left; plot(tt+h/2, uu(j,:));
-    yyaxis right; plot(tf+h/2, uf(2,:), '--');
+    subplot(2,2,1); hold on; ylabel('Swing Force')
+    plot(tt+h/2, uu(2*j-1,:));
+    plot(tf+h/2, uf(1,:), '--');
+    subplot(2,2,2); hold on; ylabel('Lift Force')
+    plot(tt+h/2, uu(2*j,:));
+    plot(tf+h/2, uf(2,:), '--');
     subplot(2,2,3); hold on; ylabel('Normal Force')
     plot(tt+h/2, cc(j,:));
     plot(tf+h/2, cf(SL.(urdf{j}).nu+SL.(urdf{j}).nl+(1:SL.(urdf{j}).nc),:), '--');
@@ -142,5 +153,5 @@ for j = 1:nc
     plot(tt, xfoot_body(3,:,j));
     plot(tf, xfootf(3,:), '--');
 end
-
-save([fname, '_fullRobotPlusAct'], 'xtraj', 'utraj')
+tilefigs;
+save([fname, '_fullRobot'], 'xtraj', 'utraj')

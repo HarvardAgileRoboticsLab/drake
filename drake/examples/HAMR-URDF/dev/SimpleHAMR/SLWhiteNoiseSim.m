@@ -1,14 +1,17 @@
 clear; clc; close all;
+global u_traj kl_traj
+u_traj = []; 
+kl_traj = []; 
 
 % Sample Rate and Time
 dt = 0.25;
 Fs = 1/dt;
-T = 1000;
+T = 2000;
 t = 0:dt:T;
 N = numel(t);
 
 % White Noise Freq Characteristics
-f1 = 100e-3;
+f1 = 40e-3;
 band = [0, 2*f1*dt];
 
 %% Build robot
@@ -32,9 +35,8 @@ nu = SL.getNumInputs();
 SL = SL.setJointLimits(-Inf(nq, 1), Inf(nq, 1));
 SL = compile(SL); 
 
-
 %% Build Actuators
-dp.Vb = 80;
+dp.Vb = 200;
 dp.Vg = 0;
 
 nact = nu;
@@ -76,7 +78,6 @@ SLWact = mimoFeedback(sl_actuators, SL, connection1, connection2, ...
 tramp = 500; 
 Vscale = (dp.Vb - dp.Vg)/5.5;
 V = Vscale*idinput([N, SL.getNumInputs()], 'rgs', band)'; 
-% V = 0.5*(dp.Vb - dp.Vg)*[sin(2*pi*f1*t); cos(2*pi*f1*t)]; 
 V(t < 500) = (t(t<500)/tramp).*V(t<500);
 V = V + (dp.Vb - dp.Vg)/2 + dp.Vg;
 % V(V > dp.Vb) = dp.Vb;
@@ -160,4 +161,4 @@ plot(t, x(nq+nv+2,:));
 plot(t, tau(2,:)); 
 legend('U', 'Tau')
 
-save('sysid_traj', 't', 'x', 'tau')
+save('sysid_traj', 't', 'tramp', 'x', 'tau')

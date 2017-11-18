@@ -292,7 +292,7 @@
       link="RLS1" />
     <axis
       xyz="0 1 0" />
-    <limit lower="-0.3" upper="0.3" />
+    <limit lower="-0.2" upper="0.2" />
   </joint>  
 
   <joint
@@ -307,7 +307,7 @@
       link="RLS2" />
     <axis
       xyz="0 0 1" />
-    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="2.804E-2" />
   </joint>
 
@@ -323,7 +323,7 @@
       link="RLS3" />
     <axis
       xyz="0 0 1" />
-    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.657E-2" />
   </joint>
 
@@ -340,7 +340,7 @@
       link="RLS4" />
     <axis
       xyz="1 0 0" />
-    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.914E-2" />
   </joint> 
 
@@ -371,7 +371,7 @@
       link="RLL2" />
     <axis
       xyz="1 0 0" />
-    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="6.366E-2" />
   </joint>
 
@@ -387,7 +387,7 @@
       link="RLL3" />
     <axis
       xyz="1 0 0" />
-    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.657E-2" />
   </joint>
 
@@ -403,7 +403,7 @@
       link="RLL4" />
     <axis
       xyz="0 0 1" />
-    <!--<limit lower="-pi/3" upper="pi/3" />-->
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.657E-2" />
   </joint>
 

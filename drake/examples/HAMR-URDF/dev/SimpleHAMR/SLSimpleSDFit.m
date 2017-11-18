@@ -1,16 +1,15 @@
 clear; clc; close all;
 
-
-dataset = '_80Hz_100V';
+dataset = '_40Hz_200V';
 data = load(['sysid_traj', dataset, '.mat']);
 
 N0 = find(data.t>=500, 1, 'first');
-N = 1000;
+N = 500;
 ds = (numel(data.t) - N0)/N; 
 IND = N0:ds:numel(data.t) ;      % randomly choose indices
 SFB_INPUTS = [3;7];
 
-NK = 2; 
+NK = 1; 
 NP = 1; 
 
 [xf,objval,exitflag,infeasible_constraint_name] = SLSimpleFitNLP(data, IND, SFB_INPUTS, NK, NP); 
@@ -59,6 +58,28 @@ for i = 1:numel(ind_plot)
     plot(t, rad2deg(xx(i, :) - x0(i)));
 end
 
-save(['SpringDamper', dataset '_', num2str(NK), '_', num2str(NP)], 'K', 'P', 'xf', 'objval'); 
+RMS_DEG = rad2deg(rms(bsxfun(@minus, xx, x0) - xd(ind_plot,:), 2));
+
+save(['SpringDamper', dataset '_', num2str(NK), '_', num2str(NP)], 'K', 'P', 'xf', ''); 
+
+%%
+xd = data.x;
+ind_plot = [SFB_INPUTS];
+figure(1); clf; hold on;
+titles = {'Swing Angle (deg)', 'Lift Angle (deg)'};
+for i = 1:numel(ind_plot)
+    si = subplot(1,2,i); hold on;
+    set(si, 'FontSize', 16); 
+    plot(t*1e-3, rad2deg(xd(ind_plot(i), :)), 'LineWidth', 1.5)
+    plot(t*1e-3, rad2deg(xx(i, :) - x0(i)), 'LineWidth', 1.5);
+    ylabel(titles{i}, 'FontSIze', 18)
+    lh = legend('Full Model', 'Simple Model')    ;
+    set(lh, 'box', 'off')
+    xlabel('Time (s)')    
+    ylim([-30, 30])
+end
+
+rad2deg(rms(bsxfun(@minus, xx, x0),2))
+rad2deg(rms(xd(ind_plot,:),2))
 
 

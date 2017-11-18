@@ -285,7 +285,7 @@
     <parent link="Chassis" />
     <child link="FLS1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.3" upper="0.3" />
+    <limit lower="-0.2" upper="0.2" />
     <dynamics damping="0.01" />
   </joint>
 
@@ -294,7 +294,7 @@
     <parent link="FLS1" />
     <child link="FLS2" />
     <axis xyz="0 0 1" />
-    <limit lower="-pi/3" upper="pi/3" />
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="2.804E-2" />
    </joint>
 
@@ -303,7 +303,7 @@
     <parent link="FLS2" />
     <child link="FLS3" />
     <axis xyz="0 0 1" />
-    <limit lower="-pi/3" upper="pi/3" />
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.657E-2" />
   </joint>
 
@@ -312,7 +312,7 @@
     <parent link="FLS3" />
     <child link="FLS4" />
     <axis xyz="1 0 0" />
-    <limit lower="-pi/3" upper="pi/3" />
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.914E-2" />
   </joint> 
 
@@ -321,7 +321,7 @@
     <parent link="Chassis" />
     <child link="FLL1" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.3" upper="0.3" />
+    <limit lower="-0.2" upper="0.2" />
     <dynamics damping="0.01" />
    </joint>
 
@@ -330,7 +330,7 @@
     <parent link="FLL1" />
     <child link="FLL2" />
     <axis xyz="1 0 0" />
-    <limit lower="-pi/3" upper="pi/3" />
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="6.366E-2" />
   </joint>
 
@@ -339,7 +339,7 @@
     <parent link="FLL2" />
     <child link="FLL3" />
     <axis xyz="1 0 0" />
-    <limit lower="-pi/3" upper="pi/3" />
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.657E-2" />
   </joint>
 
@@ -348,7 +348,7 @@
     <parent link="FLL3" />
     <child link="FLL4" />
     <axis xyz="0 0 1" />
-    <limit lower="-pi/4" upper="pi/4" />
+    <limit lower="-pi/9" upper="pi/9" />
     <dynamics damping="1.657E-2" />
   </joint>
 

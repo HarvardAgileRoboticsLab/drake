@@ -20,7 +20,7 @@
     </visual>
  </link>
 
- <link name="FL1">
+ <link name="L1">
   <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <mass value="0.0001" />
@@ -37,7 +37,7 @@
     </visual>
  </link>
 
- <link name="FL2">
+ <link name="L2">
   <inertial>
       <origin xyz="0.0261 0.9512 -1.6472" rpy="0 0 0" />
       <mass value="0.0676" />
@@ -62,44 +62,34 @@
  </link>
 
 
-
-
-
-
-
-
-
-
-
-  <joint name="FL_swing" type="continuous">
+  <joint name="swing" type="continuous">
     <origin xyz="12.75300579825,  9.91, 0.46" rpy="0 0 0" />
     <parent link="Chassis" />
-    <child link="FL1" />
+    <child link="L1" />
     <axis xyz="0 1 0" />
-    <limit lower="-pi/6" upper="pi/6"/>
-    
+    <limit lower="-pi/9" upper="pi/9"/>    
   </joint>
 
-  <joint name="FL_lift" type="continuous">
+  <joint name="lift" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0" />
-    <parent link="FL1" />
-    <child link="FL2" />
+    <parent link="L1" />
+    <child link="L2" />
     <axis xyz="1 0 0" />
-    <limit lower="0.1259" upper="0.9113"/>
+    <limit lower="0.1695" upper="0.8677"/>
   </joint>
 
 
 <!--- Actuator Inputs -->
 
-<transmission type="SimpleTransmission" name="FLS">
-    <actuator name="uFLS" />
-    <joint name="FL_swing" />
+<transmission type="SimpleTransmission" name="S">
+    <actuator name="uS" />
+    <joint name="swing" />
     <mechanicalReduction>1</mechanicalReduction>
 </transmission>
 
-<transmission type="SimpleTransmission" name="FLL">
-    <actuator name="uFLL" />
-    <joint name="FL_lift" />
+<transmission type="SimpleTransmission" name="L">
+    <actuator name="uL" />
+    <joint name="lift" />
     <mechanicalReduction>1</mechanicalReduction>
 </transmission>
 

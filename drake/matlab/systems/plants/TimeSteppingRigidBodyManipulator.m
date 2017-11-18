@@ -290,7 +290,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     end
 
     function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u)
-        global c_traj beta_traj eta_traj psi_traj
+        global u_traj kl_traj c_traj beta_traj eta_traj psi_traj
       if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
         [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
         return;
@@ -350,8 +350,12 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
           nL = sum([obj.manip.joint_limit_min~=-inf;obj.manip.joint_limit_max~=inf]); % number of joint limits
         end
         nContactPairs = obj.manip.getNumContactPairs;
-%         nP = obj.manip.num_position_constraints;  % number of position constraints
-        nP = numel(obj.valid_loops); 
+        if isprop(obj, 'valid_loops')
+            nP = numel(obj.valid_loops); 
+        else
+            nP = obj.manip.num_position_constraints;  % number of position constraints
+        end
+        
         nV = obj.manip.num_velocity_constraints;
         Big = 1e20;
 
@@ -546,8 +550,10 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
           %   phiP + h*JP*qdn >= 0 && -phiP - h*JP*qdn >= 0
           if (nargout<5)
             [phiP,JP] = obj.manip.positionConstraints(q);
-            phiP = phiP(obj.valid_loops);
-            JP = JP(obj.valid_loops, :);
+            if isprop(obj, 'valid_loops')
+                phiP = phiP(obj.valid_loops);
+                JP = JP(obj.valid_loops, :);
+            end
           else
             [phiP,JP,dJP] = obj.manip.positionConstraints(q);
             [phiP,JP,dJP] = obj.manip.positionConstraints(q);            
@@ -728,7 +734,8 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         % for debugging NEEL
         %z = [h*cL; h*cP; h*cN; h*beta{1}; ...; h*beta{mC}; lambda]
 %         jl_traj = [jl_traj, z(1:nL)/h]; 
-%         kl_traj = [kl_traj, z(nL+(1:nP))/h]; 
+        u_traj = [u_traj, u]; 
+        kl_traj = [kl_traj, z(nL+(1:nP))/h]; 
         
         if nC > 0         
         

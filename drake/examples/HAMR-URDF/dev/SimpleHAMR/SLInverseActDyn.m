@@ -5,7 +5,7 @@ clear; clc; close all;
 urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
 
 % options
-options.terrain = RigidBodyFlatTerrain();
+options.terrain = []; %RigidBodyFlatTerrain();
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
@@ -19,7 +19,7 @@ hamr = HamrTSRBM(urdf, options);
 hamr = compile(hamr);
 
 %% Trajectory
-fname = 'TrajOpt_26-Oct-2017_6_fullRobot'; 
+fname = 'TrajOpt-FixedBody_SimpleSprings_fullRobot'; 
 traj_full = load(fname); 
 
 % Build transmission trajectory
@@ -48,7 +48,7 @@ uu = [uFL(1:2, :); uRL(1:2,:); uFR(1:2,:); uRR(1:2, :)];
 
 %% Build Actuators 
 
-dp.Vb = 300;
+dp.Vb = 200;
 dp.Vg = 0;
 
 nact = 8; 

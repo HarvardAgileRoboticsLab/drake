@@ -199,69 +199,138 @@
 
 
 
-  <joint name="FL_lift" type="continuous">
+  <joint name="FL_swing" type="continuous">
     <origin xyz="12.754659815389999,  9.91, 0.46" rpy="0 0 0" />
     <parent link="Chassis" />
     <child link="FL1" />
-    <axis xyz="1 0 0" />
-    <limit lower="0.1695" upper="0.8677"/>
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/9" upper="pi/9"/>    
+    <dynamics damping="0.0593" />
   </joint>
 
-  <joint name="FL_swing" type="continuous">
+  <joint name="FL_lift" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="FL1" />
     <child link="FL2" />
-    <axis xyz="0 1 0" />
-    <limit lower="-pi/9" upper="pi/9"/>
-  </joint>
-
-  <joint name="RL_lift" type="continuous">
-    <origin xyz="-12.754659815389999,  9.91, 0.46" rpy="0 0 0" />
-    <parent link="Chassis" />
-    <child link="RL1" />
     <axis xyz="1 0 0" />
     <limit lower="0.1695" upper="0.8677"/>
+    <dynamics damping = "0.0680" />
   </joint>
 
   <joint name="RL_swing" type="continuous">
+    <origin xyz="-12.754659815389999,  9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="RL1" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/9" upper="pi/9"/>
+    <dynamics damping="0.0593" />
+  </joint>
+
+  <joint name="RL_lift" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="RL1" />
     <child link="RL2" />
-    <axis xyz="0 1 0" />
-    <limit lower="-pi/9" upper="pi/9"/>
-  </joint>
-
-  <joint name="FR_lift" type="continuous">
-    <origin xyz="12.754659815389999, -9.91, 0.46" rpy="0 0 0" />
-    <parent link="Chassis" />
-    <child link="FR1" />
-    <axis xyz="1 0 0" />
-    <limit lower="-0.8677" upper="-0.1695"/>
+    <axis xyz="1 0 0" />    
+    <limit lower="0.1695" upper="0.8677"/>
+    <dynamics damping = "0.0680" />
   </joint>
 
   <joint name="FR_swing" type="continuous">
+    <origin xyz="12.754659815389999, -9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="FR1" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/9" upper="pi/9"/>    
+    <dynamics damping="0.0593" />
+  </joint>
+
+  <joint name="FR_lift" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="FR1" />
     <child link="FR2" />
-    <axis xyz="0 1 0" />
-    <limit lower="-pi/9" upper="pi/9"/>
-  </joint>
-
-  <joint name="RR_lift" type="continuous">
-    <origin xyz="-12.754659815389999, -9.91, 0.46" rpy="0 0 0" />
-    <parent link="Chassis" />
-    <child link="RR1" />
     <axis xyz="1 0 0" />
     <limit lower="-0.8677" upper="-0.1695"/>
+    <dynamics damping = "0.0680" />
   </joint>
 
   <joint name="RR_swing" type="continuous">
+    <origin xyz="-12.754659815389999, -9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="RR1" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/9" upper="pi/9"/>
+    <dynamics damping="0.0593" />
+  </joint>
+
+  <joint name="RR_lift" type="continuous">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="RR1" />
     <child link="RR2" />
-    <axis xyz="0 1 0" />
-    <limit lower="-pi/9" upper="pi/9"/>
+    <axis xyz="1 0 0" />
+    <limit lower="-0.8677" upper="-0.1695"/>
+    <dynamics damping = "0.0680" />
   </joint>
+
+
+
+<!-- Torsional Springs at Joints -->
+
+ <force_element name="FL_ks">
+  <torsional_spring stiffness="0.5226" rest_angle="0">
+    <joint name="FL_swing" />
+   </torsional_spring>
+ </force_element>
+
+  <force_element name="FL_kl">
+  <torsional_spring stiffness="0.6026" rest_angle="0.520967">
+    <joint name="FL_lift" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RL_ks">
+  <torsional_spring stiffness="0.5226" rest_angle="0">
+    <joint name="RL_swing" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RL_kl">
+  <torsional_spring stiffness="0.6026" rest_angle="0.520967">
+    <joint name="RL_lift" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="FR_ks">
+  <torsional_spring stiffness="0.5226" rest_angle="0">
+    <joint name="FR_swing" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="FR_kl">
+  <torsional_spring stiffness="0.6026" rest_angle="-0.520967">
+    <joint name="FR_lift" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RR_ks">
+  <torsional_spring stiffness="0.5226" rest_angle="0">
+    <joint name="RR_swing" />
+   </torsional_spring>
+ </force_element>
+
+ <force_element name="RR_kl">
+  <torsional_spring stiffness="0.6026" rest_angle="-0.520967">
+    <joint name="RR_lift" />
+   </torsional_spring>
+ </force_element>
+
+
+
+
+
+
+
+
+
 
 
 <!--- Actuator Inputs -->

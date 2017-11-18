@@ -32,9 +32,9 @@ SLSimpleurdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAM
     'urdf','SLSimple_scaled.urdf');
 
 % Initial guess for stiffness and damping
-% init = load('SpringDamper_100Hz_80V_2_2');
-K0 = -rand(numel(SFB_INPUTS), numel(SFB_INPUTS), NK);
-P0 = -rand(numel(SFB_INPUTS), numel(SFB_INPUTS), NP);
+% init = load('SpringDamper_80Hz_100V_2_1');
+K0 = repmat(-rand(1)*eye(numel(SFB_INPUTS)), 1, 1, NK);
+P0 = repmat(-rand(1)*eye(numel(SFB_INPUTS)), 1, 1, NP);
 % K0 = init.K;
 % P0 = init.P; 
 z0 = [K0(:); P0(:)];
@@ -90,11 +90,12 @@ nlp = nlp.setSolverOptions('snopt','MinorIterationsLimit',200000);
 nlp = nlp.setSolverOptions('snopt','IterationsLimit',5000000);
 nlp = nlp.setSolverOptions('snopt','SuperbasicsLimit',1000);
 
-nlp = nlp.setSolverOptions('snopt','MajorOptimalityTolerance',1e-4);
-nlp = nlp.setSolverOptions('snopt','MinorOptimalityTolerance',1e-4);
-nlp = nlp.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-4);
-nlp = nlp.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-4);
-nlp = nlp.setSolverOptions('snopt','constraint_err_tol',1e-6);
+tol = 1e-6; 
+nlp = nlp.setSolverOptions('snopt','MajorOptimalityTolerance',tol);
+nlp = nlp.setSolverOptions('snopt','MinorOptimalityTolerance',tol);
+nlp = nlp.setSolverOptions('snopt','MajorFeasibilityTolerance',tol);
+nlp = nlp.setSolverOptions('snopt','MinorFeasibilityTolerance',tol);
+nlp = nlp.setSolverOptions('snopt','constraint_err_tol',tol);
 
 
 %% Add Constraints and objective
@@ -129,11 +130,12 @@ for i = 1:N
 end
 
 % NSD constraint on K and P
-lb = repmat([0; -Inf], (NK+NP), 1); 
-ub = repmat([Inf; 0], (NK+NP), 1); 
-nsd_constraint = FunctionHandleConstraint(lb, ub, nz, @nsd_const_fun);
-nsd_constraint = nsd_constraint.setName('nsd_constraint');
-nlp = nlp.addConstraint(nsd_constraint, z_inds);
+lb = repmat([-Inf; 0; 0; -Inf], NK+NP, 1); 
+ub = repmat([-1e-6; 0; 0; -1e-6], NK+NP, 1);
+nlp = nlp.addConstraint(BoundingBoxConstraint(lb, ub), z_inds); 
+% nsd_constraint = FunctionHandleConstraint(lb, ub, nz, @nsd_const_fun);
+% nsd_constraint = nsd_constraint.setName('nsd_constraint');
+% nlp = nlp.addConstraint(nsd_constraint, z_inds);
 
 
 
@@ -141,6 +143,7 @@ nlp = nlp.addConstraint(nsd_constraint, z_inds);
 
 tic;
 x0 = [z0; zeros(num_vars-nz, 1)];
+% x0 = init.xf;
 [xf,objval,exitflag,infeasible_constraint_name] = nlp.solve(x0);
 toc
 
@@ -274,59 +277,59 @@ toc
         df = dK;        
     end
 
-    function [f, df] = nsd_const_fun(z)
-        
-        xin = z;
-        [f,df] = nsd_const(xin);
-%         fprintf('NSD Constraint: %f \r', max(abs(f)));
-        
-%         step = 1e-6;
-%         df_fd = zeros(size(df));
-%         dxin = step*eye(length(xin));
-%         for k = 1:length(xin)
-%             df_fd(:,k) = (nsd_const(xin+dxin(:,k)) - nsd_const(xin-dxin(:,k)))/(2*step);
+%     function [f, df] = nsd_const_fun(z)
+%         
+%         xin = z;
+%         [f,df] = nsd_const(xin);
+% %         fprintf('NSD Constraint: %f \r', max(abs(f)));
+%         
+% %         step = 1e-6;
+% %         df_fd = zeros(size(df));
+% %         dxin = step*eye(length(xin));
+% %         for k = 1:length(xin)
+% %             df_fd(:,k) = (nsd_const(xin+dxin(:,k)) - nsd_const(xin-dxin(:,k)))/(2*step);
+% %         end
+% %         
+% %         disp('NSD Const Derivative Error:');
+% %         disp(max(abs(df_fd(:)-df(:))));
+%         
+%     end
+
+%     function [f, df] = nsd_const(xin)
+%         k = xin(1:(NK*nqS^2)); 
+%         p = xin(NK*nqS^2+(1:(NP*nvS^2))); 
+%         
+%         % Constraints on K matrices
+%         fk = zeros(2*NK,1);
+%         dfk = zeros(2*NK, numel(k));        
+%         for ii = 1:NK
+%             % determinant is positive
+%             fk(2*(ii-1) + 1) = k(nqS^2*(ii-1) + 1)*k(nqS^2*(ii-1) + 4) - k(nqS^2*(ii-1) + 2)*k(nqS^2*(ii-1) + 3); % >=0
+%             dfk(2*(ii-1) + 1, nqS^2*(ii-1)+(1:nqS^2)) = [k(nqS^2*(ii-1) + 4), -k(nqS^2*(ii-1) + 3), -k(nqS^2*(ii-1) + 2), k(nqS^2*(ii-1) + 1)]; % <=0
+% 
+%             % trace is negative
+%             fk(2*(ii-1) + 2) = k(nqS^2*(ii-1) + 1) + k(nqS^2*(ii-1) + 4); % <=0
+%             dfk(2*(ii-1) + 2, [nqS^2*(ii-1)+1, nqS^2*(ii-1)+4]) = [1, 1]; 
+%         end
+%             
+%         % Constraints on P matrices
+%         fp = zeros(2*NP,1);
+%         dfp = zeros(2*NP, numel(p));        
+%         for ii = 1:NP
+%             
+%             % determinant is positive
+%             fp(2*(ii-1) + 1) = p(nvS^2*(ii-1) + 1)*p(nvS^2*(ii-1) + 4) - p(nvS^2*(ii-1) + 2)*p(nvS^2*(ii-1) + 3); % >=0
+%             dfp(2*(ii-1) + 1,  nvS^2*(ii-1)+(1:nvS^2)) = [p(nvS^2*(ii-1) + 4), -p(nvS^2*(ii-1) + 3), ...
+%                 -p(nvS^2*(ii-1) + 2), p(nvS^2*(ii-1) + 1)]; % <=0
+% 
+%             % trace is negative
+%             fp(2*(ii-1) + 2) = p(nvS^2*(ii-1) + 1) + p(nvS^2*(ii-1) + 4); % <=0
+%             dfp(2*(ii-1) + 2, [nvS^2*(ii-1)+1, nvS^2*(ii-1)+4]) = [1, 1]; 
 %         end
 %         
-%         disp('NSD Const Derivative Error:');
-%         disp(max(abs(df_fd(:)-df(:))));
-        
-    end
-
-    function [f, df] = nsd_const(xin)
-        k = xin(1:(NK*nqS^2)); 
-        p = xin(NK*nqS^2+(1:(NP*nvS^2))); 
-        
-        % Constraints on K matrices
-        fk = zeros(2*NK,1);
-        dfk = zeros(2*NK, numel(k));        
-        for ii = 1:NK
-            % determinant is positive
-            fk(2*(ii-1) + 1) = k(nqS^2*(ii-1) + 1)*k(nqS^2*(ii-1) + 4) - k(nqS^2*(ii-1) + 2)*k(nqS^2*(ii-1) + 3); % >=0
-            dfk(2*(ii-1) + 1, nqS^2*(ii-1)+(1:nqS^2)) = [k(nqS^2*(ii-1) + 4), -k(nqS^2*(ii-1) + 3), -k(nqS^2*(ii-1) + 2), k(nqS^2*(ii-1) + 1)]; % <=0
-
-            % trace is negative
-            fk(2*(ii-1) + 2) = k(nqS^2*(ii-1) + 1) + k(nqS^2*(ii-1) + 4); % <=0
-            dfk(2*(ii-1) + 2, [nqS^2*(ii-1)+1, nqS^2*(ii-1)+4]) = [1, 1]; 
-        end
-            
-        % Constraints on P matrices
-        fp = zeros(2*NP,1);
-        dfp = zeros(2*NP, numel(p));        
-        for ii = 1:NP
-            
-            % determinant is positive
-            fp(2*(ii-1) + 1) = p(nvS^2*(ii-1) + 1)*p(nvS^2*(ii-1) + 4) - p(nvS^2*(ii-1) + 2)*p(nvS^2*(ii-1) + 3); % >=0
-            dfp(2*(ii-1) + 1,  nvS^2*(ii-1)+(1:nvS^2)) = [p(nvS^2*(ii-1) + 4), -p(nvS^2*(ii-1) + 3), ...
-                -p(nvS^2*(ii-1) + 2), p(nvS^2*(ii-1) + 1)]; % <=0
-
-            % trace is negative
-            fp(2*(ii-1) + 2) = p(nvS^2*(ii-1) + 1) + p(nvS^2*(ii-1) + 4); % <=0
-            dfp(2*(ii-1) + 2, [nvS^2*(ii-1)+1, nvS^2*(ii-1)+4]) = [1, 1]; 
-        end
-        
-        f = [fk; fp]; 
-        df = blkdiag(dfk, dfp);         
-        
-    end
+%         f = [fk; fp]; 
+%         df = blkdiag(dfk, dfp);         
+%         
+%     end
 
 end

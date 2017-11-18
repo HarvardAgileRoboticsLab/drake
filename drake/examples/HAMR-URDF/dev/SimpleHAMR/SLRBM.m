@@ -32,8 +32,8 @@ classdef SLRBM < RigidBodyManipulator
             
             % contact forces
             [phi,~,d] = obj.contactConstraints(getZeroConfiguration(obj));
-            nc = length(phi); obj.nc = nc;
-            nd = 2*length(d); obj.nd = nd;
+            nc = numel(phi); obj.nc = nc;
+            nd = 2*numel(d); obj.nd = nd;
             
             % loop const
             obj.valid_loops = [1;2;8;9;13;15];
@@ -52,17 +52,19 @@ classdef SLRBM < RigidBodyManipulator
             
             xin = [t; x; u];
             [f,df] = dynamics_fun(obj,xin);
-            %             fprintf('Dynamics: %f \r', max(abs(f)));
-            %
-            %             df_fd = zeros(size(df));
-            %             step = sqrt(eps(max(xin)));
-            %             dxin = step*eye(length(xin));
-            %             for k = 1:length(xin)
-            %                 df_fd(:,k) = (dynamics_fun(obj, xin+dxin(:,k)) - dynamics_fun(obj, xin-dxin(:,k)))/(2*step);
-            %             end
-            %
-            %             disp('Dynamics Derivative Error:');
-            %             disp(max(abs(df_fd(:)-df(:))));
+%             fprintf('Dynamics: %f \r', max(abs(f)));
+            
+%             df_fd = zeros(size(df));
+%             step = sqrt(eps(max(xin)));
+%             dxin = step*eye(length(xin));
+%             for k = 1:length(xin)
+%                 df_fd(:,k) = (dynamics_fun(obj, xin+dxin(:,k)) - dynamics_fun(obj, xin-dxin(:,k)))/(2*step);
+%             end
+%             
+%             disp('Dynamics Derivative Error:');
+%             disp(max(abs(df_fd(:)-df(:))));
+%             error = df_fd-df;
+%             error(abs(error) < 1e-6) =0; 
             
         end
         
@@ -82,14 +84,14 @@ classdef SLRBM < RigidBodyManipulator
             u = xin(1+nq+nv+(1:nu));
             l = xin(1+nq+nv+nu+(1:nl));
             c = xin(1+nq+nv+nu+nl+(1:nc));
-            b = xin(1+nq+nv+nu+nc+nl+(1:nd));
-            
+            b = xin(1+nq+nv+nu+nc+nl+(1:nd));          
+                                   
             % Contact basis
             kinopts = struct();
             kinopts.compute_gradients = true;
             kin = obj.doKinematics(q, v, kinopts);
             [~,~,~,~,~,~,~,~,n,D,dn,dD] = obj.contactConstraints(kin);
-            
+
             if isempty(n)
                 n = zeros(0,nq);
                 dn = zeros(0,nq);
@@ -99,35 +101,22 @@ classdef SLRBM < RigidBodyManipulator
             dD = reshape(cell2mat(dD)',nq,nc*nd*nq)';
             
             % loop constraints
-            K = zeros(nl, nq);
-            dK = zeros(nl, nq*nq);
-            
-            loops = obj.loop_const;
-            ct = 1;            
-            for i = 1:numel(loops)
-                [~, Ki, dKi] = loops{i}.eval(q);
-                for j = 1:size(Ki, 1)
-                    ind = (i-1)*size(Ki,1) + j;
-                    if ismember(ind, obj.valid_loops)
-                        K(ct, :) = Ki(j,:);
-                        dK(ct, :) = dKi(j,:);
-                        ct = ct+1; 
-                    end
-                end
-            end
-            
+            [~, K, dK] = obj.positionConstraints(q);
+            K = K(obj.valid_loops, :);             
+           
             if isempty(dK)
                 dK = zeros(0, nq);
             end
-            dK = reshape(dK', nq, nl*nq)'; %
+            dK = reshape(dK(obj.valid_loops, :)', nq, nl*nq)'; %
             
             % Manipulator Dynamics
             [H,C,B,dH,dC,dB] = manipulatorDynamics(obj, q, v);
             
             % form rhs and derivs
-            rhs = B*u - C + K'*l + n'*c + D'*b ;
+            rhs = B*u + K'*l+ n'*c + D'*b - C;
+            
             drhs_dq = kron(u', eye(nv))*dB(:,1:nq) + dn'*c + ...
-                + kron(l', eye(nv))*dK + kron(b', eye(nv))*comm(nd*nc,nv)*dD - dC(:,1:nq);
+                kron(l', eye(nv))*dK + kron(b', eye(nv))*comm(nd*nc,nv)*dD - dC(:,1:nq);
             drhs_dv = kron(u', eye(nv))*dB(:,nq+(1:nv)) - dC(:, nq+(1:nv));
             
             % form Hinv and derivs
@@ -142,7 +131,7 @@ classdef SLRBM < RigidBodyManipulator
             xdot = [v; qddot];
             dxdot = [zeros(nv, 1), zeros(nv, nq), eye(nv), zeros(nv, nu+nl+nc+nd); ... %dv/dt, dv/dq, dv/dv, dv/du, dv/dl, dv/dc, dv/db
                 zeros(nv, 1), kron(rhs', eye(nv))*dHinv_dq + Hinv*drhs_dq, Hinv*drhs_dv, Hinv*B, Hinv*K', Hinv*n', Hinv*D']; %da/dt, da/dq, da/dv, da/du, da/dl, da/dc, da/db
-            
+%             
         end
         %
         
