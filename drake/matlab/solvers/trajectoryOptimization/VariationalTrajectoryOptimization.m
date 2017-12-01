@@ -89,9 +89,11 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         nJL = 0;
                     end
                     
-                    %Kinemaitc loops
-                    nKL = obj.plant.getNumStateConstraints();
-                    obj.unique_const = 1:nKL;
+                    %Kinemaitc loops (FOR HAMR ONLY)
+                    nKL = obj.plant.nl;
+                    obj.unique_const = obj.plant.valid_loops; 
+%                     nKL = obj.plant.getNumStateConstraints();
+%                     obj.unique_const = 1:nKL;
                     %                     [f, df] = obj.plant.positionConstraints(rand(nQ,1));
                     % %                     [~, const_inds] = rref(df);
                     %                     const_inds = 1:numel(f);
@@ -479,7 +481,6 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             b2 = xin(2+3*nQ+2*nU+nC+(1:nC*nD));
             jl2 = xin(2+3*nQ+2*nU+nC+nC*nD+(1:nJL));  % NDD
             kl = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+(1:nKL));
-            %             kl2 = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+nKL+(1:nKL));  % NDD
             
             %Take care of angle wrap-around
             qm1 = obj.qavg(q1,q2);
@@ -488,10 +489,8 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             vm2 = obj.qdiff(q2,q3,h2);
             
             %Discrete Euler-Lagrange equation
-            %             tic
             [D1L1,D2L1,D1D1L1,D1D2L1,D2D2L1,B1,dB1] = obj.LagrangianDerivs(qm1,vm1);
             [D1L2,D2L2,D1D1L2,D1D2L2,D2D2L2,B2,dB2] = obj.LagrangianDerivs(qm2,vm2);
-            %             tdisp=toc; disp(['Lagrange Derivs (x2): ', num2str(tdisp)])
             f_del = (h1/2)*D1L1 + D2L1 + (h2/2)*D1L2 - D2L2;
             
             df_del = [0.5*D1L1 - ((h1/2)*D1D2L1'+D2D2L1)*(vm1/h1), 0.5*D1L2 - ((h2/2)*D1D2L2'-D2D2L2)*(vm2/h2), ... % d/dh1, d/dh2
@@ -556,7 +555,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h;q1;q2;psi;eta;c;b;s];
             [f,df] = obj.midpoint_contact(xin);
-            fprintf('Maximum Slack: %f \r', max(s));
+            fprintf('Slack: %f \r', s);
             
             %             df_fd = zeros(size(df));
             %             dxin = 1e-6*eye(length(xin));
@@ -611,7 +610,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             g2 = mu*c - E*b; % >= 0
             
             %Normal force complementarity
-            l1 = phi'*c - s; % <= 0
+            l1 = 10*phi'*c - s; % <= 0
             
             %Tangential velocity complementarity
             l2 = h*(mu*c - E*b)'*psi - s; % <= 0
@@ -625,7 +624,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             df = [-D*vm/h, -D/h, D/h + kron(vm', eye(nD*nC))*dD, E', -eye(nD*nC), zeros(nD*nC,nC), zeros(nD*nC,nD*nC), zeros(nD*nC,1);
                 zeros(nC,1), zeros(nC,nQ), n, zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,1);
                 zeros(nC,1), zeros(nC,nQ), zeros(nC,nQ), zeros(nC,nD*nC), zeros(nC,nC), mu*eye(nC), -E, zeros(nC,1);
-                0, zeros(1,nQ), c'*n, zeros(1,nC), zeros(1,nD*nC), phi', zeros(1,nD*nC), -1;
+                0, zeros(1,nQ), 10*c'*n, zeros(1,nC), zeros(1,nD*nC), 10*phi', zeros(1,nD*nC), -1;
                 (mu*c - E*b)'*psi, zeros(1,nQ), zeros(1,nQ), h*(mu*c - E*b)', zeros(1,nD*nC), h*psi'*mu, -h*psi'*E, -1;
                 eta'*b, zeros(1,nQ), zeros(1,nQ), zeros(1,nC), h*b', zeros(1,nC), h*eta', -1];
         end
@@ -678,7 +677,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [q1; q2];
 
             [f,df] = obj.midpoint_kinematic_loop_constraint(xin);
-            %             fprintf('Loop: %f \r',  max(abs(f)));            
+            fprintf('Loop: %f \r',  max(abs(f)));
             
             %             df_fd = zeros(size(df));
             %             dxin = 1e-6*eye(length(xin));

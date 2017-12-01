@@ -18,7 +18,7 @@ classdef PZTBender < DrakeSystem
         GF;         % geometry factor
         df;         % free deflection
         kact;       % stiffness
-        bact = 0.02;
+        bact = 0.02; 
         
     end
     
@@ -27,13 +27,14 @@ classdef PZTBender < DrakeSystem
         function obj = PZTBender(name, dp, orien, ap)
             
             input_frame = MultiCoordinateFrame({CoordinateFrame('DriveVoltage', 1, {}, {'Vd'}), ...
-                CoordinateFrame('ActuatorDeflections', 1, {}, {'qact'})}, [1;2]);
+                CoordinateFrame('ActuatorDeflectionandRate', 2, {})}, [1;2;2]);
+            %             input_frame = CoordinateFrame('DriveVoltage', 1, {}, {'Vd'});
             output_frame = CoordinateFrame('ActuatorForce', 1, {}, {'Fact'});
             
             obj = obj@DrakeSystem(...
                 0, ... % number of continuous states
                 0, ... % number of discrete states
-                2, ... % number of inputs: actuator voltage + deflection + def rate
+                3, ... % number of inputs: actuator voltage + deflection + def rate
                 1, ... % number of outputs: Actuator force/stiffness
                 true, ... % direct feedthrough
                 true); % time invariant
@@ -109,7 +110,7 @@ classdef PZTBender < DrakeSystem
             obj.df = df;
             
             obj.kact = 3*(obj.ap.f31_eff_b/obj.ap.f31_eff_f)*(obj.ap.wn/obj.ap.lact^3)*obj.GF*...
-                (df_den/(1+2*obj.ap.lext/obj.ap.lact));
+                (df_den/(1+2*obj.ap.lext/obj.ap.lact));            
             
         end
         
@@ -120,44 +121,38 @@ classdef PZTBender < DrakeSystem
             df_den = (1/3)*obj.ap.Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + 3*obj.tcf*obj.ap.tpzt + ...
                 2*obj.ap.tpzt^2) + obj.ap.Ecf*obj.tcf^3/12;
             df_num = obj.ap.f31_eff_f*obj.ap.tpzt*obj.ap.lact^2*obj.eps*(obj.ap.tpzt+obj.tcf);
-            obj.df = 0.25*(1 + 2*obj.lr)*(df_num/df_den);
+            obj.df = 0.25*(1 + 2*obj.lr)*(df_num/df_den);        
             
             obj.kact = 3*(obj.ap.f31_eff_b/obj.ap.f31_eff_f)*(obj.ap.wn/obj.ap.lact^3)*obj.GF*...
-                (df_den/(1+2*obj.ap.lext/obj.ap.lact));
+                (df_den/(1+2*obj.ap.lext/obj.ap.lact));         
             
         end
+        
         
         
         function u0 = getDefaultInput(obj)
             u0 = [0.5*(obj.Vb - obj.Vg); 0];
         end
         
-        function [u, du] = voltageToForce(obj, q, V)
-            Vt = obj.dp.Vb - V;        % voltage on top plate
-            Vb = V - obj.dp.Vg;        % voltage on bottom plate
+        % here's where the real stuff happens
+        function y = output(obj, t, x, u)
             
-            Ct = (0.75/obj.ap.lact)*(obj.ap.f31_eff_b + (-obj.orien*q/obj.df)*...
-                (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-            Cb = (0.75/obj.ap.lact)*(obj.ap.f31_eff_b + (obj.orien*q/obj.df)*...
-                (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-            
-            dCt_dq = (0.75/obj.ap.lact)*((-obj.orien/obj.df)*(obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-            dCb_dq = (0.75/obj.ap.lact)*((obj.orien/obj.df)*(obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
-            
-            u = obj.orien*(Ct*Vt - Cb*Vb);            
-            du = [obj.orien*(dCt_dq*Vt - dCb_dq*Vb), -obj.orien*(Ct + Cb)];
-            
-            
-        end
-        
-        function [y, dy] = output(obj, t, x, u)            
-            
-            V = u(1);
+            Vt = obj.dp.Vb - u(1);        % voltage on top plate
+            Vb = u(1) - obj.dp.Vg;        % voltage on bottom plate
             q = u(2);
             
-            [u, du] = obj.voltageToForce(q, V);
-            y = u;
-            dy = [zeros(1, numel(t)), zeros(1, numel(x)), du];
+            Ft = (0.75*Vt/obj.ap.lact)*(obj.ap.f31_eff_b + (-obj.orien*q/obj.df)*...
+                (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
+            Fb = (0.75*Vb/obj.ap.lact)*(obj.ap.f31_eff_b + (obj.orien*q/obj.df)*...
+                (obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
+            
+            %  Eave = obj.ap.Emin - (obj.ap.Emax - obj.ap.Emin)*(obj.ap.A0 + obj.ap.A1*cos(obj.ap.omg*obj.orien*q));
+            %
+            %             kact = 0.8*3*(obj.ap.wn/obj.ap.lact^3)*obj.GF*(((1/3)*Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + ...
+            %                 3*obj.tcf*obj.ap.tpzt + 2*obj.ap.tpzt^2)+ obj.ap.Ecf*obj.tcf^3/12)/(1 + 2*obj.lr));
+            %             kact = kact*1e-3;
+            fprintf([obj.name, ': %d s, %f \r'], t,  abs(q)/obj.df);
+            y = obj.orien*(Ft - Fb); % - obj.kact*q;
         end
         
     end
