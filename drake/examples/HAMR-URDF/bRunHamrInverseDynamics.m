@@ -2,8 +2,7 @@ clear; close all; clc;
 
 %% Build Robot
 
-hamr_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
-    'urdf', 'HAMRSimple_scaled.urdf');
+hamr_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMRSimple_scaled.urdf');
 
 % options
 options.terrain = RigidBodyFlatTerrain();
@@ -22,9 +21,9 @@ nc = hamr.getNumContactPairs();
 nd = 4; % pyramidal friction cone approx
 
 %% Load Trajectory
-
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
 fname = 'TrajOpt_MovingBody_SimpleSprings7';
-td = load(fname);
+td = load([save_dir, fname]);
 tt = td.xtraj.getBreaks();
 h = mean(diff(tt));
 
@@ -62,10 +61,6 @@ fkopt = struct();
 fkopt.base_or_frame_id = hamr.findLinkId('Chassis'); 
 for i = 1:numel(tt)
     kinsol = hamr.doKinematics(xx(1:nq, i), zeros(nv,1));
-%     [phi,normal, d] = hamr.contactConstraints(kinsol);
-%     normal
-%     d{1}
-%     d{2}
     for j = 1:nc
         xfoot_body(:,i,j) = hamr.forwardKin(kinsol, hamr.findLinkId(leg_links{j}), pfhamr, fkopt);
     end
@@ -154,4 +149,4 @@ for j = 1:nc
     plot(tf, xfootf(3,:), '--');
 end
 tilefigs;
-save([fname, '_fullRobot'], 'xtraj', 'utraj')
+save([save_dir, fname, '_fullRobot'], 'xtraj', 'utraj')

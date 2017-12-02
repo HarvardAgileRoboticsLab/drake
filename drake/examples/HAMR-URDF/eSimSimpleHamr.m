@@ -9,8 +9,7 @@ options.floating = true;
 options.collision = true;
 options.dt = 1;
 
-urdf_simple = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
-    'urdf', 'HAMRSimple_scaled.urdf');
+urdf_simple = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMRSimple_scaled.urdf');
 
 hamr_simpleTSRBM = HamrSimpleTSRBM(urdf_simple, options);
 % v = hamr_simpleTSRBM.constructVisualizer();

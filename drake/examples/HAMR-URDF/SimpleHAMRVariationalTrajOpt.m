@@ -1,10 +1,9 @@
 function [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj, ...
-    z,F,info,infeasible_constraint_name] = SimpleHAMRVariationalTrajOpt()
+    z,F,info,infeasible_constraint_name] = SimpleHAMRVariationalTrajOpt(save_dir)
 
 % file
-urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
-    'urdf', 'HAMRSimple_scaled.urdf');
+urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMRSimple_scaled.urdf');
 
 % options
 options.terrain = RigidBodyFlatTerrain();
@@ -35,7 +34,8 @@ optimoptions.joint_limit_collisions = false;
 optimoptions.add_ccost = true; 
 
 % ---- Initial Guess ----
-traj0 = load('TrajOpt_MovingBody_SimpleSprings6');
+fname = 'TrajOpt_MovingBody_SimpleSprings7';
+traj0 = load([save_dir, fname]);
 t_init = traj0.xtraj.getBreaks(); 
 N = 1*(numel(t_init)-1)+1; 
 if N < numel(t_init)

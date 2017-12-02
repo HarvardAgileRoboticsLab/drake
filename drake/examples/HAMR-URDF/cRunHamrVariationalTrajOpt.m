@@ -1,11 +1,12 @@
 clear; clc; close all;
 
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
 fname = 'TrajOpt_MovingBody_SimpleSprings7';  
  [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj, ...
-    z,F,info,infeasible_constraint_name] = HAMRVariationalTrajOpt(fname);
+    z,F,info,infeasible_constraint_name] = HAMRVariationalTrajOpt([save_dir, fname]);
 
-save([fname, '_Variational2'], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
+save([save_dir, fname, '_Variational'], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
     'jltraj', 'kltraj', 'straj'); 
 
 %% Playback

@@ -89,17 +89,15 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         nJL = 0;
                     end
                     
-                    %Kinemaitc loops (FOR HAMR ONLY)
-                    nKL = obj.plant.nl;
-                    obj.unique_const = obj.plant.valid_loops; 
-%                     nKL = obj.plant.getNumStateConstraints();
-%                     obj.unique_const = 1:nKL;
-                    %                     [f, df] = obj.plant.positionConstraints(rand(nQ,1));
-                    % %                     [~, const_inds] = rref(df);
-                    %                     const_inds = 1:numel(f);
-                    %                     obj.unique_const = const_inds;
-                    %                     nKL = numel(obj.unique_const);
-                    
+                    %Kinemaitc loops (can pick by adding unique const')
+                    if isprop(obj, 'unique_const')
+                        nKL = obj.plant.nl;
+                        obj.unique_const = obj.plant.valid_loops; 
+                    else
+                        nKL = obj.plant.getNumStateConstraints();
+                        obj.unique_const = 1:nKL;
+                    end
+
                     obj.N = N;
                     obj.nC = nC;
                     obj.nD = nD;
@@ -610,7 +608,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             g2 = mu*c - E*b; % >= 0
             
             %Normal force complementarity
-            l1 = 10*phi'*c - s; % <= 0
+            l1 = 10*phi'*c - s; % <= 0          % HACK!! 
             
             %Tangential velocity complementarity
             l2 = h*(mu*c - E*b)'*psi - s; % <= 0

@@ -4,6 +4,7 @@ global kl_traj jl_traj c_traj beta_traj psi_traj eta_traj
 %% Load Rigid Body
 
 urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
+
 kl_traj = []; 
 jl_traj = []; 
 c_traj = [];
@@ -50,15 +51,6 @@ dp.Vg = 0;
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
-
-% % make lift's double thick
-% tcfL = 2*hr_actuators.dummy_bender(1).tcf;
-% for i = 1:numel(hr_actuators.dummy_bender)
-%     if contains(hr_actuators.names{i}, 'lact')
-%         hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(tcfL);
-%     end
-% end
-
 
 %% Connect system
 

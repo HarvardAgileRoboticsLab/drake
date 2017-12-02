@@ -1,8 +1,7 @@
 function [SL, xtraj,utraj,z,F,info] = SLInverseDynDirtran(tt, urdf, foot, pf, xfoot, ctraj, btraj)
 %% Build Single Leg
 
-sl_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
-    'urdf',[urdf, '.urdf']);
+sl_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf',[urdf, '.urdf']);
 
 % options
 options.terrain = RigidBodyFlatTerrain();

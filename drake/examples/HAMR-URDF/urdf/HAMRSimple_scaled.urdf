@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="../../../meshes/Chassis.obj" scale="1000" />
+        <mesh filename="../meshes/Chassis.obj" scale="1000" />
       </geometry>
       <material name=""> 
         <color rgba="1 1 1 1" />
@@ -205,7 +205,7 @@
     <child link="FL1" />
     <axis xyz="0 1 0" />
     <limit lower="-pi/9" upper="pi/9"/>    
-    <dynamics damping="0.0593" />
+    <dynamics damping="0.0745" />
   </joint>
 
   <joint name="FL_lift" type="continuous">
@@ -214,7 +214,7 @@
     <child link="FL2" />
     <axis xyz="1 0 0" />
     <limit lower="0.1695" upper="0.8677"/>
-    <dynamics damping = "0.0680" />
+    <dynamics damping = "0.0122" />
   </joint>
 
   <joint name="RL_swing" type="continuous">
@@ -223,7 +223,7 @@
     <child link="RL1" />
     <axis xyz="0 1 0" />
     <limit lower="-pi/9" upper="pi/9"/>
-    <dynamics damping="0.0593" />
+    <dynamics damping="0.0745" />
   </joint>
 
   <joint name="RL_lift" type="continuous">
@@ -232,7 +232,7 @@
     <child link="RL2" />
     <axis xyz="1 0 0" />    
     <limit lower="0.1695" upper="0.8677"/>
-    <dynamics damping = "0.0680" />
+    <dynamics damping = "0.0122" />
   </joint> -->
 
   <joint name="FR_swing" type="continuous">
@@ -241,7 +241,7 @@
     <child link="FR1" />
     <axis xyz="0 1 0" />
     <limit lower="-pi/9" upper="pi/9"/>    
-    <dynamics damping="0.0593" />
+    <dynamics damping="0.0745" />
   </joint>
 
   <joint name="FR_lift" type="continuous">
@@ -250,7 +250,7 @@
     <child link="FR2" />
     <axis xyz="1 0 0" />
     <limit lower="-0.8677" upper="-0.1695"/>
-    <dynamics damping = "0.0680" />
+    <dynamics damping = "0.0122" />
   </joint>
 
   <joint name="RR_swing" type="continuous">
@@ -259,7 +259,7 @@
     <child link="RR1" />
     <axis xyz="0 1 0" />
     <limit lower="-pi/9" upper="pi/9"/>
-    <dynamics damping="0.0593" />
+    <dynamics damping="0.0745" />
   </joint>
 
   <joint name="RR_lift" type="continuous">
@@ -268,7 +268,7 @@
     <child link="RR2" />
     <axis xyz="1 0 0" />
     <limit lower="-0.8677" upper="-0.1695"/>
-    <dynamics damping = "0.0680" />
+    <dynamics damping = "0.0122" />
   </joint> 
 
 
@@ -276,49 +276,49 @@
 <!-- Torsional Springs at Joints -->
 
 <force_element name="FL_ks">
-  <torsional_spring stiffness="0.5226" rest_angle="0">
+  <torsional_spring stiffness="0.6680" rest_angle="0">
     <joint name="FL_swing" />
    </torsional_spring>
  </force_element>
 
   <force_element name="FL_kl">
-  <torsional_spring stiffness="0.6026" rest_angle="0.520967">
+  <torsional_spring stiffness="0.8772" rest_angle="0.520967">
     <joint name="FL_lift" />
    </torsional_spring>
  </force_element>
 
  <force_element name="RL_ks">
-  <torsional_spring stiffness="0.5226" rest_angle="0">
+  <torsional_spring stiffness="0.6680" rest_angle="0">
     <joint name="RL_swing" />
    </torsional_spring>
  </force_element>
 
  <force_element name="RL_kl">
-  <torsional_spring stiffness="0.6026" rest_angle="0.520967">
+  <torsional_spring stiffness="0.8772" rest_angle="0.520967">
     <joint name="RL_lift" />
    </torsional_spring>
  </force_element>
 
  <force_element name="FR_ks">
-  <torsional_spring stiffness="0.5226" rest_angle="0">
+  <torsional_spring stiffness="0.6680" rest_angle="0">
     <joint name="FR_swing" />
    </torsional_spring>
  </force_element>
 
  <force_element name="FR_kl">
-  <torsional_spring stiffness="0.6026" rest_angle="-0.520967">
+  <torsional_spring stiffness="0.8772" rest_angle="-0.520967">
     <joint name="FR_lift" />
    </torsional_spring>
  </force_element>
 
  <force_element name="RR_ks">
-  <torsional_spring stiffness="0.5226" rest_angle="0">
+  <torsional_spring stiffness="0.6680" rest_angle="0">
     <joint name="RR_swing" />
    </torsional_spring>
  </force_element>
 
  <force_element name="RR_kl">
-  <torsional_spring stiffness="0.6026" rest_angle="-0.520967">
+  <torsional_spring stiffness="0.8772" rest_angle="-0.520967">
     <joint name="RR_lift" />
    </torsional_spring>
  </force_element>

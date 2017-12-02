@@ -5,8 +5,9 @@ kl_traj = [];
 u_traj = [];
 %% Load Transmission Trajectories
 
+save_dir = '~/home/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
 fname = 'TrajOpt_MovingBody_SimpleSprings7';
-trajTrans = load([fname, '_Variational']);
+trajTrans = load([save_dir, fname, '_Variational']);
 
 xtrajd = trajTrans.xtraj();
 ttd = xtrajd.getBreaks();

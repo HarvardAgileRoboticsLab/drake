@@ -1,4 +1,4 @@
-function [xf,objval,exitflag,infeasible_constraint_name] = SLSimpleFitFootNLP(data, IND, NK, NP)
+function [xf,objval,exitflag,infeasible_constraint_name] = SLSimpleFitNLPFoot(data, IND, xS, NK, NP)
 
 % Load dataset
 N = numel(IND);                                       % Number of points in dataset
@@ -9,7 +9,7 @@ TAU = data.tau(:,IND);
 
 % options
 name = 'FL_scaled';
-SLurdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', 'urdf', [name, '.urdf']);
+SLurdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', [name, '.urdf']);
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
@@ -28,13 +28,12 @@ nl = SL.nl();
 
 %% Build Simple Single Leg
 
-SLSimpleurdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
-    'urdf','SLSimple_scaled.urdf');
+SLSimpleurdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf','SLSimple_scaled.urdf');
 
 % Initial guess for stiffness and damping
 % init = load('SpringDamper_80Hz_100V_2_1');
-K0 = repmat(-rand(1)*eye(numel(SFB_INPUTS)), 1, 1, NK);
-P0 = repmat(-rand(1)*eye(numel(SFB_INPUTS)), 1, 1, NP);
+K0 = repmat(-rand(1)*eye(2), 1, 1, NK);
+P0 = repmat(-rand(1)*eye(2), 1, 1, NP);
 % K0 = init.K;
 % P0 = init.P; 
 z0 = [K0(:); P0(:)];
@@ -53,6 +52,9 @@ nqS = SLSimple.getNumPositions();
 nvS = SLSimple.getNumVelocities();
 naS = SLSimple.getNumPositions();
 nuS = SLSimple.getNumInputs();
+
+qS = reshape(xS(1:N*nqS), nqS, N); 
+vS = reshape(xS(N*nqS+(1:N*nvS)), nvS, N); 
 
 
 %% Define NLP
@@ -119,13 +121,30 @@ for i = 1:N
     % dynamics of simple SL
     nvars2 = naS + nz;
     dynS_constraint = FunctionHandleConstraint(zeros(naS,1), zeros(naS,1), nvars2, ...
-        @(aS, z)dynS_const_fun(aS, z, [XI([SFB_INPUTS; nq+SFB_INPUTS], i); TAU(:,i)]), copt);
+        @(aS, z)dynS_const_fun(aS, z, [qS(:,i); vS(:,i); TAU(:,i)]), copt);
     dynS_constraint = dynS_constraint.setName(sprintf('dynamicS[%d]', i));
     nlp = nlp.addConstraint(dynS_constraint, {aS_inds(:,i); z_inds});
     
     % Objective
-    nlp = nlp.addCost(FunctionHandleObjective(2*naS, @objective_fun), ...
-        {a_inds(SFB_INPUTS, i); aS_inds(:,i)});
+    dkopt.compute_gradients = 'true';
+    kinsol = SL.doKinematics(XI(1:nq, i), XI(nq+(1:nv),i), dkopt); 
+    kinsolS = SLSimple.doKinematics(qS(:, i), vS(:,i), dkopt);     
+    
+    [~, Jfoot, dJfoot] = SL.forwardKin(kinsol, SL.findLinkId(SL.foot), SL.pf);
+    [~, JfootS, dJfootS] = SLSimple.forwardKin(kinsolS, SLSimple.findLinkId('L2'), ...
+        [0 0 -14.988382167532292]'); 
+    
+    dJfoot = reshape(dJfoot', nq, 3*nq)'; %
+    dJfootS = reshape(dJfootS', nqS, 3*nqS)'; %
+    
+    % ma + b form
+    params.b = (kron(XI(nq+(1:nv),i)', eye(3))*dJfoot)*XI(nq+(1:nv),i);
+    params.m = Jfoot;
+    params.bS = (kron(vS(:,i)', eye(3))*dJfootS)*vS(:,i);
+    params.mS = JfootS;
+    
+    nlp = nlp.addCost(FunctionHandleObjective(na + naS, @(a, aS)objective_fun(a, aS, params)), ...
+        {a_inds(:,i); aS_inds(:,i)});
     
 end
 
@@ -143,38 +162,42 @@ nlp = nlp.addConstraint(BoundingBoxConstraint(lb, ub), z_inds);
 
 tic;
 x0 = [z0; zeros(num_vars-nz, 1)];
-% x0 = init.xf;
 [xf,objval,exitflag,infeasible_constraint_name] = nlp.solve(x0);
 toc
 
 %% Objective
-    function [f, df] = objective_fun(adyn, aSdyn)
+    function [f, df] = objective_fun(adyn, aSdyn, params)
         
         xin = [adyn; aSdyn];
-        [f,df] = objective(xin);
+        [f,df] = objective(xin, params);
         fprintf('Objective: %f \r', max(f));
         
 %         step = 1e-6;
 %         df_fd = zeros(size(df));
 %         dxin = step*eye(length(xin));
 %         for k = 1:length(xin)
-%             df_fd(:,k) = (objective(xin+dxin(:,k)) - objective(xin-dxin(:,k)))/(2*step);
+%             df_fd(:,k) = (objective(xin+dxin(:,k), params) - ...
+%                 objective(xin-dxin(:,k), params))/(2*step);
 %         end
 %         
 %         disp('Objective Derivative Error:');
 %         disp(max(abs(df_fd(:)-df(:))));
-        
+%         
     end
 
 
-    function [f, df] = objective(xin)
+    function [f, df] = objective(xin, params)
         
-        a = xin(1:naS);
-        aS = xin(naS+(1:naS));
+        a = xin(1:na);
+        aS = xin(na+(1:naS));
         
-        Q = eye(naS);
-        f = (1/2)*(a - aS)'*Q*(a - aS);
-        df = [(a - aS)'*Q, (aS - a)'*Q];
+        af = (params.m*a + params.b);
+        afS = (params.mS*aS + params.bS);
+        
+        Q = eye(3);
+%         Q(2,2) = 0; 
+        f = (1/2)*(af - afS)'*Q*(af - afS);
+        df = [(af - afS)'*Q*params.m, (afS - af)'*Q*params.mS];
     end
 
 
@@ -182,7 +205,7 @@ toc
         xin = [ak; lk; xk];
         
         [f,df] = dyn_const(xin);
-        fprintf('Full Dynamics: %f \r', max(abs(f)));
+%         fprintf('Full Dynamics: %f \r', max(abs(f)));
         
         %         step = 1e-6;
         %         df_fd = zeros(size(df));
@@ -215,10 +238,10 @@ toc
     end
 
     function [f, df] = dynS_const_fun(aSk, z, xSk)
-        xin = [aSk; z; xSk];
+        xin = [aSk; z];
         
-        [f,df] = dynS_const(xin);
-        fprintf('Simple Dynamics: %f \r', max(abs(f)));
+        [f,df] = dynS_const(xin, xSk);
+%         fprintf('Simple Dynamics: %f \r', max(abs(f)));
         
         %         step = 1e-6;
         %         df_fd = zeros(size(df));
@@ -233,12 +256,12 @@ toc
     end
 
 
-    function [f, df] = dynS_const(xin)
+    function [f, df] = dynS_const(xin, xSk)
         
         ak = xin(1:naS);
         z = xin(naS+(1:nz));
-        xk = xin(naS+nz+(1:(nqS+nvS))) + [SLSimple.q0; 0*SLSimple.q0];
-        tauk = xin(naS+nz+nqS+nvS+(1:nuS));
+        xk = xSk(1:(nqS+nvS));
+        tauk = xSk(nqS+nvS+(1:nuS));
         
         [xkdot, dxkdot_dK, dxkdot_dP] = SLSimple.dynamics_sd_fit([0; xk; tauk; z]);
         f = xkdot(nvS+(1:naS)) - ak;
@@ -250,7 +273,7 @@ toc
         
         xin = [ak; xk];
         [f,df] = acc_const(xin);
-        fprintf('Accleration: %f \r', max(abs(f)));
+%         fprintf('Accleration: %f \r', max(abs(f)));
         
         %         step = 1e-6;
         %         df_fd = zeros(size(df));

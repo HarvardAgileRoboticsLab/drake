@@ -1,10 +1,11 @@
 clear; clc; close all; 
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
 fname = 'TrajOpt_MovingBody_SimpleSprings7'; 
 
 %% Build Robot 
 
 % file
-urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', 'urdf', 'HAMRSimple_scaled.urdf');
+urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMRSimple_scaled.urdf');
 
 % options
 options.terrain = RigidBodyFlatTerrain();
@@ -20,7 +21,7 @@ v = hamr.constructVisualizer();
 
 %%  Plot
 
-load(fname); 
+load([save_dir, fname]); 
 
 nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();

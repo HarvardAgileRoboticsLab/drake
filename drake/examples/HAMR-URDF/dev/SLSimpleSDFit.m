@@ -1,11 +1,11 @@
 clear; clc; close all;
-
+addpath('../')
 datadir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SysIDFiles/';
 dataset = '_40Hz_200V';
 data = load([datadir, 'sysid_traj', dataset, '.mat']);
 
 N0 = find(data.t>=500, 1, 'first');
-N = 500;
+N = 10;
 ds = (numel(data.t) - N0)/N; 
 IND = N0:ds:numel(data.t) ;      % randomly choose indices
 SFB_INPUTS = [3;7];
@@ -17,8 +17,7 @@ NP = 1;
 
 %% Simulate w/ fitted params
 
-sl_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
-    'urdf','SLSimple_scaled.urdf');
+sl_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf','SLSimple_scaled.urdf');
 
 options.k = reshape(xf(1:4*NK), [], NK);
 options.p = reshape(xf(4*NK+(1:4*NP)), [], NP); 
@@ -32,7 +31,7 @@ x0 = SLSimple.getInitialState();
 
 K = reshape(options.k, nqS, nqS, NK);
 P = reshape(options.p, nvS, nvS, NP);
-save(['SpringDamper', dataset '_', num2str(NK), '_', num2str(NP)], 'K', 'P', 'objval'); 
+save([datadir, 'SpringDamper', dataset '_', num2str(NK), '_', num2str(NP)], 'K', 'P', 'objval'); 
 
 t = data.t; 
 tau_traj = PPTrajectory(foh(t, data.tau));

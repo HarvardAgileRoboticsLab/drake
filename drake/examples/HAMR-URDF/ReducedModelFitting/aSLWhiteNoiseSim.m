@@ -1,4 +1,7 @@
 clear; clc; close all;
+addpath('../')
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SysIDFiles/';
+
 global u_traj kl_traj
 u_traj = []; 
 kl_traj = []; 
@@ -18,7 +21,7 @@ band = [0, 2*f1*dt];
 
 % options
 name = 'FL_scaled';
-urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', 'urdf', [name, '.urdf']);
+urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', [name, '.urdf']);
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
 options.use_bullet = false;
@@ -64,9 +67,9 @@ input_select(1).input = act_in.getFrameByName('DriveVoltage');
 
 % mimo outputs
 output_select(1).system = 2;
-output_select(1).output = sl_out.getFrameByName('FrontLeftSingleLegPosition');
+output_select(1).output = sl_out.getFrameByName('RearLeftSingleLegPosition');
 output_select(2).system = 2;
-output_select(2).output = sl_out.getFrameByName('FrontLeftSingleLegVelocity');
+output_select(2).output = sl_out.getFrameByName('RearLeftSingleLegVelocity');
 output_select(3).system = 1;
 output_select(3).output = sl_actuators.getOutputFrame();
 
@@ -141,9 +144,14 @@ for i = 1:N
     q = x(1:nq, i);
     qd = x(nq+(1:nv), i); 
     kinsol = SL.doKinematics(q, qd, struct('compute_gradients', true));
+%     [xf, Jf] = SL.forwardKin(kinsol, SL.findLinkId('FLL4'), zeros(3,1), struct('rotation_type', 1));
+%     [H, C, B] = SL.manipulatorDynamics(q, qd); 
+%     F = pinv(Jf')*B*x(nq+nv+(1:nu),i);
+%     tau(:,i) = F(4:end); 
     [K, dK] = SL.positionConstraints(q);
-    dKUnique = dK([1:2; 8:9; 13, 15], :);
-    Jc = -dKUnique(:,[2:4, 6:8])\dKUnique(:, actuated_dof);
+    dKUnique = dK(SL.valid_loops, :);
+    unactuated_dof = find((1:nq ~= actuated_dof(1)) &  (1:nq ~= actuated_dof(2)))';
+    Jc = -dKUnique(:,unactuated_dof)\dKUnique(:, actuated_dof);
     Jc_phi = Jc([2, 5], :);    
     tau(:,i) = Jc_phi\x(nq+nv+(1:nu),i);    
 end
@@ -161,4 +169,4 @@ plot(t, x(nq+nv+2,:));
 plot(t, tau(2,:)); 
 legend('U', 'Tau')
 
-save('sysid_traj', 't', 'tramp', 'x', 'tau')
+save([save_dir, 'sysid_traj_', name, '_', num2str(f1*1e3), 'Hz_', num2str(dp.Vb), 'V'], 't', 'tramp', 'x', 'tau')
