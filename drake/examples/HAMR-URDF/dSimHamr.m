@@ -1,5 +1,6 @@
 clear; clc; close all;
 global kl_traj jl_traj c_traj beta_traj psi_traj eta_traj
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
 
 %% Load Rigid Body
 
@@ -20,7 +21,7 @@ options.use_bullet = false;
 
 % options to change
 options.dt = 1;
-options.mu = 0.6;
+% options.mu = 0.6;
 gait = 'TROT';
 SAVE_FLAG = 1;
 ISFLOAT = true; % floating (gnd contact) or in air (not floating)
@@ -28,8 +29,7 @@ ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    load q0
-    x0 = q0; 
+    x0 = zeros(76, 1); x0(3) = 12.49; 
     options.terrain = RigidBodyFlatTerrain();
     
 else
@@ -43,50 +43,52 @@ end
 hamr = HamrTSRBM(urdf, options);
 hamr = compile(hamr);
 v = hamr.constructVisualizer();
+% v.inspector(x0); 
 
 %% Build Actuators
-dp.Vb = 150;
-dp.Vg = 0;
-% 
-nact = 8;
-hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+% dp.Vb = 150;
+% dp.Vg = 0;
+% % 
+% nact = 8;
+% hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
+%     'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
 
 %% Connect system
 
 % connections from actuators to hamr
-hr_actuators = hr_actuators.setOutputFrame(hamr.getInputFrame());
-connection1(1).from_output = hr_actuators.getOutputFrame();
-connection1(1).to_input = hamr.getInputFrame();
-
-% connections from hamr to actuators
-hamr_out = hamr.getOutputFrame();
-act_in = hr_actuators.getInputFrame();
-act_in = act_in.replaceFrameNum(2, hamr_out.getFrameByName('ActuatorDeflectionandRate'));
-hr_actuators = hr_actuators.setInputFrame(act_in);
+% hr_actuators = hr_actuators.setOutputFrame(hamr.getInputFrame());
+% connection1(1).from_output = hr_actuators.getOutputFrame();
+% connection1(1).to_input = hamr.getInputFrame();
 % 
-connection2(1).from_output = hamr_out.getFrameByName('ActuatorDeflectionandRate');
-connection2(1).to_input = act_in.getFrameByName('ActuatorDeflectionandRate');
-
-% mimo inputs
-input_select(1).system = 1;
-input_select(1).input = act_in.getFrameByName('DriveVoltage');
-
-% mimo outputs
-output_select(1).system = 2;
-output_select(1).output = hamr_out.getFrameByName('HamrPosition');
-output_select(2).system = 2;
-output_select(2).output = hamr_out.getFrameByName('HamrVelocity');
-output_select(3).system = 1;
-output_select(3).output = hr_actuators.getOutputFrame();
-
-hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
-    input_select, output_select);
+% % connections from hamr to actuators
+% hamr_out = hamr.getOutputFrame();
+% act_in = hr_actuators.getInputFrame();
+% act_in = act_in.replaceFrameNum(2, hamr_out.getFrameByName('ActuatorDeflectionandRate'));
+% hr_actuators = hr_actuators.setInputFrame(act_in);
+% % 
+% connection2(1).from_output = hamr_out.getFrameByName('ActuatorDeflectionandRate');
+% connection2(1).to_input = act_in.getFrameByName('ActuatorDeflectionandRate');
+% 
+% % mimo inputs
+% input_select(1).system = 1;
+% input_select(1).input = act_in.getFrameByName('DriveVoltage');
+% 
+% % mimo outputs
+% output_select(1).system = 2;
+% output_select(1).output = hamr_out.getFrameByName('HamrPosition');
+% output_select(2).system = 2;
+% output_select(2).output = hamr_out.getFrameByName('HamrVelocity');
+% output_select(3).system = 1;
+% output_select(3).output = hr_actuators.getOutputFrame();
+% 
+% hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
+%     input_select, output_select);
 
 %% Build (open-loop) control input
 
-fd = 0.001;         % drive frequency (Hz)
+fd = 0.01;         % drive frequency (Hz)
 tsim = 1e3; 
+Fmax = 0.2; 
 
 t = 0:options.dt:tsim;
 
@@ -101,42 +103,42 @@ t = 0:options.dt:tsim;
 
 switch gait
     case 'TROT'
-        Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FLlift
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RLSwing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % RLLift
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);                % FRswing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FRlift
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + 3*pi/2);              % RRSwing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                      % RRLift
+        uu = [Fmax*sin(2*pi*fd*t + pi/2);            % FLswing
+            Fmax*sin(2*pi*fd*t);                       % FLlift
+            Fmax*sin(2*pi*fd*t + pi/2);              % RLSwing
+            Fmax*sin(2*pi*fd*t + pi);                       % RLLift
+            Fmax*sin(2*pi*fd*t + pi/2);                % FRswing
+            Fmax*sin(2*pi*fd*t);                       % FRlift
+            Fmax*sin(2*pi*fd*t + pi/2);                % RRSwing
+            Fmax*sin(2*pi*fd*t + pi)];               % RRLift
     case 'PRONK'
-        Vact = [0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);            % FLswing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t);                       % FLlift
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi/2);                % RLSwing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi);                  % RLLift
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi/2);                % FRswing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t + pi);                       % FRlift
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t - pi/2);                % RRSwing
-            0.5*(dp.Vb-dp.Vg)*sin(2*pi*fd*t)];                 % RRLift
+        uu = [Fmax*sin(2*pi*fd*t + pi/2);            % FLswing
+            Fmax*sin(2*pi*fd*t);                       % FLlift
+            Fmax*sin(2*pi*fd*t + pi/2);                % RLSwing
+            Fmax*sin(2*pi*fd*t + pi);                  % RLLift
+            Fmax*sin(2*pi*fd*t - pi/2);                % FRswing
+            Fmax*sin(2*pi*fd*t + pi);                       % FRlift
+            Fmax*sin(2*pi*fd*t - pi/2);                % RRSwing
+            Fmax*sin(2*pi*fd*t)];                 % RRLift
     otherwise
-        Vact = zeros(8, numel(t));
+        uu = zeros(8, numel(t));
 end
 
 % ramp
 tramp = 1/fd;
 ramp = t/tramp; ramp(t >= tramp) = 1;
 
-Vact = bsxfun(@times, ramp, Vact) + 0.5*(dp.Vb - dp.Vg);
-u = PPTrajectory(foh(t, Vact));
-u = setOutputFrame(u, hamrWact.getInputFrame());
+uu = bsxfun(@times, ramp, uu); %+ 0.5*(dp.Vb - dp.Vg);
+u = PPTrajectory(foh(t, uu));
+u = setOutputFrame(u, hamr.getInputFrame());
 
 figure(1); clf;
-plot(t, Vact(1,:), t, Vact(2,:), '--');
+plot(t, uu(1,:), t, uu(2,:), '--');
 legend('Swing Drive', 'Lift Drive')
 
 %% Simulate Open loop
 
-hamr_OL = cascade(u, hamrWact);
+hamr_OL = cascade(u, hamr);
 nQ = hamr.getNumPositions(); 
 x0_hat = hamr.getManipulator.positionConstraints(x0); 
 [tf, err_str] = valuecheck(positionConstraints(hamr,x0),zeros(72,1),1e-6);
@@ -165,7 +167,7 @@ end
 tt = xtraj.getBreaks();
 yy = xtraj.eval(tt);
 xx = yy(1:2*nQ,:); 
-uu = yy(2*nQ+1:end,:);
+% uu = yy(2*nQ+1:end,:);
 
 act_dof = hamr.getActuatedJoints();
 ndof = hamr.getNumDiscStates();
@@ -177,13 +179,12 @@ title_str = {'Front Left Swing', 'Front Left Lift', ...
 figure(2); clf; hold on;
 for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str(i))
-    yyaxis left; hold on; plot(tt, yy(ndof+i,:), 'b')
+    yyaxis left; hold on; plot(tt, uu(i,:))
 %     yyaxis left; plot(tt, yy(act_dof(i), :)*1e3); 
 %     yyaxis right; plot(tt, Vact(i,:)); 
 %     legend('Deflection', 'Force')
-    yyaxis right; hold on; plot(tt, yy(act_dof(i), :)*1e3, 'r--', ...
-        t/1000, Vact(i,:) - mean(Vact(i,:)), 'r')
-    legend('Force', 'Deflection', 'Drive')
+    yyaxis right; hold on; plot(tt, yy(act_dof(i), :)*1e3)
+    legend('Force', 'Deflection')
 end
 
 lp_b = [0, 7.540, -11.350;
@@ -242,10 +243,9 @@ if ISFLOAT
 end
 
 %% saving
-savedir = '';
 
 if SAVE_FLAG
-    fname = [gait, '_', num2str(dp.Vb) 'V_', num2str(1e3*fd), 'Hz_', num2str(options.mu*100), '.mat'];
+    fname = [gait, '_', num2str(Fmax) 'N_', num2str(1e3*fd), 'Hz' '.mat'];
     disp(['Saving as ', fname]);
-    save([savedir, fname], 'tt', 'xx', 'uu', 'kl_traj', 'jl_traj', 'c_traj', 'beta_traj', 'eta_traj', 'psi_traj', 'Vact');
+    save([save_dir, fname], 'tt', 'xx', 'uu', 'kl_traj', 'jl_traj', 'c_traj', 'beta_traj', 'eta_traj', 'psi_traj');
 end

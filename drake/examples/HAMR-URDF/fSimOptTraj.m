@@ -1,13 +1,12 @@
 clear; clc; close all;
-global u_traj kl_traj
-
-kl_traj = [];
+global u_traj
+% kl_traj = [];
 u_traj = [];
 %% Load Transmission Trajectories
 
-save_dir = '~/home/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
-fname = 'TrajOpt_MovingBody_SimpleSprings7';
-trajTrans = load([save_dir, fname, '_Variational']);
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
+fname = 'TROT_0.2N_10Hz';
+trajTrans = load([save_dir, fname, '_Variational.mat']);
 
 xtrajd = trajTrans.xtraj();
 ttd = xtrajd.getBreaks();
@@ -36,6 +35,7 @@ options.dt = 0.5; %0.1;
 hamr = HamrTSRBM(urdf, options);
 hamr = compile(hamr);
 nq = hamr.getNumPositions(); 
+
 v = hamr.constructVisualizer(); 
 
 %% Build OL Inputs and IC
@@ -52,15 +52,14 @@ hamr_OL = cascade(utraj, hamr);
 xtraj_sim = simulate(hamr_OL, [0 ncyc*ttd(end)], x0);
 
 %% Simulate Closed Loop
-kp = 2; 
-kd = 0.3; 
+kp = 0.5; 
+kd = 0.05; %0.3; 
 
-qa = hamr.getActuatedJoints();
-xxTransA = xxd([qa; nq+qa], :);
-xtrajA = PPTrajectory(foh(0:hhd:(ncyc*ttd(end) - hhd), ...
-    repmat(xxTransA(:,1:end-1), 1, ncyc)));
+% qa = hamr.getActuatedJoints();
+% xtrajA = PPTrajectory(foh(0:hhd:(ncyc*ttd(end) - hhd), ...
+%     repmat(xxTransA(:,1:end-1), 1, ncyc)));
 
-PDTracking = HAMRPDTracking(hamr, utraj, xtrajA, kp, kd); 
+PDTracking = HAMRPDTracking(hamr, utraj, xtrajd, kp, kd); 
 hamr_CL = feedback(hamr, PDTracking); 
 
 xtraj_sim_CL = simulate(hamr_CL, [0, ncyc*ttd(end)], x0);
@@ -88,6 +87,12 @@ for i = 1:numel(act_dof)
     legend('OL Inputs', 'CL Inputs', 'Desired Inputs');
 end
 
+% figure(100); clf; hold on;
+% for i = 1:numel(act_dof)
+%      subplot(4,2,i); hold on; title(title_str{i})
+%      yyaxis left; plot(ttd, xxd(act_dof(i), :));
+%     yyaxis right; plot(ttd+hhd/2, uu(i, :));
+% end
 
 figure(2); clf; hold on;
 for i = 1:numel(act_dof)
@@ -184,7 +189,12 @@ end
 tilefigs;
 
 %%
+% xtraj_scaled = DTTrajectory(xtraj_sim.getBreaks()*1e-3, xtraj_sim.eval(xtraj_sim.getBreaks()));
+% xtraj_scaled = xtraj_scaled.setOutputFrame(xtraj_sim.getOutputFrame());
+% options.slider = true;
+% v.playback(xtraj_scaled, options);
 xtraj_scaled = DTTrajectory(xtraj_sim_CL.getBreaks()*1e-3, xtraj_sim_CL.eval(xtraj_sim_CL.getBreaks()));
 xtraj_scaled = xtraj_scaled.setOutputFrame(xtraj_sim_CL.getOutputFrame());
 options.slider = true;
 v.playback(xtraj_scaled, options);
+

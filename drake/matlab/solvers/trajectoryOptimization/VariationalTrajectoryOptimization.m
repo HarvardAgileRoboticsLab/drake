@@ -89,8 +89,8 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                         nJL = 0;
                     end
                     
-                    %Kinemaitc loops (can pick by adding unique const')
-                    if isprop(obj, 'unique_const')
+                    %Kinemaitc loops (can pick by adding valid_loop')
+                    if isprop(obj.plant, 'valid_loops')
                         nKL = obj.plant.nl;
                         obj.unique_const = obj.plant.valid_loops; 
                     else
@@ -608,7 +608,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             g2 = mu*c - E*b; % >= 0
             
             %Normal force complementarity
-            l1 = 10*phi'*c - s; % <= 0          % HACK!! 
+            l1 =10*(phi'*c - s); % <= 0          % HACK!! 
             
             %Tangential velocity complementarity
             l2 = h*(mu*c - E*b)'*psi - s; % <= 0
@@ -622,7 +622,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             df = [-D*vm/h, -D/h, D/h + kron(vm', eye(nD*nC))*dD, E', -eye(nD*nC), zeros(nD*nC,nC), zeros(nD*nC,nD*nC), zeros(nD*nC,1);
                 zeros(nC,1), zeros(nC,nQ), n, zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,1);
                 zeros(nC,1), zeros(nC,nQ), zeros(nC,nQ), zeros(nC,nD*nC), zeros(nC,nC), mu*eye(nC), -E, zeros(nC,1);
-                0, zeros(1,nQ), 10*c'*n, zeros(1,nC), zeros(1,nD*nC), 10*phi', zeros(1,nD*nC), -1;
+                0, zeros(1,nQ), 10*c'*n, zeros(1,nC), zeros(1,nD*nC), 10*phi', zeros(1,nD*nC), -10;
                 (mu*c - E*b)'*psi, zeros(1,nQ), zeros(1,nQ), h*(mu*c - E*b)', zeros(1,nD*nC), h*psi'*mu, -h*psi'*E, -1;
                 eta'*b, zeros(1,nQ), zeros(1,nQ), zeros(1,nC), h*b', zeros(1,nC), h*eta', -1];
         end

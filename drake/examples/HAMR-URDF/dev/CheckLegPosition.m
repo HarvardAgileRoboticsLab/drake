@@ -1,8 +1,7 @@
 clear; close all; clc;
 
 %%
-hamr1_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'dev', 'SimpleHAMR', ...
-    'urdf', 'HAMRSimple_scaled.urdf');
+hamr1_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'FL_scaled.urdf');
 % options
 % options.terrain = RigidBodyFlatTerrain(); 
 options.ignore_self_collisions = true;
@@ -29,12 +28,12 @@ v.inspector(x0);
 
 fkoptSL.base_or_frame_id = hamr1.findLinkId('Chassis');
 kinsoliSL = hamr1.doKinematics(x0(1:nq), x0(1:nq)*0);
-% xfootiSL = hamr1.forwardKin(kinsoliSL, hamr1.findLinkId('FLL4'), pfSL , fkoptSL); 
+xfootiSL = hamr1.forwardKin(kinsoliSL, hamr1.findLinkId('FLL4'), pfSL , fkoptSL); 
 
-hamr1.getMass()
+% hamr1.getMass()
 
 %%
-hamr_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
+hamr_urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMRSimple_scaled.urdf');
 
 % options
 % options.terrain = RigidBodyFlatTerrain(); 
@@ -58,7 +57,7 @@ pf = [0 0 -14.988382167532292]'; % position of foot in local frame
 fkopt.base_or_frame_id = hamr.findLinkId('Chassis');
 
 kinsoli = hamr.doKinematics(x0(1:nq), 0*x0(1:nq));
-% xfootiHAMR = hamr.forwardKin(kinsoli, hamr.findLinkId('FL2'), pf, fkopt); 
+xfootiHAMR = hamr.forwardKin(kinsoli, hamr.findLinkId('FL2'), pf, fkopt); 
 
-hamr.getMass
-% xfootiSL - xfootiHAMR
+% hamr.getMass
+xfootiSL - xfootiHAMR

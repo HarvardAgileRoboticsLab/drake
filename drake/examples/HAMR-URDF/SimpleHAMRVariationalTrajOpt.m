@@ -29,50 +29,50 @@ umin = -Vlim*V2Tau*ones(nu,1);
 umax = Vlim*V2Tau*ones(nu, 1);
 
 % --- Initialize TrajOpt---
-optimoptions.s_weight = 1200;
+optimoptions.s_weight = 200;
 optimoptions.joint_limit_collisions = false; 
 optimoptions.add_ccost = true; 
 
 % ---- Initial Guess ----
-fname = 'TrajOpt_MovingBody_SimpleSprings7';
-traj0 = load([save_dir, fname]);
-t_init = traj0.xtraj.getBreaks(); 
-N = 1*(numel(t_init)-1)+1; 
-if N < numel(t_init)
-    T = t_init(N); 
-else 
-    T = t_init(end);
-end
-
-t_init = linspace(0, T, N); 
-x0 = traj0.xtraj.eval(t_init(1));
-x1 = traj0.xtraj.eval(t_init(N)); 
-q1 = x1(1:nq); 
-traj_init.x = traj0.xtraj;
-traj_init.u = traj0.utraj;
-traj_init.c = traj0.ctraj;
-traj_init.b = traj0.btraj;
-traj_init.eta = traj0.etatraj;
-traj_init.psi = traj0.psitraj;
+% fname = 'TrajOpt_MovingBody_SimpleSprings8';
+% traj0 = load([save_dir, fname]);
+% t_init = traj0.xtraj.getBreaks(); 
+% N = 1*(numel(t_init)-1)+1; 
+% if N < numel(t_init)
+%     T = t_init(N); 
+% else 
+%     T = t_init(end);
+% end
+% 
+% t_init = linspace(0, T, N); 
+% x0 = traj0.xtraj.eval(t_init(1)); 
+% x1 = traj0.xtraj.eval(t_init(N)); 
+% q1 = x1(1:nq); q1(1) = q1(1); 
+% traj_init.x = traj0.xtraj;
+% traj_init.u = traj0.utraj;
+% traj_init.c = traj0.ctraj;
+% traj_init.b = traj0.btraj;
+% traj_init.eta = traj0.etatraj;
+% traj_init.psi = traj0.psitraj;
 % traj_init.s = traj0.straj;
 
 % -- Initialize Traj Opt ---% 
 
-% T = 100;
-% N = 21;
-% x0 = hamr.getInitialState();
-% x1 = x0; x1(1) = x1(1); q1 = x1(1:nq);
+T = 200;
+N = 42;
+x0 = hamr.getInitialState();
+x1 = x0; x1(1) = x1(1)+30; q1 = x1(1:nq);
 
 T_span = [T T];
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
  
-% t_init = linspace(0,T,N);
-% traj_init.x = PPTrajectory(foh([0 T],[x0, x1]));
-% traj_init.u = PPTrajectory(zoh(t_init, 0.001*randn(nu,N)));
-% traj_init.c = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
-% traj_init.b = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
-% traj_init.psi = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
-% traj_init.eta =  PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
+t_init = linspace(0,T,N);
+traj_init.x = PPTrajectory(foh([0 T],[x0, x1]));
+traj_init.u = PPTrajectory(zoh(t_init, 0.001*randn(nu,N)));
+traj_init.c = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
+traj_init.b = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
+traj_init.psi = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
+traj_init.eta =  PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
 
 
 % -- State Costs ---%
@@ -98,13 +98,13 @@ state_cost.RR_lift = 0; %(9/pi)^2;
 state_cost.RR_swing = 0; %(9/pi)^2;
 
 state_cost = double(state_cost);
-state_cost(nq+(1:nv)) = 0; 
+% state_cost(nq+(1:nv)) = 0; 
 Q = diag(state_cost); 
 
 % --- Cost Functions ---%
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
 traj_opt = traj_opt.addRunningCost(@lift_cost_fun);
-traj_opt = traj_opt.addFinalCost(@final_cost_fun); 
+% traj_opt = traj_opt.addFinalCost(@final_cost_fun); 
 
 % -- State Constraints ---%
 [qmin, qmax] = hamr.getJointLimits(); 
@@ -114,7 +114,7 @@ zlb = x0(3) - 1;
 zub = x0(3) + 1;
 traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(zlb, zub),1:N, 3);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1:nq)),1);
-traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q1(1:2)), N, 1:2);
+traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(q1(1:2)-2,q1(1:2)+2), N, 1:2);
 traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(x0(nq+(1:nv))),1);
 
 % Input Constraint 
@@ -126,9 +126,8 @@ traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 traj_opt = traj_opt.setSolver('snopt');
 traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',10000);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
-traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',5000000);
+traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',10000000);
 traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
-
 traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-6);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-6);
 traj_opt = traj_opt.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-6);
@@ -142,11 +141,13 @@ tic
 toc
 
     function [f,df] = running_cost_fun(h,x,u)
-        ulim = Vlim*V2Tau; 
-        R = (1/ulim)^2*eye(nu);
-        g = (1/2)*(x-x1)'*Q*(x-x1) + (1/2)*u'*R*u;
+        ugain = 10*Vlim*V2Tau; 
+        R = (1/ugain)^2*eye(nu);
+        
+        xd = [x1(1); x0(2:end)];
+        g = (1/2)*(x-xd)'*Q*(x-xd) + (1/2)*u'*R*u;
         f = h*g;
-        df = [g, h*(x-x1)'*Q, h*u'*R];
+        df = [g, h*(x-xd)'*Q, h*u'*R];
     end
 
     function [f, df] = lift_cost_fun(h, x, u)
@@ -164,7 +165,6 @@ toc
 %         disp(max(abs(df_fd(:)-df(:))));        
     end            
    
-
     function [f, df] = lift_cost(xin) 
         h = xin(1); 
         q = xin(1+(1:nq));
@@ -173,9 +173,9 @@ toc
         kinsol = hamr.doKinematics(q, qd, struct('compute_gradients', true)); 
         [phi,~,~,~,~,~,~,~,n] = hamr.contactConstraints(kinsol);        
  
-%         a = -1; 
-%         lc = a*ones(1,numel(phi)); 
-        lc = [-1, -0.1, -1, -0.1]; 
+        a = -0.2; 
+        lc = a*ones(1,numel(phi)); 
+%         lc = [-1, -1, -1, -1]; 
 %         lc([8, 10]) = -10; 
 %         lc([12, 14]) = 10; 
 
@@ -183,13 +183,12 @@ toc
         df = [0, lc*n, zeros(1,nv), zeros(1, nu)]; 
 
     end
-
-    function [f,df] = final_cost_fun(tf,x)
-        a = 10;
-        f = a*x(5)^2;
-        df = zeros(1, nx+1);
-        df(6) = 2*a*x(5);
-    end
+%     function [f,df] = final_cost_fun(tf,x).
+%         a = 20;
+%         f = a*x(5)^2;
+%         df = zeros(1, nx+1);
+%         df(6) = 2*a*x(5);
+%     end
 
     function displayTraj(h,x,u)
         disp('Displaying Trajectory...')

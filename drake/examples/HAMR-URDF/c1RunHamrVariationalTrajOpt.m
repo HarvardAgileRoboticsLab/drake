@@ -1,44 +1,40 @@
 clear; clc; close all;
 
-save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
-fname = 'TrajOpt_MovingBody_SimpleSprings10';  
+load_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
+fname = 'TROT_0.2N_10Hz.mat';  
+sim_traj = load([load_dir, fname]); 
+sim_tt = sim_traj.tt; 
+sim_hh = mean(diff(sim_tt)); 
+T = sim_tt(end); 
 
-%% Build Simple Robot 
+% last cycle
+tokens = strsplit(fname, '_'); 
+freq = str2double(tokens{3}(1:end-6)); 
+nc = T*freq*1e-3; 
+nCF0 = find(sim_tt >= (nc-1)/freq/1e-3, 1, 'first');
+nCF1 = numel(sim_tt); 
 
-% file
-urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMRSimple_scaled.urdf');
+% zero out starting x and y pos
+xx_sim = sim_traj.xx(:, nCF0:nCF1);
+xx_sim0 = 0*xx_sim(:,1); xx_sim0(1:2) = xx_sim(1:2, 1); 
 
-% options
-options.terrain = RigidBodyFlatTerrain();
-options.ignore_self_collisions = true;
-options.collision_meshes = false;
-options.use_bullet = false;
-options.floating = true;
-options.collision = true;
+xx_sim = bsxfun(@minus, xx_sim, xx_sim0); 
 
-hamrSimple = HAMRSimpleRBM(urdf,options);
-nqS = hamrSimple.getNumPositions; 
-nvS = hamrSimple.getNumVelocities; 
-
-%% Load Simple trajectory 
-
-SimpleTraj = load([save_dir, fname]); 
-ttSimple = SimpleTraj.xtraj.getBreaks(); 
-xxSimple = SimpleTraj.xtraj.eval(ttSimple); 
-phiS = zeros(4, numel(ttSimple)); 
-
-for i = 1:numel(ttSimple)
-    qS = xxSimple(1:nqS, i);
-    qdS = xxSimple(nqS+(1:nvS), i);
-    kinsol = hamrSimple.doKinematics(qS, qdS);
-    phiS(:,i) = hamrSimple.contactConstraints(kinsol, false);
-end
+traj_init.t = sim_tt(nCF0:nCF1) - sim_tt(nCF0);
+traj_init.x = PPTrajectory(foh(traj_init.t, xx_sim)); 
+traj_init.u = PPTrajectory(zoh(traj_init.t + sim_hh/2, sim_traj.uu(:, nCF0:nCF1))); 
+traj_init.c = PPTrajectory(zoh(traj_init.t + sim_hh/2, sim_traj.c_traj(:, nCF0:nCF1))); 
+traj_init.b = PPTrajectory(zoh(traj_init.t + sim_hh/2, sim_traj.beta_traj(:, nCF0:nCF1))); 
+traj_init.psi = PPTrajectory(zoh(traj_init.t + sim_hh/2, sim_traj.psi_traj(:, nCF0:nCF1))); 
+traj_init.eta =  PPTrajectory(zoh(traj_init.t + sim_hh/2, sim_traj.eta_traj(:, nCF0:nCF1))); 
+traj_init.kl =  PPTrajectory(zoh(traj_init.t + sim_hh/2, sim_traj.kl_traj(:, nCF0:nCF1))); 
 
 %% Optimize
 
  [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj, ...
-    z,F,info,infeasible_constraint_name] = HAMRVariationalTrajOpt([save_dir, fname], phiS);
+    z,F,info,infeasible_constraint_name] = HAMRVariationalPeriodicTrajOptWS(traj_init);
 
 save([save_dir, fname, '_Variational'], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
     'jltraj', 'kltraj', 'straj'); 
@@ -58,7 +54,6 @@ nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();
 nx = nq+nv;
 nu = hamr.getNumInputs();
-
 
 hh = mean(diff(tt))/2; 
 yy = xtraj.eval(tt);

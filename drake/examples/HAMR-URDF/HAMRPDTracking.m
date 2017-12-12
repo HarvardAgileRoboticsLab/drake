@@ -38,22 +38,82 @@ classdef HAMRPDTracking < DrakeSystem
         end
         
         
+        %         function y = output(obj, t, ~, x)
+        %
+        %             u0 = obj.u0.eval(t);
+        %             x_des = obj.x_des.eval(t);
+        %             x_hat = x([obj.qa; obj.nq+obj.qa]);
+        %
+        %             err = x_des - x_hat;
+        %
+        %             y = u0 + [obj.Kp, obj.Kd]*err;
+        %
+        % %             disp(
+        %
+        %             y(y > 0.3) = 0.3;
+        %             y(y < -0.3) = -0.3;
+        %
+        %         end
+        
+        
         function y = output(obj, t, ~, x)
             
+            dim = 3; % 3D
             u0 = obj.u0.eval(t);
+            nq = obj.robot.getNumPositions();
+            nv = obj.robot.getNumVelocities();
+            nc = obj.robot.getNumContactPairs();
+            
             x_des = obj.x_des.eval(t);
-            x_hat = x([obj.qa; obj.nq+obj.qa]);
+            q_des = x_des(1:nq);
+            qd_des = x_des(nq+(1:nv));            
+            qleg_des = zeros(dim,  nc);
+            vleg_des = qleg_des;
             
-            err = x_des - x_hat;
+           fkopt.base_or_frame_id = obj.robot.findLinkId('Chassis');  
+            kinsol_des = obj.robot.doKinematics(q_des, qd_des);
+            for i = 1:nc
+                [qleg_des(:, i), Jleg_des] = obj.robot.forwardKin(kinsol_des, ...
+                    obj.robot.findLinkId(obj.robot.legs{i}), obj.robot.pfFull(i,:)', fkopt);
+                vleg_des(:,i) = Jleg_des*qd_des;
+            end
             
-            y = u0 + [obj.Kp, obj.Kd]*err;
+            q = x(1:nq);
+            qd = x(nq+(1:nv));        
+            qleg = zeros(dim, nc);
+            vleg = qleg;
             
-%             disp(
+            kinsol = obj.robot.doKinematics(q, qd);     
+            for i = 1:nc
+                [qleg(:, i), Jleg] = obj.robot.forwardKin(kinsol, ...
+                    obj.robot.findLinkId(obj.robot.legs{i}), obj.robot.pfFull(i,:)', fkopt);
+                vleg(:,i) = Jleg*qd;
+            end
+            
+            
+            q_err = qleg_des([1,3], :) - qleg([1,3], :);
+            v_err = vleg_des([1,3], :) - vleg([1,3], :);
+            fprintf('Leg Error: %f at %f sec \r', max(abs(q_err(:))), t)
+            
+            Kp = obj.Kp;     
+            Kp([1, 6, 7, 8], :) = -Kp([1, 6, 7, 8], :);
+%             Kp(1:2:end) = 0; 
+            
+            Kd = obj.Kd;                
+            Kd([1, 6, 7, 8], :) = -Kd([1, 6, 7, 8], :);
+%             Kd(1:2:end) = 0; 
+
+                        
+            y = u0 + Kp*q_err(:) + Kd*v_err(:);
+            
+            %             disp(
             
             y(y > 0.3) = 0.3;
-            y(y < -0.3) = -0.3;             
+            y(y < -0.3) = -0.3;
             
         end
+        
+        
     end
     
 end

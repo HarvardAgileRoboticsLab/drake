@@ -1,6 +1,6 @@
 clear; clc; close all; 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
-fname = 'TrajOpt_MovingBody_SimpleSprings7'; 
+fname = 'TrajOpt_MovingBody_SimpleSprings9'; 
 
 %% Build Robot 
 
@@ -93,8 +93,8 @@ subplot(2,1,1); hold on;
 for i = 1:numel(tt)
     nc(i) = phi(:,i)'*cc(:,i); 
 end
-yyaxis left; plot(tt, nc);
-yyaxis right; plot(tt, ss, '--')
+plot(tt, nc);
+plot(tt, ss, '--')
 legend('Normal Constraint', 'S')
 subplot(2,1,2); hold on; 
 plot(tt, nc'-ss');

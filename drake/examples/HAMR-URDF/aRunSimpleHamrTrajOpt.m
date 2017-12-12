@@ -1,6 +1,6 @@
 clear; clc; close all; 
 
-trial_name = 'TrajOpt_MovingBodySimpleSprings8';
+trial_name = 'TrajOpt_MovingBody_SimpleSprings10';
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
 
 [hamr,xtraj,utraj,ctraj,btraj,...

@@ -22,7 +22,7 @@ nd = 4; % pyramidal friction cone approx
 
 %% Load Trajectory
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
-fname = 'TrajOpt_MovingBody_SimpleSprings7';
+fname = 'TrajOpt_MovingBody_SimpleSprings10';
 td = load([save_dir, fname]);
 tt = td.xtraj.getBreaks();
 h = mean(diff(tt));
