@@ -2,15 +2,15 @@ clear; clc; close all;
 
 load_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.2N_10Hz.mat';  
-sim_traj = load([load_dir, fname]); 
+fname = 'TROT_0.2N_10Hz';  
+sim_traj = load([load_dir, fname, '.mat']); 
 sim_tt = sim_traj.tt; 
 sim_hh = mean(diff(sim_tt)); 
 T = sim_tt(end); 
 
 % last cycle
 tokens = strsplit(fname, '_'); 
-freq = str2double(tokens{3}(1:end-6)); 
+freq = str2double(tokens{3}(1:end-2)); 
 nc = T*freq*1e-3; 
 nCF0 = find(sim_tt >= (nc-1)/freq/1e-3, 1, 'first');
 nCF1 = numel(sim_tt); 
@@ -36,7 +36,7 @@ traj_init.kl =  PPTrajectory(zoh(traj_init.t + sim_hh/2, sim_traj.kl_traj(:, nCF
     psitraj,etatraj,jltraj, kltraj, straj, ...
     z,F,info,infeasible_constraint_name] = HAMRVariationalPeriodicTrajOptWS(traj_init);
 
-save([save_dir, fname, '_Variational'], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
+save([save_dir, fname, '_VariationalMS.mat'], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
     'jltraj', 'kltraj', 'straj'); 
 
 %% Playback

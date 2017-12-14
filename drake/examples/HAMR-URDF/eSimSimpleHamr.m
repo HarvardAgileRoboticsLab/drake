@@ -26,12 +26,12 @@ t = 0:options.dt:tsim;
 
 tau_act =  V*V2Tau*[sin(2*pi*fd*t + pi/2);            % FLswing
     sin(2*pi*fd*t);                                   % FLlift
-    sin(2*pi*fd*t - pi/2);                                   % RLSwing
+    sin(2*pi*fd*t - pi/2);                            % RLSwing
     sin(2*pi*fd*t + pi);                              % RLLift
     sin(2*pi*fd*t - pi/2);                            % FRswing
-    sin(2*pi*fd*t);                              % FRlift
+    sin(2*pi*fd*t);                                   % FRlift
     sin(2*pi*fd*t + pi/2);                            % RRSwing
-    sin(2*pi*fd*t + pi)];                                  % RRLift
+    sin(2*pi*fd*t + pi)];                             % RRLift
 
 % ramp
 tramp = 1/fd;

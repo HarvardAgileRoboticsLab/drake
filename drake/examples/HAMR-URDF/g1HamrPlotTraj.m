@@ -1,33 +1,33 @@
 clear; clc; close all; 
-save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/TrajOptFiles/';
-fname = 'TrajOpt_MovingBody_SimpleSprings10'; 
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
+fname = 'TROT_0.2N_10Hz'; 
 
-SimpleTraj = load([save_dir, fname]); 
-IDTraj = load([save_dir, fname, '_fullRobot']); 
-VarTraj = load([save_dir, fname, '_Variational']); 
+OrigTraj = load([save_dir, fname, '.mat']); 
+VarTraj = load([save_dir, fname, '_VariationalMU.mat']); 
 
-ttSimple = SimpleTraj.xtraj.getBreaks(); 
+ttSimple = OrigTraj.tt;
 hhSimple = mean(diff(ttSimple)); 
-uuSimple = SimpleTraj.utraj.eval(ttSimple); 
+xxSimple = OrigTraj.xx; 
+uuSimple = OrigTraj.uu; 
 
-ttID = IDTraj.xtraj.FL_scaled.getBreaks(); 
-hhID = mean(diff(ttID)); 
+% last cycle
+tokens = strsplit(fname, '_'); 
+freq = str2double(tokens{3}(1:end-2)); 
+nc = ttSimple(end)*freq*1e-3; 
+nCF0 = find(ttSimple >= (nc-1)/freq/1e-3, 1, 'first');
+nCF1 = numel(ttSimple); 
 
-xtrajID = [IDTraj.xtraj.FL_scaled; 
-    IDTraj.xtraj.RL_scaled; 
-    IDTraj.xtraj.FR_scaled; 
-    IDTraj.xtraj.RR_scaled];
-xxID = xtrajID.eval(ttID); 
+ttSimple = ttSimple(nCF0:nCF1) - ttSimple(nCF0);
+uuSimple = uuSimple(:, nCF0:nCF1);
+xxSimple = xxSimple(:, nCF0:nCF1);
 
-utrajID = [IDTraj.utraj.FL_scaled(1:2);
-    IDTraj.utraj.RL_scaled(1:2);
-    IDTraj.utraj.FR_scaled(1:2);
-    IDTraj.utraj.RR_scaled(1:2)];
-uuID = utrajID.eval(ttID+hhID/2); 
+% zero out starting x and y pos
+xxSimple0 = 0*xxSimple(:,1); xxSimple0(1:2) = xxSimple(1:2, 1); 
+xxSimple = bsxfun(@minus, xxSimple, xxSimple0); 
 
 ttVar = VarTraj.xtraj.getBreaks(); 
 hhVar = mean(diff(ttVar)); 
-uuVar = VarTraj.utraj.eval(ttVar); 
+uuVar = VarTraj.utraj.eval(ttVar+hhVar/2); 
 xxVar = VarTraj.xtraj.eval(ttVar); 
 
 %% Build Full Model
@@ -40,7 +40,7 @@ options.collision_meshes = false;
 options.use_bullet = false;
 options.floating = true; %false;
 options.collision = true; %false;
-options.dt = 0.5; %0.1; 
+options.dt = 1; %0.1; 
 
 % Build robot + visualizer
 hamr = HamrTSRBM(urdf, options);
@@ -57,12 +57,12 @@ for i = 1:nu
     subplot(4,2,i); hold on; %title(title_str(i))'
     plot(ttSimple+hhSimple/2, uuSimple(i,:));
     plot(ttVar+hhVar/2, uuVar(i,:)); ylabel('Force(N)')
-    plot(ttID+hhID/2, uuID(i, :)); 
+%     plot(ttID+hhID/2, uuID(i, :)); 
 end
 % 
 figure(2); clf; hold on;
 for i = 1:nu
     subplot(4,2,i); hold on; %title(title_str(i))'
     plot(ttVar, xxVar(act_dof(i),:)); ylabel('Deflection')
-    plot(ttID, xxID(act_dof(i)-6, :)); 
+%     plot(ttID, xxID(act_dof(i)-6, :)); 
 end

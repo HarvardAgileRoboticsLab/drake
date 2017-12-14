@@ -46,32 +46,33 @@ xxf = traj_init.x.eval(t_init(N));
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
 
 % -- Costs ---%
-traj_opt = traj_opt.addRunningCost(@running_cost_fun);
-traj_opt = traj_opt.addRunningCost(@lift_cost_fun);
+traj_opt = traj_opt.addFinalCost(@final_cost_fun);
+% traj_opt = traj_opt.addRunningCost(@running_cost_fun);
+% traj_opt = traj_opt.addRunningCost(@lift_cost_fun);
 traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 
 % -----Periodic Constraint-----
 
-% Position 
-Qperiodic = [-eye(nq-1), eye(nq-1)]; 
+% Position
+Qperiodic = [-eye(nq-1), eye(nq-1)];
 periodic_cnst_pos = LinearConstraint(zeros(nq-1,1),zeros(nq-1,1),Qperiodic);
 periodic_cnst_pos = periodic_cnst_pos.setName('periodicity_pos');
 
-% Velocity 
+% Velocity
 cnstr_opts.grad_level = 1;
 cnstr_opts.grad_method = 'user';
 periodic_vars = 2 + 4*nq+2*nu+traj_opt.nC+traj_opt.nD*traj_opt.nC+traj_opt.nJL+2*traj_opt.nKL;
 periodic_cnst_vel = FunctionHandleConstraint(zeros(nq,1), zeros(nq,1), periodic_vars, ...
-    @periodic_constraint, cnstr_opts);
+    @periodic_constraint_fun, cnstr_opts);
 
 periodic_cnst_vel = periodic_cnst_vel.setName('periodicity_vel');
 
-periodic_inds = {[traj_opt.h_inds(1); traj_opt.x_inds(:,1); traj_opt.x_inds(:,2); ...
-    traj_opt.u_inds(:,1); traj_opt.c_inds(:,1); traj_opt.b_inds(:,1); traj_opt.jl_inds(:,1); ...
+periodic_inds = {traj_opt.h_inds(1); traj_opt.x_inds(:,1); traj_opt.x_inds(:,2); ...
+    traj_opt.u_inds(:,1); traj_opt.c_inds(:,1); traj_opt.b_inds(:,1); traj_opt.jl_inds(:,1);
     traj_opt.kl_inds(:,1); traj_opt.h_inds(N-1); traj_opt.x_inds(:,N-1); traj_opt.x_inds(:,N); ...
-    traj_opt.u_inds(:,N-1); traj_opt.kl_inds(:,N-1)]};
+    traj_opt.u_inds(:,N-1); traj_opt.kl_inds(:,N-1)};
 
-% Add Initial/Final State Constraints 
+% Add Initial/Final State Constraints
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(xx0(1:2)),1, 1:2);
 traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(xxf(1)-1, Inf),N,1);
 
@@ -86,7 +87,7 @@ traj_opt = traj_opt.addConstraint(periodic_cnst_vel, periodic_inds);
 % Input constraints
 traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(umin, umax),1:N-1);
 
-% ----- Solver options ----- 
+% ----- Solver options -----
 traj_opt = traj_opt.setSolver('snopt');
 traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',10000);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
@@ -107,30 +108,29 @@ tic
     z,F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
 toc
 
-    function [f,df] = running_cost_fun(h,x,u)
-        R = (2/(FlimS+FLimL))^2*eye(nu);
-        g = (1/2)*u'*R*u;
-        f = h*g;
-        df = [g, zeros(1,nx), h*u'*R];
+    function [f,df] = periodic_constraint_fun(h0,q0,q1,u0,c0,b0,jl0,kl0, ...
+            hNm1,qNm1,qN,uNm1,klNm1)
+        
+        xin = [h0;q0;q1;u0;c0;b0;jl0;kl0; ...
+            hNm1;qNm1;qN;uNm1;klNm1];
+        [f,df] = periodic_constraint(xin);
+        %         f
+        
+        %         df_fd = zeros(size(df));
+        %         step = 1e-6; % sqrt(eps(max(xin)));
+        %         dxin = step*eye(length(xin));
+        %         for k = 1:length(xin)
+        %             xin + dxin(:,k);
+        %             df_fd(:,k) = (periodic_constraint(xin+dxin(:,k)) - ...
+        %                 periodic_constraint(xin-dxin(:,k)))/(2*step);
+        %         end
+        %
+        %         disp('Periodic constraint derivative error:');
+        %         disp(max(abs(df_fd(:)-df(:))));
     end
 
 
-    function [f, df] = lift_cost_fun(~, x, ~)
-        q = x(1:nq);
-        qd = x(nq+(1:nv));
-        
-        kinsol = hamr.doKinematics(q, qd);
-        [phi,~,~,~,~,~,~,~,n] = hamr.contactConstraints(kinsol);
-        
-        a = -0.2;
-        lc = a*ones(1,numel(phi));
-        
-        f = lc*phi;
-        df = [0, lc*n, zeros(1,nv), zeros(1, nu)];
-        
-    end
-
-  function [f, df] = periodic_constraint(xin)
+    function [f, df] = periodic_constraint(xin)
         
         nC = traj_opt.nC;
         nD = traj_opt.nD;
@@ -159,35 +159,37 @@ toc
         [p0, dp0] = left_legendre_transform_fun(traj_opt,h0,q0,q1,u0,c0,b0,jl0,kl0);
         [pN, dpN] = right_legendre_transform_fun(traj_opt,hNm1,qNm1,qN,uNm1,klNm1);
         
-        f = pN - p0;
+        f = p0 - pN;
         
         df = zeros(nQ, numel(xin));
-        df(:, 1:1+2*nQ+nU+nC+nD*nC+nJL+nKL) = -dp0;
-        df(:, 1+2*nQ+nU+nC+nD*nC+nJL+nKL+(1:1+2*nQ+nU+nKL)) = dpN;        
-        fprintf('Periodic const: %f \r', max(abs(f))); 
+        df(:, 1:1+2*nQ+nU+nC+nD*nC+nJL+nKL) = dp0;
+        df(:, 1+2*nQ+nU+nC+nD*nC+nJL+nKL+(1:1+2*nQ+nU+nKL)) = -dpN;
+        
     end
 
 %     function [f, df] = tracking_cost(x, xd, phid)
 %         dim = 3;            % RigidBodyPose
-%         
+%
 %         Q1 = eye(dim);
 %         Q2 = eye(numel(phid));
-%         
+%
 %         kinsol = doKinematics(hamr, x, 0*x);
 %         [phi,~,~,~,~,~,~,~,n] = hamr.contactConstraints(kinsol);
-%         
+%
 %         f = (1/2)*(x(1:dim)-xd(1:dim))'*Q1*(x(1:dim)-xd(1:dim)) + (1/2)*(phi-phid)'*Q2*(phi-phid);
 %         df = [(x(1:dim)-xd(1:dim))'*Q1, zeros(1, nq-dim)] + (phi-phid)'*Q2*n;
 %         fprintf('Objective: %f \r', f)
 %     end
 %
-%
-%     function [f,df] = final_cost_fun(tf,x)
-%         a = 1;
-%         f = -a*x(1);
-%         df = zeros(1, nx+1);
-%         df(2) = -a;
-%     end
+
+
+
+    function [f,df] = final_cost_fun(tf,x)
+        a = 1;
+        Q = a*eye(nq+nv-1);
+        f = -a*x(1) + (1/2)*(x(2:end)-xxf(2:end))'*Q'*(x(2:end)-xxf(2:end));
+        df = [0, -a, (x(2:end)-xxf(2:end))'*Q];
+    end
 
     function displayTraj(h,x,u)
         disp('Displaying Trajectory...')
@@ -195,8 +197,30 @@ toc
         ts = [0;cumsum(h)];
         for i=1:length(ts)
             v.drawWrapper(0,x(:,i));
-            pause(h(1));
+            pause(5*h(1));
         end
+    end
+
+    function [f,df] = running_cost_fun(h,x,u)
+        R = (2/(FlimS+FLimL))^2*eye(nu);
+        g = (1/2)*u'*R*u;
+        f = h*g;
+        df = [g, zeros(1,nx), h*u'*R];
+    end
+
+
+    function [f, df] = lift_cost_fun(~, x, ~)
+        q = x(1:nq);
+        qd = x(nq+(1:nv));
+        
+        kinsol = hamr.doKinematics(q, qd);
+        [phi,~,~,~,~,~,~,~,n] = hamr.contactConstraints(kinsol);
+        
+        a = -0.2;
+        lc = a*ones(1,numel(phi));
+        
+        f = lc*phi;
+        df = [0, lc*n, zeros(1,nv), zeros(1, nu)];
         
     end
 end

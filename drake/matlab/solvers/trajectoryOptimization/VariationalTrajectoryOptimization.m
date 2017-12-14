@@ -712,15 +712,15 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;q1;u;c;b;jl;kl];
             [pl,dpl] = left_legendre_transform(obj,xin);
             
-            %             dpl_fd = zeros(size(dpl));
-            %             dxin = 1e-6*eye(length(xin));
-            %             for k = 1:length(xin)
-            %                 dpl_fd(:,k) = (left_legendre_transform(obj,xin+dxin(:,k)) - ...
-            %                     left_legendre_transform(obj,xin-dxin(:,k)))/2e-6;
-            %             end
-            %
-            %             disp('Left Legendre transform derivative error:');
-            %             disp(max(abs(dpl_fd(:)-dpl(:))));
+%             dpl_fd = zeros(size(dpl));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 dpl_fd(:,k) = (left_legendre_transform(obj,xin+dxin(:,k)) - ...
+%                     left_legendre_transform(obj,xin-dxin(:,k)))/2e-6;
+%             end
+%             
+%             disp('Left Legendre transform derivative error:');
+%             disp(max(abs(dpl_fd(:)-dpl(:))));
             
         end
         
@@ -804,15 +804,15 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;q1;u;kl];
             [pr,dpr] = right_legendre_transform(obj,xin);
             
-            %             dpr_fd = zeros(size(dpr));
-            %             dxin = 1e-6*eye(length(xin));
-            %             for k = 1:length(xin)
-            %                 dpr_fd(:,k) = (right_legendre_transform(obj,xin+dxin(:,k)) - ...
-            %                     right_legendre_transform(obj,xin-dxin(:,k)))/2e-6;
-            %             end
-            %
-            %             disp('Right Legendre transform derivative error:');
-            %             disp(max(abs(dpr_fd(:)-dpr(:))));
+%             dpr_fd = zeros(size(dpr));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 dpr_fd(:,k) = (right_legendre_transform(obj,xin+dxin(:,k)) - ...
+%                     right_legendre_transform(obj,xin-dxin(:,k)))/2e-6;
+%             end
+%             
+%             disp('Right Legendre transform derivative error:');
+%             disp(max(abs(dpr_fd(:)-dpr(:))));
         end
         
         

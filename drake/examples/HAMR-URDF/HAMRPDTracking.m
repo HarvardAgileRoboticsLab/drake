@@ -10,6 +10,7 @@ classdef HAMRPDTracking < DrakeSystem
         u0;
         Kp;
         Kd;
+%         uu;
     end
     
     
@@ -17,10 +18,10 @@ classdef HAMRPDTracking < DrakeSystem
         function obj = HAMRPDTracking(r, u0, x_des, kp, kd)
             % @param r rigid body manipulator instance
             
-            input_frame = r.getStateFrame();
+            input_frame = r.getOutputFrame();
             output_frame = r.getInputFrame();
             
-            obj = obj@DrakeSystem(0,0,r.getNumStates,r.getNumInputs,true,true);
+            obj = obj@DrakeSystem(0,0,r.getNumOutputs,r.getNumInputs,true,true);
             
             obj = setInputFrame(obj,input_frame);
             obj = setOutputFrame(obj,output_frame);
@@ -31,10 +32,12 @@ classdef HAMRPDTracking < DrakeSystem
             obj.qa = r.getActuatedJoints();
             
             obj.Kp = eye(numel(obj.qa))*kp;
-            obj.Kd = eye(numel(obj.qa))*kd;
-            
-            obj.u0 = u0;
+            obj.Kd = eye(numel(obj.qa))*kd;            
+          
+            obj.u0 = u0;            
             obj.x_des = x_des;
+            
+%             obj.uu = zeros(numel(obj.qa),101); %u0.eval(u0.getBreaks()); 
         end
         
         
@@ -66,11 +69,11 @@ classdef HAMRPDTracking < DrakeSystem
             
             x_des = obj.x_des.eval(t);
             q_des = x_des(1:nq);
-            qd_des = x_des(nq+(1:nv));            
+            qd_des = x_des(nq+(1:nv));
             qleg_des = zeros(dim,  nc);
             vleg_des = qleg_des;
             
-           fkopt.base_or_frame_id = obj.robot.findLinkId('Chassis');  
+            fkopt.base_or_frame_id = obj.robot.findLinkId('Chassis');
             kinsol_des = obj.robot.doKinematics(q_des, qd_des);
             for i = 1:nc
                 [qleg_des(:, i), Jleg_des] = obj.robot.forwardKin(kinsol_des, ...
@@ -79,38 +82,35 @@ classdef HAMRPDTracking < DrakeSystem
             end
             
             q = x(1:nq);
-            qd = x(nq+(1:nv));        
+            qd = x(nq+(1:nv));
             qleg = zeros(dim, nc);
             vleg = qleg;
             
-            kinsol = obj.robot.doKinematics(q, qd);     
+            kinsol = obj.robot.doKinematics(q, qd);
             for i = 1:nc
                 [qleg(:, i), Jleg] = obj.robot.forwardKin(kinsol, ...
                     obj.robot.findLinkId(obj.robot.legs{i}), obj.robot.pfFull(i,:)', fkopt);
                 vleg(:,i) = Jleg*qd;
-            end
-            
+            end            
             
             q_err = qleg_des([1,3], :) - qleg([1,3], :);
             v_err = vleg_des([1,3], :) - vleg([1,3], :);
             fprintf('Leg Error: %f at %f sec \r', max(abs(q_err(:))), t)
             
-            Kp = obj.Kp;     
+            Kp = obj.Kp;
             Kp([1, 6, 7, 8], :) = -Kp([1, 6, 7, 8], :);
-%             Kp(1:2:end) = 0; 
+%             Kp(1:2:end) = 0;
             
-            Kd = obj.Kd;                
+            Kd = obj.Kd;
             Kd([1, 6, 7, 8], :) = -Kd([1, 6, 7, 8], :);
-%             Kd(1:2:end) = 0; 
-
-                        
-            y = u0 + Kp*q_err(:) + Kd*v_err(:);
+%             Kd(1:2:end) = 0;            
             
-            %             disp(
+            y = Kp*q_err(:) + Kd*v_err(:); 
             
-            y(y > 0.3) = 0.3;
-            y(y < -0.3) = -0.3;
-            
+            % Input Limits
+            y(y > obj.robot.umax) = obj.robot.umax(1);
+            y(y < obj.robot.umin) = obj.robot.umin(1);
+       
         end
         
         
