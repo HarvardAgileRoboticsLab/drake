@@ -47,9 +47,15 @@ traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
 
 % -- Costs ---%
 traj_opt = traj_opt.addFinalCost(@final_cost_fun);
-% traj_opt = traj_opt.addRunningCost(@running_cost_fun);
-% traj_opt = traj_opt.addRunningCost(@lift_cost_fun);
 traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
+
+nqact =  numel(hamr.getActuatedJoints);
+nvarsCoT = nqact *(N-1) + nu*(N-1) +1; 
+q_actuated = traj_opt.x_inds(hamr.getActuatedJoints,2:N); 
+CoT_inds = {q_actuated(:); traj_opt.u_inds(:); traj_opt.x_inds(1,N)}; 
+
+traj_opt = traj_opt.addCost(FunctionHandleObjective(nvarsCoT,...
+    @(qact, u, xf)CoT_cost_fun(qact, u, xf)),CoT_inds);
 
 % -----Periodic Constraint-----
 
@@ -107,6 +113,37 @@ tic
 [xtraj,utraj,ctraj,btraj, psitraj,etatraj,jltraj, kltraj,straj, ...
     z,F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
 toc
+
+    function [f,df] = CoT_cost_fun(qact, u, xf)
+        
+        xin = [qact; u; xf];
+        [f,df] = CoT_cost(xin);
+
+        df_fd = zeros(size(df));
+        step = sqrt(eps(max(xin)));
+        dxin = step*eye(length(xin));
+        for k = 1:length(xin)
+            df_fd(:,k) = (CoT_cost(xin+dxin(:,k)) - CoT_cost(xin-dxin(:,k)))/(2*step);
+        end
+        
+        disp('CoT cost derivative error:');
+        disp(max(abs(df_fd(:)-df(:))));
+    end
+
+    function [f, df] = CoT_cost(xin)
+        
+        
+        qact = xin(1:nqact*(N-1));
+        u = xin(nqact*(N-1)+(1:(nu*(N-1)))); 
+        xf = xin(end); 
+        
+        m = hamr.getMass; 
+        g = hamr.getGravity();
+        c = m*abs(g(3)); 
+        f = (1/2)*(qact'*u/(c*xf))^2; 
+        df = (qact'*u/(c*xf))*[u'/(c*xf), qact'/(c*xf), -(qact'*u)/(c*xf^2)];
+        
+    end
 
     function [f,df] = periodic_constraint_fun(h0,q0,q1,u0,c0,b0,jl0,kl0, ...
             hNm1,qNm1,qN,uNm1,klNm1)
