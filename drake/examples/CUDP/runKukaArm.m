@@ -1,4 +1,4 @@
-function runKukaArm2()
+function runKukaArm()
     % get plant and visualizer
     options.with_weight = true;
     options.with_shelf_and_boxes = true;
