@@ -8,7 +8,7 @@ classdef HamrRBM < RigidBodyManipulator
 %         nc              % number of contact pairs
 %         nd              % number of basis vectors in polyhedral friction cone
         nl              % number of loop constraints
-        
+        ULIM = 3; 
         valid_loops     % valid loop constraints
 %         pf = [];        % Position of foot in local frame
 %         feet;           % name of foot link
@@ -34,6 +34,8 @@ classdef HamrRBM < RigidBodyManipulator
             obj = obj.setGravity(obj.grav);
             obj = compile(obj);
             
+            % set input limits
+
             % Add contact forces to inputs
 %             [phi,~,d] = obj.contactConstraints(getZeroConfiguration(obj));
 %             nc = length(phi); obj.nc = nc;

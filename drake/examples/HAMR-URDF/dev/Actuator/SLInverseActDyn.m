@@ -19,26 +19,28 @@ hamr = HamrTSRBM(urdf, options);
 hamr = compile(hamr);
 
 %% Trajectory
-fname = 'TrajOpt-FixedBody_SimpleSprings_fullRobot'; 
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
+fname = 'TROT_0.2N_10Hz';
+trajTrans = load([save_dir, fname, '_VariationalMS.mat']); %, '_VariationalMU.mat']);
 traj_full = load(fname); 
 
-% Build transmission trajectory
-xtraj = traj_full.xtraj();
-tt = xtraj.FL_scaled.getBreaks();
-hh = mean(diff(tt));
-
-xxFL = xtraj.FL_scaled.eval(tt);
-xxRL = xtraj.RL_scaled.eval(tt);
-xxFR = xtraj.FR_scaled.eval(tt);
-xxRR = xtraj.RR_scaled.eval(tt);
-
-% Build input trajectory (included contact and const. forces)
-utraj = traj_full.utraj;
-uFL = utraj.FL_scaled.eval(tt+hh/2);
-uRL = utraj.RL_scaled.eval(tt+hh/2);
-uFR = utraj.FR_scaled.eval(tt+hh/2);
-uRR = utraj.RR_scaled.eval(tt+hh/2);
-nut = size(utraj.FL_scaled.eval(tt), 1);
+% % Build transmission trajectory
+% xtraj = traj_full.xtraj();
+% tt = xtraj.FL_scaled.getBreaks();
+% hh = mean(diff(tt));
+% 
+% xxFL = xtraj.FL_scaled.eval(tt);
+% xxRL = xtraj.RL_scaled.eval(tt);
+% xxFR = xtraj.FR_scaled.eval(tt);
+% xxRR = xtraj.RR_scaled.eval(tt);
+% 
+% % Build input trajectory (included contact and const. forces)
+% utraj = traj_full.utraj;
+% uFL = utraj.FL_scaled.eval(tt+hh/2);
+% uRL = utraj.RL_scaled.eval(tt+hh/2);
+% uFR = utraj.FR_scaled.eval(tt+hh/2);
+% uRR = utraj.RR_scaled.eval(tt+hh/2);
+% nut = size(utraj.FL_scaled.eval(tt), 1);
 
 %% Just inputs and actuated dof
 

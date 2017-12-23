@@ -2,7 +2,9 @@ classdef HAMRPDTracking < DrakeSystem
     
     
     properties (SetAccess=private)
+        rwact; % cascade with actuators
         robot; % to be controlled
+        act; 
         nq;
         nv;
         qa;
@@ -15,24 +17,32 @@ classdef HAMRPDTracking < DrakeSystem
     
     
     methods
-        function obj = HAMRPDTracking(r, u0, x_des, kp, kd)
+        function obj = HAMRPDTracking(rwact, r, act, u0, x_des, kp, kd)
             % @param r rigid body manipulator instance
             
-            input_frame = r.getOutputFrame();
-            output_frame = r.getInputFrame();
+            input_frame = rwact.getOutputFrame();
+            output_frame = rwact.getInputFrame();
             
-            obj = obj@DrakeSystem(0,0,r.getNumOutputs,r.getNumInputs,true,true);
+            obj = obj@DrakeSystem(0,0,rwact.getNumOutputs,rwact.getNumInputs,true,true);
             
             obj = setInputFrame(obj,input_frame);
             obj = setOutputFrame(obj,output_frame);
             
+            obj.rwact = rwact; 
             obj.robot = r;
-            obj.nq = r.getNumPositions();
+            obj.nq = r.getNumStates();
             obj.nv = r.getNumVelocities();
             obj.qa = r.getActuatedJoints();
             
-            obj.Kp = eye(numel(obj.qa))*kp;
-            obj.Kd = eye(numel(obj.qa))*kd;            
+            orien = zeros(numel(obj.qa), 1);
+            for i = 1:numel(obj.qa) 
+                orien(i) = act.dummy_bender(i).orien; 
+            end
+            
+            obj.Kp = diag(-orien)*kp; 
+            obj.Kd = diag(-orien)*kd; 
+%             obj.Kp = eye(numel(obj.qa))*kp;
+%             obj.Kd = eye(numel(obj.qa))*kd;            
           
             obj.u0 = u0;            
             obj.x_des = x_des;
@@ -65,14 +75,16 @@ classdef HAMRPDTracking < DrakeSystem
             u0 = obj.u0.eval(t);
             nq = obj.robot.getNumPositions();
             nv = obj.robot.getNumVelocities();
-            nc = obj.robot.getNumContactPairs();
+            nc = 4; %obj.robot.getNumContactPairs();
             
             x_des = obj.x_des.eval(t);
             q_des = x_des(1:nq);
             qd_des = x_des(nq+(1:nv));
-            qleg_des = zeros(dim,  nc);
-            vleg_des = qleg_des;
             
+            % leg desired in body frame
+            qleg_des = zeros(dim,  nc);             
+            vleg_des = qleg_des; 
+
             fkopt.base_or_frame_id = obj.robot.findLinkId('Chassis');
             kinsol_des = obj.robot.doKinematics(q_des, qd_des);
             for i = 1:nc
@@ -83,19 +95,21 @@ classdef HAMRPDTracking < DrakeSystem
             
             q = x(1:nq);
             qd = x(nq+(1:nv));
+            
+            % leg in body frame
             qleg = zeros(dim, nc);
             vleg = qleg;
             
             kinsol = obj.robot.doKinematics(q, qd);
             for i = 1:nc
-                [qleg(:, i), Jleg] = obj.robot.forwardKin(kinsol, ...
+                [qleg(:, i), JlegB] = obj.robot.forwardKin(kinsol, ...
                     obj.robot.findLinkId(obj.robot.legs{i}), obj.robot.pfFull(i,:)', fkopt);
-                vleg(:,i) = Jleg*qd;
+                vleg(:,i) = JlegB*qd;
+
             end            
             
             q_err = qleg_des([1,3], :) - qleg([1,3], :);
-            v_err = vleg_des([1,3], :) - vleg([1,3], :);
-            fprintf('Leg Error: %f at %f sec \r', max(abs(q_err(:))), t)
+            v_err = vleg_des([1,3], :) - vleg([1,3], :); 
             
             Kp = obj.Kp;
             Kp([1, 6, 7, 8], :) = -Kp([1, 6, 7, 8], :);
@@ -105,12 +119,14 @@ classdef HAMRPDTracking < DrakeSystem
             Kd([1, 6, 7, 8], :) = -Kd([1, 6, 7, 8], :);
 %             Kd(1:2:end) = 0;            
             
-            y = Kp*q_err(:) + Kd*v_err(:); 
+            y = u0 + Kp*q_err(:) + Kd*v_err(:) 
+            
+            fprintf('Leg Error: %f at %f sec \r', max(abs(q_err(:))), t)
             
             % Input Limits
-            y(y > obj.robot.umax) = obj.robot.umax(1);
-            y(y < obj.robot.umin) = obj.robot.umin(1);
-       
+            y(y < 0) = 0;
+            y(y > 200) = 200;
+%        
         end
         
         

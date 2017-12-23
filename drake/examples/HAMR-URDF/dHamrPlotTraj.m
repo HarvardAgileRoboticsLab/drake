@@ -3,7 +3,7 @@ save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
 fname = 'TROT_0.2N_10Hz'; 
 
 OrigTraj = load([save_dir, fname, '.mat']); 
-VarTraj = load([save_dir, fname, '_VariationalMU.mat']); 
+VarTraj = load([save_dir, fname, '_VariationalPlusAct.mat']); 
 
 ttSimple = OrigTraj.tt;
 hhSimple = mean(diff(ttSimple)); 
@@ -27,8 +27,8 @@ xxSimple = bsxfun(@minus, xxSimple, xxSimple0);
 
 ttVar = VarTraj.xtraj.getBreaks(); 
 hhVar = mean(diff(ttVar)); 
-uuVar = VarTraj.utraj.eval(ttVar+hhVar/2); 
-xxVar = VarTraj.xtraj.eval(ttVar); 
+uuVar = VarTraj.utraj.eval(ttVar); 
+xxVar = VarTraj.xtraj.eval(ttVar + hhVar/2); 
 
 %% Build Full Model
 
@@ -55,7 +55,7 @@ act_dof = hamr.getActuatedJoints();
 figure(1); clf; hold on;
 for i = 1:nu
     subplot(4,2,i); hold on; %title(title_str(i))'
-    plot(ttSimple+hhSimple/2, uuSimple(i,:));
+    plot(ttSimple, uuSimple(i,:));
     plot(ttVar+hhVar/2, uuVar(i,:)); ylabel('Force(N)')
 %     plot(ttID+hhID/2, uuID(i, :)); 
 end
@@ -63,6 +63,7 @@ end
 figure(2); clf; hold on;
 for i = 1:nu
     subplot(4,2,i); hold on; %title(title_str(i))'
+    plot(ttSimple, xxSimple(act_dof(i), :))
     plot(ttVar, xxVar(act_dof(i),:)); ylabel('Deflection')
 %     plot(ttID, xxID(act_dof(i)-6, :)); 
 end

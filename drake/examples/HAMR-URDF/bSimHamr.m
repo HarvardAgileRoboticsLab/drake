@@ -29,7 +29,7 @@ ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
-    x0 = zeros(76, 1); x0(3) = 12.49; 
+    x0 = zeros(76, 1); x0(3) = 12.69; 
     options.terrain = RigidBodyFlatTerrain();
     
 else
@@ -103,6 +103,14 @@ t = 0:options.dt:tsim;
 
 switch gait
     case 'TROT'
+%         uu = [0*Fmax*sin(2*pi*fd*t + pi/2);            % FLswing
+%             Fmax*sin(2*pi*fd*t);                       % FLlift
+%             0*Fmax*sin(2*pi*fd*t + pi/2);              % RLSwing
+%             Fmax*sin(2*pi*fd*t);                       % RLLift
+%             0*Fmax*sin(2*pi*fd*t + pi/2);                % FRswing
+%             Fmax*sin(2*pi*fd*t);                       % FRlift
+%             0*Fmax*sin(2*pi*fd*t + pi/2);                % RRSwing
+%             Fmax*sin(2*pi*fd*t)];               % RRLift
         uu = [Fmax*sin(2*pi*fd*t + pi/2);            % FLswing
             Fmax*sin(2*pi*fd*t);                       % FLlift
             Fmax*sin(2*pi*fd*t + pi/2);              % RLSwing
@@ -125,7 +133,7 @@ switch gait
 end
 
 % ramp
-tramp = 1/fd;
+tramp = 2/fd;
 ramp = t/tramp; ramp(t >= tramp) = 1;
 
 uu = bsxfun(@times, ramp, uu); %+ 0.5*(dp.Vb - dp.Vg);

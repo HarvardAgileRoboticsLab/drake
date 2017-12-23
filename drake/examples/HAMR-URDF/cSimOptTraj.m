@@ -1,27 +1,21 @@
 clear; clc; close all;
-% global u_traj
-% kl_traj = [];
-% u_traj = [];
 %% Load Transmission Trajectories
 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
 fname = 'TROT_0.2N_10Hz';
-trajTrans = load([save_dir, fname, '_VariationalMU.mat']); %, '_VariationalMU.mat']);
+trajTrans = load([save_dir, fname, '_VariationalPlusAct.mat']); %, '_VariationalMU.mat']);
 xtrajd = trajTrans.xtraj();
 ttd = xtrajd.getBreaks();
 hhd = mean(diff(ttd));
 xxd = xtrajd.eval(ttd + hhd/2);
-% ttd = trajTrans.tt; 
-% hhd = mean(diff(ttd));
-% xxd = trajTrans.xx;
 
+% Inputs forces
+utrajd = trajTrans.utraj;
+uud = utrajd.eval(ttd);
 
-utraj0 = trajTrans.utraj;
-uud0 = utraj0.eval(ttd+hhd/2);
-% uu0 = trajTrans.uu;
-
-% Just inputs
-uud = uud0(1:8, :); 
+% Input voltages
+vtrajd = trajTrans.vtraj; 
+vvd = vtrajd.eval(ttd); 
 %% Build Full Model
 
 urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
@@ -36,34 +30,86 @@ options.dt = 1; %0.1;
 
 % Build robot + visualizer
 hamr = HamrTSRBM(urdf, options);
-hamr = compile(hamr);
 nq = hamr.getNumPositions(); 
 nv = hamr.getNumVelocities(); 
 nu = hamr.getNumInputs(); 
 
 v = hamr.constructVisualizer(); 
 
+%% Build Actuators
+dp.Vb = 200;
+dp.Vg = 0;
+% 
+nact = 8;
+hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+
+%% Connect system
+
+%connections from actuators to hamr
+hr_actuators = hr_actuators.setOutputFrame(hamr.getInputFrame());
+connection1(1).from_output = hr_actuators.getOutputFrame();
+connection1(1).to_input = hamr.getInputFrame();
+
+% connections from hamr to actuators
+hamr_out = hamr.getOutputFrame();
+act_in = hr_actuators.getInputFrame();
+act_in = act_in.replaceFrameNum(2, hamr_out.getFrameByName('ActuatorDeflection'));
+hr_actuators = hr_actuators.setInputFrame(act_in);
+% 
+connection2(1).from_output = hamr_out.getFrameByName('ActuatorDeflection');
+connection2(1).to_input = act_in.getFrameByName('ActuatorDeflection');
+
+% mimo inputs
+input_select(1).system = 1;
+input_select(1).input = act_in.getFrameByName('DriveVoltage');
+
+% mimo outputs
+output_select(1).system = 2;
+output_select(1).output = hamr_out.getFrameByName('HamrPosition');
+output_select(2).system = 2;
+output_select(2).output = hamr_out.getFrameByName('HamrVelocity');
+
+hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
+    input_select, output_select);
 %% Build OL Inputs and IC
 
-utraj = PPTrajectory(zoh(ttd+hhd/2, uud)); 
+ncyc = 5; 
+ttdN = 0:hhd:(ncyc*ttd(end));
+
+xxdN = [xxd(:,1), repmat(xxd(:,2:end), 1, ncyc)];
+if options.floating
+   xxCOMdN = reshape(xxdN(1,2:end), [], ncyc);  
+   for i = 2:ncyc
+    xxCOMdN(:, i) = xxCOMdN(:,i) + xxCOMdN(end, i-1);
+   end
+   xxdN(1,:) = [0; xxCOMdN(:)];
+end
+
+uudN = [uud(:,1), repmat(uud(:,2:end), 1, ncyc)];
+utraj = PPTrajectory(zoh(ttdN, uudN)); 
 utraj = utraj.setOutputFrame(hamr.getInputFrame);
 
-% x0 = xtrajd.eval(0);
+vvdN = [vvd(:,1), repmat(vvd(:,2:end), 1, ncyc)];
+vtraj = PPTrajectory(zoh(ttdN, vvdN)); 
+vtraj = vtraj.setOutputFrame(hamrWact.getInputFrame);
+
 x0 = xxd(:,1); 
 
 %% Simulate Open loop
-hamr_OL = cascade(utraj, hamr);
-xtraj_sim = simulate(hamr_OL, [0 ttd(end)], x0);
+
+hamr_OL = cascade(vtraj, hamrWact);
+xtraj_sim = simulate(hamr_OL, [0 ncyc*ttd(end)], x0);
 
 %% Simulate Closed Loop
-kp = 0.3; %0.5; 
-kd = 0.06; %0.05; %0.3; 
+kp = 10; %100; %0.05; %0.5; 
+kd = 50; %20; %0.15; %0.05; %0.3; 
 
 % qa = hamr.getActuatedJoints();
 % xtrajA = PPTrajectory(foh(0:hhd:(ncyc*ttd(end) - hhd), ...
 %     repmat(xxTransA(:,1:end-1), 1, ncyc)));
-xtrajd = PPTrajectory(foh(ttd, xxd)); 
-PDTracking = HAMRPDTracking(hamr, utraj, xtrajd, kp, kd); 
+xtrajd = PPTrajectory(foh(ttdN, xxdN)); 
+PDTracking = HAMRPDTracking(hamrWact, hamr, hr_actuators, vtraj, xtrajd, kp, kd); 
 
 % mimo inputs
 % input_select(1).system = 2; 
@@ -71,14 +117,15 @@ PDTracking = HAMRPDTracking(hamr, utraj, xtrajd, kp, kd);
 
 % mimo outputs
 output_select(1).system = 1;
-output_select(1).output = hamr.getOutputFrame.getFrameByName('HamrPosition');
+output_select(1).output = hamrWact.getOutputFrame.getFrameByName('HamrPosition');
 output_select(2).system = 1;
-output_select(2).output = hamr.getOutputFrame.getFrameByName('HamrVelocity');
+output_select(2).output = hamrWact.getOutputFrame.getFrameByName('HamrVelocity');
 output_select(3).system = 2;
 output_select(3).output = PDTracking.getOutputFrame();
 
-hamr_CL = mimoFeedback(hamr, PDTracking, [], [], [], output_select); 
-xtraj_sim_CL = simulate(hamr_CL, [0, ttd(end)], x0);
+% hamrWact_CL = mimoFeedback(hamrWact, PDTracking); 
+hamr_CL = mimoFeedback(hamrWact, PDTracking, [], [], [], output_select); 
+xtraj_sim_CL = simulate(hamr_CL, [0, ncyc*ttd(end)], x0);
 
 
 %% Plotting
@@ -90,8 +137,8 @@ yy_sol_CL = xtraj_sim_CL.eval(tt_sol);
 xx_sol_OL = yy_sol_OL(1:nq+nv, :); 
 xx_sol_CL = yy_sol_CL(1:nq+nv, :); 
 
-uu_sol_OL = utraj.eval(tt_sol); 
-uu_sol_CL = yy_sol_CL(nq+nv+(1:nu),:); 
+vv_sol_OL = vtraj.eval(tt_sol); 
+vv_sol_CL = yy_sol_CL(nq+nv+(1:nu),:); 
 
 act_dof = hamr.getActuatedJoints();
 ndof = hamr.getNumDiscStates();
@@ -103,9 +150,9 @@ title_str = {'Front Left Swing', 'Front Left Lift', ...
 figure(1); clf; hold on;
 for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str{i})
-    plot(tt_sol, uu_sol_OL(i,:));
-    plot(tt_sol, uu_sol_CL(i,:));
-    plot(ttd+hhd/2, uud(i, :));
+    plot(tt_sol, vv_sol_OL(i,:));
+    plot(tt_sol, vv_sol_CL(i,:));
+    plot(ttdN+hhd/2, vvdN(i, :));
     legend('OL Inputs', 'CL Inputs', 'Desired Inputs');
 end
 
@@ -121,7 +168,7 @@ for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str{i})
     plot(tt_sol, xx_sol_OL(act_dof(i), :));
     plot(tt_sol, xx_sol_CL(act_dof(i), :));
-    plot(ttd, xxd(act_dof(i), :));
+    plot(ttdN, xxdN(act_dof(i), :));
     legend('OL Act Defl', 'CL Act Defl', 'Desired Act Defl');
 end
 
@@ -134,13 +181,13 @@ if options.floating
         if i > 3
             plot(tt_sol*1e-3, rad2deg(xx_sol_OL(i,:)), 'LineWidth', 1.5); 
             plot(tt_sol*1e-3, rad2deg(xx_sol_CL(i,:)), 'LineWidth', 1.5); 
-            plot(ttd*1e-3, rad2deg(xxd(i,:)), 'LineWidth', 1.5);
+            plot(ttdN*1e-3, rad2deg(xxdN(i,:)), 'LineWidth', 1.5);
             lh = legend('OL', 'CL', 'Desired');
             set(lh, 'box', 'off')
         else
             plot(tt_sol*1e-3, xx_sol_OL(i,:), 'LineWidth', 1.5); 
             plot(tt_sol*1e-3, xx_sol_CL(i,:), 'LineWidth', 1.5); 
-            plot(ttd*1e-3, xxd(i,:), 'LineWidth', 1.5);
+            plot(ttdN*1e-3, xxdN(i,:), 'LineWidth', 1.5);
             lh = legend('OL', 'CL', 'Desired');
             set(lh, 'box', 'off')
         end
@@ -166,14 +213,14 @@ for j = 1:numel(tt_sol)
     qdCL = xx_sol_CL(ndof/2+1: ndof, j);
     kinsolCL = hamr.doKinematics(qCL, qdCL);
     for i = 1:size(pfFull,1)
-        pfCL(j,:,i) = hamr.forwardKin(kinsolCL, hamr.findLinkId(legs{i}), pfFull(i,:)',fkopt);
+        pfCL(j,:,i) = hamr.forwardKin(kinsolCL, hamr.findLinkId(legs{i}), pfFull(i,:)'); %,fkopt);
     end
     
     qOL = xx_sol_OL(1:ndof/2, j);
     qdOL = xx_sol_OL(ndof/2+1: ndof, j);
     kinsolOL = hamr.doKinematics(qOL, qdOL);
     for i = 1:size(pfFull,1)
-        pfOL(j,:,i) = hamr.forwardKin(kinsolOL, hamr.findLinkId(legs{i}), pfFull(i,:)',fkopt);
+        pfOL(j,:,i) = hamr.forwardKin(kinsolOL, hamr.findLinkId(legs{i}), pfFull(i,:)'); %,fkopt);
     end
 
     xi = xtrajd.eval(tt_sol(j));
@@ -181,7 +228,7 @@ for j = 1:numel(tt_sol)
     qdi =  xi(ndof/2+1:ndof);
     kinsol0 = hamr.doKinematics(qi, qdi);
     for i = 1:size(pfFull,1)
-        pfDesW(j,:,i) = hamr.forwardKin(kinsol0, hamr.findLinkId(legs{i}), pfFull(i,:)',fkopt);
+        pfDesW(j,:,i) = hamr.forwardKin(kinsol0, hamr.findLinkId(legs{i}), pfFull(i,:)'); %,fkopt);
     end
 end
 
