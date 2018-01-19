@@ -567,7 +567,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         end
         
         function [f,df] = midpoint_contact(obj,xin)
-            mu = 1; %This is currently hard-coded in Drake
+%             mu = 1; %This is currently hard-coded in Drake
             nC = obj.nC;
             nD = obj.nD;
             nQ = obj.plant.getNumPositions();
@@ -587,7 +587,8 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             kinopts = struct();
             kinopts.compute_gradients = true;
             kin = obj.plant.doKinematics(q2, vm, kinopts);
-            [phi,~,~,~,~,~,~,~,n,D,dn,dD] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
+            [phi,~,~,~,~,~,~,mu,n,D,dn,dD] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
+            mu = unique(mu); % should be all the same 
             if isempty(n)
                 n = zeros(0,nQ);
                 dn = zeros(0,nQ);

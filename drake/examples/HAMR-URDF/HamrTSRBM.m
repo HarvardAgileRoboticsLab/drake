@@ -5,10 +5,6 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
         grav = [0; 0; -9.81e-3];
         valid_loops;
         legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
-        pfFull = [0, 7.58, -11.350;
-            0, 7.58, -11.350;
-            0, -7.58, -11.350;
-            0, -7.58, -11.350];
         ULIM = 0.3; 
     end
     
@@ -20,6 +16,7 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
             
             obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
             obj.q0 = zeros(obj.getNumPositions(), 1);
+            obj.q0(3) = 12.69;
             
             % set input limits
             umax = obj.ULIM*ones(obj.getNumInputs(), 1);
@@ -104,6 +101,7 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
         
         function x0 = getInitialState(obj)
             x0 = [obj.q0; 0*obj.q0];
+            x0(3) = 12.69;
         end
         
     end

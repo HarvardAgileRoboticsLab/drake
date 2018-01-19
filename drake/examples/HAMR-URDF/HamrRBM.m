@@ -25,6 +25,8 @@ classdef HamrRBM < RigidBodyManipulator
             
 %             obj.nu = obj.getNumInputs();
             obj.x0 = zeros(2*obj.getNumPositions(), 1);
+            obj.x0(3) = 12.69;
+
             
             % leg position
 %             obj.pf = options.pf;

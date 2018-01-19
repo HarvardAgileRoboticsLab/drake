@@ -1,9 +1,9 @@
 clear; clc; close all; 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.2N_10Hz'; 
+fname = 'TROT_0.2N_10Hz_MU6'; 
 
 OrigTraj = load([save_dir, fname, '.mat']); 
-VarTraj = load([save_dir, fname, '_VariationalPlusAct.mat']); 
+VarTraj = load([save_dir, fname, '_VariationalSmooth.mat']); 
 
 ttSimple = OrigTraj.tt;
 hhSimple = mean(diff(ttSimple)); 
@@ -46,6 +46,7 @@ options.dt = 1; %0.1;
 hamr = HamrTSRBM(urdf, options);
 hamr = compile(hamr);
 nq = hamr.getNumPositions(); 
+nv = hamr.getNumVelocities(); 
 nu = hamr.getNumInputs(); 
 v = hamr.constructVisualizer(); 
 act_dof = hamr.getActuatedJoints(); 
@@ -67,3 +68,25 @@ for i = 1:nu
     plot(ttVar, xxVar(act_dof(i),:)); ylabel('Deflection')
 %     plot(ttID, xxID(act_dof(i)-6, :)); 
 end
+
+
+phi = zeros(4, numel(ttVar));
+cc = VarTraj.ctraj.eval(ttVar + hhVar/2);
+for i = 2:numel(ttVar)
+    q = xxVar(1:nq, i);
+    qd = xxVar(nq+(1:nv), i);
+    kinsol = hamr.doKinematics(q, qd);
+    phi(:,i-1) = hamr.contactConstraints(kinsol, false);
+end
+
+figure(3); clf; hold on; 
+for i = 1:size(phi, 1)    
+    subplot(2,2,i); hold on; %title(legs{i}); 
+    yyaxis left; plot(ttVar, phi(i,:)); ylabel('Distance (mm)'); %ylim([0, 5])
+    yyaxis right; plot(ttVar, cc(i,:)); ylabel('Force (N)')
+%     plot(tt, straj.eval(straj.getBreaks()), 'k')
+end
+
+xtraj_playback = PPTrajectory(foh(ttVar/1e3, xxVar(1:nq, :)));
+xtraj_playback = xtraj_playback.setOutputFrame(v.getInputFrame()); 
+v.playback(xtraj_playback, struct('slider', true))

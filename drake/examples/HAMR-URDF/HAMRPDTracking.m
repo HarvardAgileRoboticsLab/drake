@@ -125,7 +125,7 @@ classdef HAMRPDTracking < DrakeSystem
             
             % Input Limits
             y(y < 0) = 0;
-            y(y > 200) = 200;
+            y(y > 225) = 225;
 %        
         end
         

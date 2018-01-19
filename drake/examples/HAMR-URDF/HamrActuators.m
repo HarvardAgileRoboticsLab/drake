@@ -26,7 +26,7 @@ classdef HamrActuators < DrakeSystem
             end
             
             if nargin < 4
-                dp.Vb = 200;
+                dp.Vb = 225;
                 dp.Vg = 0;
             end
             

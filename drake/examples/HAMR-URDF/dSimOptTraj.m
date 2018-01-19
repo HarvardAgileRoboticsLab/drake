@@ -2,12 +2,12 @@ clear; clc; close all;
 %% Load Transmission Trajectories
 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.2N_10Hz';
-trajTrans = load([save_dir, fname, '_VariationalPlusAct.mat']); %, '_VariationalMU.mat']);
+fname = 'TROT_0.2N_10Hz_MU10';
+trajTrans = load([save_dir, fname, '_VariationalSmooth2_PlusAct.mat']); %, '_VariationalMU.mat']);
 xtrajd = trajTrans.xtraj();
 ttd = xtrajd.getBreaks();
 hhd = mean(diff(ttd));
-xxd = xtrajd.eval(ttd + hhd/2);
+xxd = xtrajd.eval(ttd);
 
 % Inputs forces
 utrajd = trajTrans.utraj;
@@ -26,7 +26,7 @@ options.collision_meshes = false;
 options.use_bullet = false;
 options.floating = true; %false;
 options.collision = true; %false;
-options.dt = 1; %0.1; 
+options.dt = 0.4; %0.1; 
 
 % Build robot + visualizer
 hamr = HamrTSRBM(urdf, options);
@@ -37,12 +37,12 @@ nu = hamr.getNumInputs();
 v = hamr.constructVisualizer(); 
 
 %% Build Actuators
-dp.Vb = 200;
+dp.Vb = 225;
 dp.Vg = 0;
 % 
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [-1; -1; 1; 1; -1; -1; 1; 1], dp);
 
 %% Connect system
 
@@ -95,6 +95,7 @@ vtraj = PPTrajectory(zoh(ttdN, vvdN));
 vtraj = vtraj.setOutputFrame(hamrWact.getInputFrame);
 
 x0 = xxd(:,1); 
+% x0 = hamr.getInitialState(); 
 
 %% Simulate Open loop
 
@@ -102,7 +103,7 @@ hamr_OL = cascade(vtraj, hamrWact);
 xtraj_sim = simulate(hamr_OL, [0 ncyc*ttd(end)], x0);
 
 %% Simulate Closed Loop
-kp = 10; %100; %0.05; %0.5; 
+kp = 40; %100; %0.05; %0.5; 
 kd = 50; %20; %0.15; %0.05; %0.3; 
 
 % qa = hamr.getActuatedJoints();

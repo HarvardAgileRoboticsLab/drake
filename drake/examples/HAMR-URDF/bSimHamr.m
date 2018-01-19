@@ -1,6 +1,6 @@
 clear; clc; close all;
 global kl_traj jl_traj c_traj beta_traj psi_traj eta_traj
-save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/StepUp/';
 
 %% Load Rigid Body
 
@@ -22,8 +22,8 @@ options.use_bullet = false;
 % options to change
 options.dt = 1;
 % options.mu = 0.6;
-gait = 'TROT';
-SAVE_FLAG = 1;
+gait = 'PRONK';
+SAVE_FLAG = 0;
 ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 
 if ISFLOAT
@@ -88,7 +88,7 @@ v = hamr.constructVisualizer();
 
 fd = 0.01;         % drive frequency (Hz)
 tsim = 1e3; 
-Fmax = 0.2; 
+Fmax = 0.25; 
 
 t = 0:options.dt:tsim;
 
@@ -120,14 +120,14 @@ switch gait
             Fmax*sin(2*pi*fd*t + pi/2);                % RRSwing
             Fmax*sin(2*pi*fd*t + pi)];               % RRLift
     case 'PRONK'
-        uu = [Fmax*sin(2*pi*fd*t + pi/2);            % FLswing
+        uu = [0*Fmax*sin(2*pi*fd*t + pi/2);            % FLswing
             Fmax*sin(2*pi*fd*t);                       % FLlift
-            Fmax*sin(2*pi*fd*t + pi/2);                % RLSwing
-            Fmax*sin(2*pi*fd*t + pi);                  % RLLift
-            Fmax*sin(2*pi*fd*t - pi/2);                % FRswing
-            Fmax*sin(2*pi*fd*t + pi);                       % FRlift
-            Fmax*sin(2*pi*fd*t - pi/2);                % RRSwing
-            Fmax*sin(2*pi*fd*t)];                 % RRLift
+            0*Fmax*sin(2*pi*fd*t + pi/2);              % RLSwing
+            Fmax*sin(2*pi*fd*t);                       % RLLift
+            0*Fmax*sin(2*pi*fd*t - pi/2);              % FRswing
+            Fmax*sin(2*pi*fd*t + pi);                  % FRlift
+            0*Fmax*sin(2*pi*fd*t - pi/2);              % RRSwing
+            Fmax*sin(2*pi*fd*t + pi)];                      % RRLift
     otherwise
         uu = zeros(8, numel(t));
 end
