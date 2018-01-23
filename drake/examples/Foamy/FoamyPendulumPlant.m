@@ -49,7 +49,7 @@ classdef FoamyPendulumPlant < DrakeSystem
 
             tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
 
-            N = 15;
+            N = 20;
             prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
             prog = addStateConstraint(prog,ConstantConstraint(x0),1);
             prog = addStateConstraint(prog,ConstantConstraint(xf),N);
@@ -57,7 +57,7 @@ classdef FoamyPendulumPlant < DrakeSystem
             prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,11:14);
             prog = addInputConstraint(prog,BoundingBoxConstraint([.001; -1; -1; -1], [1; 1; 1; 1]),1:N);
             prog = addRunningCost(prog,@cost);
-            prog = addStateConstraint(prog,ConstantConstraint(0.5),8,10);
+            prog = addStateConstraint(prog,ConstantConstraint(0.5),10,10);
             %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
 
             %--- snopt options ---%
@@ -83,7 +83,7 @@ classdef FoamyPendulumPlant < DrakeSystem
 
             if nargin == 2 && display
                 v = FoamyPendulumVisualizer(obj);
-                v.playback(xtraj);
+                v.playback(xtraj,struct('slider',true));
             end
 
             function [g,dg] = cost(dt,x,u)

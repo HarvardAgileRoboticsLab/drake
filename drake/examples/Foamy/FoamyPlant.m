@@ -36,7 +36,7 @@ classdef FoamyPlant < DrakeSystem
         function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
+            [x0, u0] = findTrim(obj,6) %find trim conditions for level flight at 6 m/s
             x0(1) = -6;
             x0(3) = 1.5;
 
@@ -75,7 +75,7 @@ classdef FoamyPlant < DrakeSystem
 
             if nargin == 2 && display
                 v = FoamyVisualizer(obj);
-                v.playback(xtraj);
+                v.playback(xtraj,struct('slider',true));
             end
 
             function [g,dg] = cost(dt,x,u)
