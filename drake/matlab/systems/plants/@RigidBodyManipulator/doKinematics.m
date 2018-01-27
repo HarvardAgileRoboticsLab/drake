@@ -89,7 +89,7 @@ kinsol.q = q;
 kinsol.v = v;
 kinsol.has_gradients = options.compute_gradients;
 
-if options.use_mex && model.mex_model_ptr~=0 && ((isnumeric(q) && isnumeric(v)) || (isa(q, 'TaylorVar') && (getOrder(q) < 2 && ~options.compute_gradients))) % relying on short circuiting here
+if false%options.use_mex && model.mex_model_ptr~=0 && ((isnumeric(q) && isnumeric(v)) || (isa(q, 'TaylorVar') && (getOrder(q) < 2 && ~options.compute_gradients))) % relying on short circuiting here
   if ~isnumeric(q) && isa(q, 'TaylorVar')
     options.compute_gradients = true;
   end
@@ -119,6 +119,14 @@ if options.use_mex && model.mex_model_ptr~=0 && ((isnumeric(q) && isnumeric(v)) 
   
   doKinematicsmex(model.mex_model_ptr, kinsol.mex_ptr, q, v, options.compute_JdotV);
   kinsol.mex = true;
+  
+%   kinsol.T = computeTransforms(model.body, q);
+%   if options.compute_gradients
+%     [kinsol.S, kinsol.dSdq] = computeMotionSubspaces(model.body, q);
+%     kinsol.dTdq = computeTransformGradients(model.body, kinsol.T, kinsol.S, kinsol.qdotToV, length(q));
+%   else
+%       kinsol.S = computeMotionSubspaces(model.body, q);
+%   end
 else
   kinsol.mex = false;
   
