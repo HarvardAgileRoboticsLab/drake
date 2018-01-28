@@ -1,6 +1,6 @@
 clear; clc; close all; 
 
-npts = 11;
+npts = 21;
 xlim = [-3, 3];
 zlim = [-1.5, 3];
 

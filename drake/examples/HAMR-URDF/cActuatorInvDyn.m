@@ -2,7 +2,7 @@ clear; clc; close all;
 
 %% Build Robot
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
 
 % options
 options.terrain = RigidBodyFlatTerrain();
@@ -20,8 +20,8 @@ hamr = compile(hamr);
 
 %% Trajectory
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.2N_10Hz_MU10';
-append = '_VariationalSmooth2';
+fname = 'TROT_0.25N_10Hz_TYM';
+append = '_TEF_VariationalSmooth';
 trajTrans = load([save_dir, fname, append, '.mat']); %, '_VariationalMU.mat']);
 
 % Time
@@ -33,10 +33,11 @@ xtraj = trajTrans.xtraj;
 xx = xtraj.eval(tt);
 act_dof = hamr.getActuatedJoints();
 xx_act = xx(act_dof, :);
+xx_act_m = (xx_act(:, 1:end-1) + xx_act(:, 2:end))/2; 
 
 % input
 utraj = trajTrans.utraj;
-uu = utraj.eval(tt);
+uu = utraj.eval(tt(1:end-1));
 
 % Rest
 ctraj = trajTrans.ctraj;
@@ -57,20 +58,26 @@ act_names = {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'};
 hr_actuators = HamrActuators(nact, act_names,  [-1; -1; 1; 1; -1; -1; 1; 1], dp);
 
+for i = 2:2:nact
+    hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1); 
+end
+
 %%
 vv = zeros(size(uu));
-for i = 1:numel(tt)
-    [vv(:,i), dvv] = ipzt_fun(hamr, hr_actuators, tt(i), xx_act(:,i), uu(:,i));
+for i = 1:(numel(tt)-1)
+    [vv(:,i), dvv] = ipzt_fun(hamr, hr_actuators, tt(i), xx_act_m(:,i), uu(:,i));
+    vv(vv(:,i) < 0, i) = 0; 
+    vv(vv(:,i) > 225, i) = 225; 
 end
 
 figure(1); clf; hold on;
 for i = 1:nact
     subplot(nact/2, 2, i)
-    plot(tt, vv(i,:)); title(act_names{i})
+    plot(tt(1:end-1), vv(i,:)); title(act_names{i})
     ylim([0, 225])
 end
 
-vtraj = PPTrajectory(zoh(tt, vv));
+vtraj = PPTrajectory(zoh(tt(1:end-1)+hh/2, vv));
 save([save_dir, fname, append, '_PlusAct.mat'], 'xtraj', 'utraj', 'vtraj', ...
     'ctraj', 'btraj', 'psitraj', 'etatraj', 'jltraj', 'kltraj', 'straj');
 

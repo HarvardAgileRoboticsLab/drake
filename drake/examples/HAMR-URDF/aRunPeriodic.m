@@ -2,41 +2,41 @@ clear; clc; close all;
 
 load_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.2N_10Hz_MU10';  
-sim_traj = load([load_dir, fname, '_VariationalSmooth2.mat']); 
-% sim_tt = sim_traj.tt; 
-% sim_hh = mean(diff(sim_tt)); 
-% T = sim_tt(end); 
-% 
-% % last cycle
-% tokens = strsplit(fname, '_'); 
-% freq = str2double(tokens{3}(1:end-2)); % FOR FIXED BODY
-% nc = T*freq*1e-3; 
-% nCF0 = find(sim_tt >= (nc-1)/freq/1e-3, 1, 'first');
-% nCF1 = numel(sim_tt); 
-% 
-% % zero out starting x and y pos
-% xx_sim = sim_traj.xx(:, nCF0:nCF1);
-% xx_sim0 = 0*xx_sim(:,1); xx_sim0(1:2) = xx_sim(1:2, 1); 
-% 
-% xx_sim = bsxfun(@minus, xx_sim, xx_sim0); 
-% 
-% traj_init.t = sim_tt(nCF0:nCF1) - sim_tt(nCF0);
-% traj_init.x = PPTrajectory(foh(traj_init.t, xx_sim)); 
-% traj_init.u = PPTrajectory(zoh(traj_init.t, sim_traj.uu(:, nCF0:nCF1))); 
-% traj_init.c = PPTrajectory(zoh(traj_init.t, sim_traj.c_traj(:, nCF0:nCF1))); 
-% traj_init.b = PPTrajectory(zoh(traj_init.t, sim_traj.beta_traj(:, nCF0:nCF1))); 
-% traj_init.psi = PPTrajectory(zoh(traj_init.t, sim_traj.psi_traj(:, nCF0:nCF1))); 
-% traj_init.eta =  PPTrajectory(zoh(traj_init.t, sim_traj.eta_traj(:, nCF0:nCF1))); 
-% traj_init.kl =  PPTrajectory(zoh(traj_init.t, sim_traj.kl_traj(:, nCF0:nCF1))); 
-traj_init.t = sim_traj.xtraj.getBreaks();
-traj_init.x = sim_traj.xtraj;
-traj_init.u = sim_traj.utraj;
-traj_init.c = sim_traj.ctraj;
-traj_init.b = sim_traj.btraj;
-traj_init.psi = sim_traj.psitraj;
-traj_init.eta = sim_traj.etatraj;
-traj_init.kl = sim_traj.kltraj;
+fname = 'TROT_0.25N_2Hz_TYM';  
+sim_traj = load([load_dir, fname, '.mat']); 
+sim_tt = sim_traj.tt; 
+sim_hh = mean(diff(sim_tt)); 
+T = sim_tt(end); 
+
+% last cycle
+tokens = strsplit(fname, '_'); 
+freq = str2double(tokens{3}(1:end-2)); % FOR FIXED BODY
+nc = T*freq*1e-3; 
+nCF0 = find(sim_tt >= (nc-1)/freq/1e-3, 1, 'first');
+nCF1 = numel(sim_tt); 
+
+% zero out starting x and y pos
+xx_sim = sim_traj.xx(:, nCF0:nCF1);
+xx_sim0 = 0*xx_sim( :,1); xx_sim0(1:2) = xx_sim(1:2, 1); 
+
+xx_sim = bsxfun(@minus, xx_sim, xx_sim0); 
+ 
+traj_init.t = sim_tt(nCF0:nCF1) - sim_tt(nCF0);
+traj_init.x = PPTrajectory(foh(traj_init.t, xx_sim)); 
+traj_init.u = PPTrajectory(zoh(traj_init.t, sim_traj.uu(:, nCF0:nCF1))); 
+traj_init.c = PPTrajectory(zoh(traj_init.t, sim_traj.c_traj(:, nCF0:nCF1))); 
+traj_init.b = PPTrajectory(zoh(traj_init.t, sim_traj.beta_traj(:, nCF0:nCF1))); 
+traj_init.psi = PPTrajectory(zoh(traj_init.t, sim_traj.psi_traj(:, nCF0:nCF1))); 
+traj_init.eta =  PPTrajectory(zoh(traj_init.t, sim_traj.eta_traj(:, nCF0:nCF1))); 
+traj_init.kl =  PPTrajectory(zoh(traj_init.t, sim_traj.kl_traj(:, nCF0:nCF1))); 
+% traj_init.t = sim_traj.xtraj.getBreaks();
+% traj_init.x = sim_traj.xtraj;
+% traj_init.u = sim_traj.utraj;
+% traj_init.c = sim_traj.ctraj;
+% traj_init.b = sim_traj.btraj;
+% traj_init.psi = sim_traj.psitraj;
+% traj_init.eta = sim_traj.etatraj;
+% traj_init.kl = sim_traj.kltraj;
 
 %% Optimize
 
@@ -44,7 +44,7 @@ traj_init.kl = sim_traj.kltraj;
     psitraj,etatraj,jltraj, kltraj, straj, ...
     z,F,info,infeasible_constraint_name] = HAMRVariationalPeriodicTrajOptWS(traj_init);
 
-save([save_dir, fname, '_VariationalSmooth3.mat'], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
+save([save_dir, fname, '_SP_VariationalSmooth.mat'], 'xtraj', 'utraj', 'ctraj', 'btraj', 'psitraj', 'etatraj', ...
     'jltraj', 'kltraj', 'straj'); 
 
 %% Playback

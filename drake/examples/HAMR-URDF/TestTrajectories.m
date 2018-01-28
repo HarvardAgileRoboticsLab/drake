@@ -4,7 +4,7 @@ save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/forXPC/';
 
 %% Load Rigid Body
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
 
 % kl_traj = [];
 % jl_traj = [];
@@ -48,12 +48,16 @@ nv = hamr.getNumVelocities();
 % v.inspector(x0);
 
 %% Build Actuators
-dp.Vb = 150;
+dp.Vb = 200;
 dp.Vg = 0;
 
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [-1; -1; 1; 1; -1; -1; 1; 1], dp);
+
+for i = 2:2:nact
+    hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.13);
+end
 
 %% Connect system
 
@@ -88,8 +92,8 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Build (open-loop) control input
 
-fd = 0.01;         % drive frequency (Hz)
-tsim = 1e3;
+fd = 0.002;         % drive frequency (Hz)
+tsim = 5e3;
 
 t = 0:options.dt:tsim;
 
@@ -179,10 +183,11 @@ for i = 1:numel(act_dof)
     legend('Force', 'Deflection')
 end
 
-lp_b = [0, 8.58, -6.00;
-    0, 8.58, -6.00;
-    0, -8.58, -6.00;
-    0, -8.58, -6.00];
+
+lp_b = [0.06, 8.565, -6.322;
+    -0.06, 8.565, -6.322;
+    0.06, -8.565, -6.322;
+    -0.06, -8.565, -6.322];
 
 pf0 = 0*lp_b;
 pfB = zeros([numel(t), size(lp_b')]);
@@ -260,7 +265,7 @@ pfB = pfB(nCF0:nCF1, :, :);
 vfB = vfB(nCF0:nCF1, :, :); 
 
 if SAVE_FLAG
-    fname = ['NC_', gait, '_', num2str(dp.Vb) 'N_', num2str(1e3*fd), 'Hz' '.mat'];
+    fname = ['NC_', gait, '_TYM_', num2str(dp.Vb) 'V_', num2str(1e3*fd), 'Hz' '.mat'];
     disp(['Saving as ', fname]);
     save([save_dir, fname], 'tt', 'xx', 'uu', 'pfB', 'vfB');
 end

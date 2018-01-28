@@ -2,8 +2,8 @@ clear; clc; close all;
 %% Load Transmission Trajectories
 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.2N_10Hz_MU10';
-trajTrans = load([save_dir, fname, '_VariationalSmooth2_PlusAct.mat']); %, '_VariationalMU.mat']);
+fname = 'TROT_0.25N_2Hz_TYM';
+trajTrans = load([save_dir, fname, '_SP_VariationalSmooth_PlusAct.mat']); %, '_VariationalMU.mat']);
 xtrajd = trajTrans.xtraj();
 ttd = xtrajd.getBreaks();
 hhd = mean(diff(ttd));
@@ -18,7 +18,7 @@ vtrajd = trajTrans.vtraj;
 vvd = vtrajd.eval(ttd); 
 %% Build Full Model
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
 
 options.terrain = RigidBodyFlatTerrain();
 options.ignore_self_collisions = true;

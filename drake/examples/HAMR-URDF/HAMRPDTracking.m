@@ -4,7 +4,7 @@ classdef HAMRPDTracking < DrakeSystem
     properties (SetAccess=private)
         rwact; % cascade with actuators
         robot; % to be controlled
-        act; 
+        act;
         nq;
         nv;
         qa;
@@ -12,7 +12,7 @@ classdef HAMRPDTracking < DrakeSystem
         u0;
         Kp;
         Kd;
-%         uu;
+        %         uu;
     end
     
     
@@ -28,26 +28,26 @@ classdef HAMRPDTracking < DrakeSystem
             obj = setInputFrame(obj,input_frame);
             obj = setOutputFrame(obj,output_frame);
             
-            obj.rwact = rwact; 
+            obj.rwact = rwact;
             obj.robot = r;
             obj.nq = r.getNumStates();
             obj.nv = r.getNumVelocities();
             obj.qa = r.getActuatedJoints();
             
             orien = zeros(numel(obj.qa), 1);
-            for i = 1:numel(obj.qa) 
-                orien(i) = act.dummy_bender(i).orien; 
+            for i = 1:numel(obj.qa)
+                orien(i) = act.dummy_bender(i).orien;
             end
             
-            obj.Kp = diag(-orien)*kp; 
-            obj.Kd = diag(-orien)*kd; 
-%             obj.Kp = eye(numel(obj.qa))*kp;
-%             obj.Kd = eye(numel(obj.qa))*kd;            
-          
-            obj.u0 = u0;            
+            obj.Kp = diag(-orien)*kp;
+            obj.Kd = diag(-orien)*kd;
+            %             obj.Kp = eye(numel(obj.qa))*kp;
+            %             obj.Kd = eye(numel(obj.qa))*kd;
+            
+            obj.u0 = u0;
             obj.x_des = x_des;
             
-%             obj.uu = zeros(numel(obj.qa),101); %u0.eval(u0.getBreaks()); 
+            %             obj.uu = zeros(numel(obj.qa),101); %u0.eval(u0.getBreaks());
         end
         
         
@@ -81,15 +81,21 @@ classdef HAMRPDTracking < DrakeSystem
             q_des = x_des(1:nq);
             qd_des = x_des(nq+(1:nv));
             
+                        
+            lp_b = [0, 7.540, -11.350;
+                0, 7.540, -11.350;
+                0, -7.540, -11.350;
+                0, -7.540, -11.350];
+            
             % leg desired in body frame
-            qleg_des = zeros(dim,  nc);             
-            vleg_des = qleg_des; 
-
+            qleg_des = zeros(dim,  nc);
+            vleg_des = qleg_des;
+            
             fkopt.base_or_frame_id = obj.robot.findLinkId('Chassis');
             kinsol_des = obj.robot.doKinematics(q_des, qd_des);
             for i = 1:nc
                 [qleg_des(:, i), Jleg_des] = obj.robot.forwardKin(kinsol_des, ...
-                    obj.robot.findLinkId(obj.robot.legs{i}), obj.robot.pfFull(i,:)', fkopt);
+                    obj.robot.findLinkId(obj.robot.legs{i}), lp_b(i,:)', fkopt);
                 vleg_des(:,i) = Jleg_des*qd_des;
             end
             
@@ -103,30 +109,30 @@ classdef HAMRPDTracking < DrakeSystem
             kinsol = obj.robot.doKinematics(q, qd);
             for i = 1:nc
                 [qleg(:, i), JlegB] = obj.robot.forwardKin(kinsol, ...
-                    obj.robot.findLinkId(obj.robot.legs{i}), obj.robot.pfFull(i,:)', fkopt);
+                    obj.robot.findLinkId(obj.robot.legs{i}), lp_b(i,:)', fkopt);
                 vleg(:,i) = JlegB*qd;
-
-            end            
+                
+            end
             
             q_err = qleg_des([1,3], :) - qleg([1,3], :);
-            v_err = vleg_des([1,3], :) - vleg([1,3], :); 
+            v_err = vleg_des([1,3], :) - vleg([1,3], :);
             
             Kp = obj.Kp;
             Kp([1, 6, 7, 8], :) = -Kp([1, 6, 7, 8], :);
-%             Kp(1:2:end) = 0;
+            %             Kp(1:2:end) = 0;
             
             Kd = obj.Kd;
             Kd([1, 6, 7, 8], :) = -Kd([1, 6, 7, 8], :);
-%             Kd(1:2:end) = 0;            
+            %             Kd(1:2:end) = 0;
             
-            y = u0 + Kp*q_err(:) + Kd*v_err(:) 
+            y = u0 + Kp*q_err(:) + Kd*v_err(:)
             
             fprintf('Leg Error: %f at %f sec \r', max(abs(q_err(:))), t)
             
             % Input Limits
             y(y < 0) = 0;
             y(y > 225) = 225;
-%        
+            %
         end
         
         

@@ -1,9 +1,9 @@
 clear; clc; close all; 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.2N_10Hz_MU6'; 
+fname = 'TROT_0.25N_10Hz_TYM'; 
 
 OrigTraj = load([save_dir, fname, '.mat']); 
-VarTraj = load([save_dir, fname, '_VariationalSmooth.mat']); 
+VarTraj = load([save_dir, fname, '_TEF_VariationalSmooth2.mat']); 
 
 ttSimple = OrigTraj.tt;
 hhSimple = mean(diff(ttSimple)); 

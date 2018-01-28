@@ -3,7 +3,7 @@ function [hamr,xtraj,utraj,ctraj,btraj,...
     z,F,info,infeasible_constraint_name] = HAMRVariationalPeriodicTrajOptWS(traj_init)
 
 % file
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
 
 % options
 options.terrain = RigidBodyFlatTerrain();
@@ -24,32 +24,40 @@ nx = nq+nv;
 nu = hamr.getNumInputs();
 
 % --- Set Input limits ---
-FlimS = 0.27;                 % set max force
-FLimL = 0.27;
+FlimS = 0.28;                 % set max force
+FLimL = 0.36;
 umin = -reshape([FlimS; FLimL]*ones(1, nu/2), nu, 1);
 umax =  reshape([FlimS; FLimL]*ones(1, nu/2), nu, 1);
 hamr = hamr.setInputLimits(umin, umax);
 
 % --- Initialize TrajOpt---
-optimoptions.s_weight = 100;
+optimoptions.s_weight = 50;
 optimoptions.joint_limit_collisions = false;
 optimoptions.add_ccost = true;
 
 % ---- Initial Guess ----%
 tt = traj_init.t;
 T = tt(end);
-N = 41;
+N = 51;
 t_init = linspace(0, T, N);
 xx0 = traj_init.x.eval(t_init(1));
 xxf = traj_init.x.eval(t_init(N)); xxf(1) = 10; 
-% xxd = traj_init.x.eval(t_init);
 t_init = linspace(0, T, N);
+
+% traj_init.x = traj_init.x.eval(t_init);
+% traj_init.u = traj_init.u.eval(t_init);
+% traj_init.c = traj_init.c.eval(t_init);
+% traj_init.b = traj_init.b.eval(t_init);
+% traj_init.psi = traj_init.psi.eval(t_init);
+% traj_init.eta = traj_init.eta.eval(t_init);
+% traj_init.kl = traj_init.kl.eval(t_init);
 
 T_span = [0.9*T 1.1*T];
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
 
 % -- Costs ---%
 traj_opt = traj_opt.addFinalCost(@final_cost);                          % close to final goal
+% traj_opt = traj_opt.addRunningCost(@running_cost); 
 traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);         % display
 
 
@@ -59,11 +67,11 @@ traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);         % displa
 %         traj_opt.x_inds(1:nq,ind));
 % end
 
-% % try to get smooth u
-% for ind = 1:N-2
-%     traj_opt = traj_opt.addCost(FunctionHandleObjective(2*nu,@(u1, u2)udiff_cost(u1, u2)), ...
-%         {traj_opt.u_inds(:,ind); traj_opt.u_inds(:,ind+1)});
-% end
+% try to get smooth u
+for ind = 1:N-2
+    traj_opt = traj_opt.addCost(FunctionHandleObjective(2*nu,@(u1, u2)udiff_cost(u1, u2)), ...
+        {traj_opt.u_inds(:,ind); traj_opt.u_inds(:,ind+1)});
+end
 
 % try to get smooth accelerations
 for ind = 2:N-1
@@ -73,7 +81,7 @@ for ind = 2:N-1
 end
 
 
-%
+%  `
 % nqact =  numel(hamr.getActuatedJoints);
 % nvarsCoT = nqact *(N-1) + nu*(N-1) +1;
 % q_actuated = traj_opt.x_inds(hamr.getActuatedJoints,2:N);
@@ -189,8 +197,7 @@ toc
 
 
     function [c,dc] = final_cost(tf,x)
-        a = 1;
-        Q = a*eye(nq+nv);
+        Q = eye(nq+nv); Q(1,1) = 1; 
         c = (1/2)*(x-xxf)'*Q'*(x-xxf);
         dc = [0, (x-xxf)'*Q];
         fprintf('Final Cost %f \r', c); 
@@ -225,7 +232,7 @@ toc
         vm1 = traj_opt.qdiff(q1,q2,h1);
         vm2 = traj_opt.qdiff(q2,q3,h2);
         
-        a = 30; 
+        a = 40; 
         vdiff = (vm1 - vm2);
         c = 0.5*a*(vdiff'*vdiff);
         I = eye(nv);
@@ -233,14 +240,13 @@ toc
 %         fprintf('Vdiff Cost: %f \r', c)
     end
 
-    function [c,dc] = running_cost(h, x, u)        
-        
-        r = 0.1*(1/FLimL)^2*eye(nu);                 
-        
-        g =(1/2)*(u'*R*u);
-        c = h*g;
-        dc = [g, zeros(1, numel(x)), h*u'*R];
-    end
+%     function [c,dc] = running_cost(h, x, u)        
+%         
+%         R = 0.1*(1/FLimL)^2*eye(nu);                         
+%         g =(1/2)*(u'*R*u);
+%         c = h*g;
+%         dc = [g, zeros(1, numel(x)), h*u'*R];
+%     end
 
 
 %     function [c, dc] = tracking_cost(x, xd)
@@ -256,17 +262,17 @@ toc
         ts = [0;cumsum(h)];
         for i=1:length(ts)
             v.drawWrapper(0,x(:,i));
-            pause(5*h(1));
+            pause(h(1));
         end
     end
 
 % 
-%     function [f, df] = udiff_cost(u1, u2)
-%         udiff = u1-u2;
-%         f = 0.5*(udiff'*udiff);
-%         I = eye(length(u1));
-%         df = [udiff'*I,-udiff'*I];
-%     end
+    function [f, df] = udiff_cost(u1, u2)
+        udiff = u1-u2;
+        f = 0.5*(udiff'*udiff);
+        I = eye(length(u1));
+        df = [udiff'*I,-udiff'*I];
+    end
 
 
 

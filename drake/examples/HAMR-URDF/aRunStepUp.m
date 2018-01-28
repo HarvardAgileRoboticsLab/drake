@@ -1,14 +1,23 @@
 clear; clc; close all; 
 
-load_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/StepUp/';
-save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/StepUp/';
-fname = 'Jump_3a';
+load_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/AgileBehaviors/';
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/AgileBehaviors/';
+fname = 'MULTI_JUMP_0.2N_15Hz_TYM';
 
-traj0 = load([load_dir, fname, '.mat']);
+sim_traj = load([load_dir, fname, '.mat']);
+
+traj_init.t = sim_traj.tt; 
+traj_init.x = PPTrajectory(foh(traj_init.t, sim_traj.xx)); 
+traj_init.u = PPTrajectory(zoh(traj_init.t, sim_traj.uu)); 
+traj_init.c = PPTrajectory(zoh(traj_init.t, sim_traj.c_traj)); 
+traj_init.b = PPTrajectory(zoh(traj_init.t, sim_traj.beta_traj)); 
+traj_init.psi = PPTrajectory(zoh(traj_init.t, sim_traj.psi_traj)); 
+traj_init.eta =  PPTrajectory(zoh(traj_init.t, sim_traj.eta_traj)); 
+traj_init.kl =  PPTrajectory(zoh(traj_init.t, sim_traj.kl_traj)); 
 
 [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj, ...
-    z,F,info,infeasible_constraint_name] = HAMRVariationalStepUp(traj0); 
+    z,F,info,infeasible_constraint_name] = HAMRVariationalStepUp(traj_init); 
 
 %% Playback
 
@@ -83,7 +92,7 @@ for i = 1:size(phi, 1)
 end
 
 %%
-save([save_dir, fname, 'a.mat'], 'xtraj', 'utraj', ...
+save([save_dir, fname, 'b.mat'], 'xtraj', 'utraj', ...
     'ctraj', 'btraj', 'psitraj', 'etatraj',  'jltraj', 'kltraj', 'straj');
 
 

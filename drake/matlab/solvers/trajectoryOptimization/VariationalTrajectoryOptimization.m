@@ -567,7 +567,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         end
         
         function [f,df] = midpoint_contact(obj,xin)
-%             mu = 1; %This is currently hard-coded in Drake
+            mu = 0.5; %This is currently hard-coded in Drake
             nC = obj.nC;
             nD = obj.nD;
             nQ = obj.plant.getNumPositions();
@@ -587,8 +587,8 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             kinopts = struct();
             kinopts.compute_gradients = true;
             kin = obj.plant.doKinematics(q2, vm, kinopts);
-            [phi,~,~,~,~,~,~,mu,n,D,dn,dD] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
-            mu = unique(mu); % should be all the same 
+            [phi,~,~,~,~,~,~,~,n,D,dn,dD] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
+%             mu = 0.5*unique(mu); % should be all the same 
             if isempty(n)
                 n = zeros(0,nQ);
                 dn = zeros(0,nQ);
@@ -609,7 +609,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             g2 = mu*c - E*b; % >= 0
             
             %Normal force complementarity
-            l1 =10*(phi'*c - s); % <= 0          % HACK!! 
+            l1 =phi'*c - s; % <= 0          % HACK!! 
             
             %Tangential velocity complementarity
             l2 = h*(mu*c - E*b)'*psi - s; % <= 0
@@ -623,7 +623,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             df = [-D*vm/h, -D/h, D/h + kron(vm', eye(nD*nC))*dD, E', -eye(nD*nC), zeros(nD*nC,nC), zeros(nD*nC,nD*nC), zeros(nD*nC,1);
                 zeros(nC,1), zeros(nC,nQ), n, zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,nC), zeros(nC,nD*nC), zeros(nC,1);
                 zeros(nC,1), zeros(nC,nQ), zeros(nC,nQ), zeros(nC,nD*nC), zeros(nC,nC), mu*eye(nC), -E, zeros(nC,1);
-                0, zeros(1,nQ), 10*c'*n, zeros(1,nC), zeros(1,nD*nC), 10*phi', zeros(1,nD*nC), -10;
+                0, zeros(1,nQ), c'*n, zeros(1,nC), zeros(1,nD*nC), phi', zeros(1,nD*nC), -1;
                 (mu*c - E*b)'*psi, zeros(1,nQ), zeros(1,nQ), h*(mu*c - E*b)', zeros(1,nD*nC), h*psi'*mu, -h*psi'*E, -1;
                 eta'*b, zeros(1,nQ), zeros(1,nQ), zeros(1,nC), h*b', zeros(1,nC), h*eta', -1];
         end

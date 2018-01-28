@@ -1,6 +1,6 @@
 function [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj, ...
-    z,F,info,infeasible_constraint_name] = HAMRVariationalStepUp(varargin)
+    z,F,info,infeasible_constraint_name] = HAMRVariationalStepUp(traj_init)
 %% Set up Steps
 % w  = 100;
 % l = 50;
@@ -31,8 +31,8 @@ nu = hamr.getNumInputs();
 act_dof = hamr.getActuatedJoints(); 
 
 % --- Set Input limits ---
-FlimS = 0.3;                 % set max force
-FLimL = 0.3;
+FlimS = 0.28;                 % set max force
+FLimL = 0.36;
 umin = -reshape([FlimS; FLimL]*ones(1, nu/2), nu, 1);
 umax =  reshape([FlimS; FLimL]*ones(1, nu/2), nu, 1);
 hamr = hamr.setInputLimits(umin, umax);
@@ -40,53 +40,26 @@ hamr = hamr.setInputLimits(umin, umax);
 %% Set up Traj Opt
 
 % --- Initialize TrajOpt---
-optimoptions.s_weight = 600;
+optimoptions.s_weight = 400;
 optimoptions.joint_limit_collisions = false;
 
 % ---- Initial Guess ----%
+tt = traj_init.t;
+T = tt(end);
+N = 61;
+t_init = linspace(0, T, N);
+x0 = traj_init.x.eval(t_init(1));
+% x1 = traj_init.x.eval(t_init(end));
+t_init = linspace(0, T, N);
 
-if ~isempty(varargin)
-    traj0 = varargin{1};
-    t_init = traj0.xtraj.getBreaks();
-    N = numel(t_init);
-    T = t_init(end);
-    x0 = traj0.xtraj.eval(t_init(1));
-    x1 = traj0.xtraj.eval(t_init(end));
-else
-    T = 100;
-    N = 41;
-    t_init = linspace(0, T, N);
-    x0 = hamr.getInitialState(); x0(3) = 12.59;
-    x1 = x0; 
-    
-end
-
-
-T_span = [0.8*T 1.2*T];
+T_span = [0 1.5*T];
 
 % Initialzie optimization
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
 
-if ~isempty(varargin)
-    traj_init.x = traj0.xtraj; %.eval(;
-    traj_init.u = traj0.utraj;
-    traj_init.c = traj0.ctraj;
-    traj_init.b = traj0.btraj;
-    traj_init.psi = traj0.psitraj;
-    traj_init.eta = traj0.etatraj;
-    traj_init.kl = traj0.kltraj;
-else
-    traj_init.x = PPTrajectory(foh([0, T], [x0, x1]));
-    traj_init.u = PPTrajectory(zoh(t_init, 0.2*randn(nu,N)));
-    traj_init.c = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
-    traj_init.b = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
-    traj_init.psi = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
-    traj_init.eta =  PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
-    traj_init.kl =  PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nKL,N)));
-end
 % -- Costs ---%
 
-% % try to get smooth accelerations
+% try to get smooth accelerations
 % for ind = 2:N-1
 %     traj_opt = traj_opt.addCost(FunctionHandleObjective(2*nv,@vdiff_cost), ...
 %         {traj_opt.h_inds(ind-1); traj_opt.h_inds(ind); traj_opt.x_inds(:,ind-1); ...
@@ -145,9 +118,9 @@ tic
 toc
 % 
     function [c,dc] = final_cost(tf,xf)
-        a = 20;                
-        c = -a*(xf(3) - x0(3)) + (xf-x1)'*Q*(xf-x1);
-        dc_dx = (xf-x1)'*Q; 
+        a = 30;                
+        c = -a*(xf(3) - x0(3)); % + (xf-x1)'*Q*(xf-x1);
+        dc_dx = zeros(1, numel(xf)); 
         dc_dx(3) = dc_dx(3) - a; 
         dc = [0, dc_dx];
         fprintf('Final Cost %f \r', c); 
@@ -160,9 +133,9 @@ toc
         R = diag(r); 
         
         
-        g =(1/2)*((x-x1)'*Q*(x-x1) + u'*R*u);
+        g =(1/2)*((x-x0)'*Q*(x-x0) + u'*R*u);
         f = h*g;
-        df = [g, (x-x1)'*Q, h*u'*R];
+        df = [g, (x-x0)'*Q, h*u'*R];
     end
 
     function [c, dc] = vdiff_cost(h1, h2, q1, q2, q3)        
