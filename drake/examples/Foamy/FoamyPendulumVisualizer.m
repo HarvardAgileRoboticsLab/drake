@@ -4,7 +4,7 @@ classdef FoamyPendulumVisualizer < Visualizer
     methods
         function obj = FoamyPendulumVisualizer(plant)
             
-            typecheck(plant,'FoamyPendulumPlant');
+            %typecheck(plant,'FoamyPendulumPlant');
             checkDependency('lcm');
             
             obj = obj@Visualizer(plant.getOutputFrame);

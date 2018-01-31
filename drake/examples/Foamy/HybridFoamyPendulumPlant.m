@@ -38,7 +38,8 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             
             function [g,dg] = packageGuardz(obj,t,x,u)
             g = x(10) - 0.5;
-            dg = [0,-1,zeros(1,29)];
+            dg = [0,zeros(1,9),1,zeros(1,20)];
+            %dg = [0,-1,zeros(1,29)];
             end
             
         
@@ -75,7 +76,7 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
         function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
+            [x0, u0] = findTrim(obj,5); %find trim conditions for level flight at 6 m/s
             x0(1) = -6;
             x0(3) = x0(3) + 1.5;
             x0(8) = x0(8) - 6;
@@ -152,12 +153,9 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             %[xtraj,utraj,~,~,info]=solveTraj(prog,[t_init/2;t_init/2]);
             toc
 
-            
+
             if nargin == 2 && display
-                v = HybridFoamyVisualizer(obj);
-                %v = FoamyVisualizer(obj);
-                v.playback(xtraj.traj{1}.trajs{2});
-                %v.playback(xtraj,struct('slider',true));
+               visualizeFoamy(obj,xtraj,true);
             end
 
             function [g,dg] = cost(dt,x,u)

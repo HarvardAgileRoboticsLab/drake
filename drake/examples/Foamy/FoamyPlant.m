@@ -29,14 +29,34 @@ classdef FoamyPlant < DrakeSystem
             end
         end
         
+        function [xdot, dxdot,d2xdot] = dynamics_w(obj,t,x,u,w)
+            if nargout == 1
+                xdot = varMass_foamy_dynamics(t,x,u,w);
+                %xdot = foamy_dynamics_mex(t,x,u);
+                dxdot = 0;
+                d2xdot = 0;
+            else %Need Jacobian
+                options.grad_level = 0;
+                options.grad_method = 'numerical';
+                options.diff_type = 'central';
+                [xdot, dxdot] = geval(@(t1,x1,u1) varMass_foamy_dynamics(t1,x1,u1,w),t,x,u,options);
+                d2xdot = 0;
+                %[xdot, dxdot] = geval(@(t1,x1,u1) foamy_dynamics_mex(t1,x1,u1),t,x,u,options);
+            end
+        end
+        
         function y = output(obj,t,x,u)
             y = x;
+        end
+        
+        function n = getNumDisturbances(~)
+            n=1;
         end
         
         function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,6) %find trim conditions for level flight at 6 m/s
+            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
             x0(1) = -6;
             x0(3) = 1.5;
 
@@ -74,8 +94,7 @@ classdef FoamyPlant < DrakeSystem
             toc
 
             if nargin == 2 && display
-                v = FoamyVisualizer(obj);
-                v.playback(xtraj,struct('slider',true));
+               visualizeFoamy(obj,xtraj,true);
             end
 
             function [g,dg] = cost(dt,x,u)
@@ -102,6 +121,68 @@ classdef FoamyPlant < DrakeSystem
             end
             
         end
+        
+     function [utraj,xtraj,z,prog] = robustTrajectory(obj,N,D,options)
+        
+        if nargin == 3
+            options = struct();
+        end
+        
+        % initial conditions:
+        [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
+        x0(1) = -6;
+        x0(3) = 1.5;
+
+        % final conditions:
+        xf = x0;
+        xf(1) = 6; %translated in x
+        
+        tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
+        
+        Q = eye(13);
+        Q(1,1) = 10;
+        R = eye(4);
+        Qf = 100*eye(13);
+        
+        E0 = zeros(13,13);
+        
+        prog = RobustDirtranTrajectoryOptimization(obj,N,D,E0,Q,R,Qf,[0 tf0],options);
+        prog = prog.addStateConstraint(ConstantConstraint(x0),1);
+        prog = prog.addStateConstraint(ConstantConstraint(xf),N);
+        prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,4:7);
+        %prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),1:N);
+        prog = addRunningCost(prog,@cost);
+        %prog = prog.addFinalCost(@finalCost);
+        
+        prog = prog.addRobustCost(Q,R,Qf);
+        prog = prog.addRobustInputConstraint();
+        
+        prog = prog.setSolverOptions('snopt','majoroptimalitytolerance', 1e-2);
+        prog = prog.setSolverOptions('snopt','majorfeaasibilitytolerance', 1e-3);
+        prog = prog.setSolverOptions('snopt','minorfeaasibilitytolerance', 1e-3);
+        
+        %prog = addTrajectoryDisplayFunction(prog,@displayTrajectory);
+        
+        traj_init.x = PPTrajectory(foh([0,tf0],[double(x0),double(xf)]));
+        
+        disp('Running solve');
+        tic
+        [xtraj,utraj,z] = prog.solveTraj(tf0,traj_init);
+        toc
+        
+        function [h,dh] = finalCost(tf,x)
+            h = tf;
+            if (nargout>1)
+                dh = [1, zeros(1,13)];
+            end
+        end
+        function [g,dg] = cost(dt,x,u)
+                R = eye(4);
+                g = 0.5*(u-u0)'*R*(u-u0);
+                dg = [0, zeros(1,13), (u-u0)'*R];
+        end
+        
+    end
         
         function [xtrim, utrim] = findTrim(obj,v,varargin)
             %Trim the plane for level forward flight at speed v

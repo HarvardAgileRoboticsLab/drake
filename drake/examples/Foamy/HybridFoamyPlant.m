@@ -136,15 +136,11 @@ classdef HybridFoamyPlant < HybridDrakeSystem
             prog = prog.compile();
             tic
             [xtraj,utraj,~,~,info]=solveTraj(prog,t_init,traj_init);
-            %[xtraj,utraj,~,~,info]=solveTraj(prog,[t_init/2;t_init/2]);
             toc
 
-            
+
             if nargin == 2 && display
-                v = HybridFoamyVisualizer(obj);
-                %v = FoamyVisualizer(obj);
-                v.playback(xtraj.traj{1}.trajs{2});
-                %v.playback(xtraj,struct('slider',true));
+                visualizeFoamy(obj,xtraj,true);
             end
 
             function [g,dg] = cost(dt,x,u)

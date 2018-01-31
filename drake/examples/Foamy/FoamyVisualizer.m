@@ -4,7 +4,7 @@ classdef FoamyVisualizer < Visualizer
     methods
         function obj = FoamyVisualizer(plant)
           
-          typecheck(plant,'FoamyPlant');
+          %typecheck(plant,'FoamyPlant');
           checkDependency('lcm');
       
           obj = obj@Visualizer(plant.getOutputFrame);
