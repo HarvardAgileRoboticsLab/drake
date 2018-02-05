@@ -27,13 +27,16 @@ end
 
 tf=2.0;
 
-ts_plant = TimeSteppingRigidBodyManipulator(plant,0.0005,options);
+ts_plant = TimeSteppingRigidBodyManipulator(plant,0.002,options);
 
-for k = 1:20;
+for k = 1:20
 sim_traj = ts_plant.simulate([0,tf],x0samp(:,k));
 sim_traj = PPTrajectory(foh(sim_traj.getBreaks(), sim_traj.eval(sim_traj.getBreaks())));
 true_traj{k} = sim_traj.setOutputFrame(plant.getStateFrame());
-v.playback(true_traj{k});
+end
+
+for k = 1:20
+    v.playback(true_traj{k});
 end
 
 save('random_true3.mat','true_traj');

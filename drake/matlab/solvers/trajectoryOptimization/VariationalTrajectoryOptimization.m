@@ -900,62 +900,57 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivs(obj,q2,v)
             nq = length(q2);
             nv = length(v);
-            [M,G,B,dM,dG,dB] = manipulatorDynamics(obj.plant, q2, zeros(nv,1));
             
-            [M,G,B,dM,dG,dB] = obj.plant.manipulatorDynamics(q2, zeros(nv,1));
-            %             [dT,d2T] = obj.plant.kineticEnergyDerivatives(q2, v);
+            [~,G,B,~,dG,dB] = obj.plant.manipulatorDynamics(q2, zeros(nv,1));
+            [dT,d2T] = obj.plant.kineticEnergyDerivatives(q2, v);
             
             dBdq = dB(:,1:nq);
             
-            %             D1L = dT(1:nq) - G;
-            %             D2L = dT(nq+(1:nv));
+            D1L = dT(1:nq) - G;
+            D2L = dT(nq+(1:nv));
             
-            %             D1D1L = d2T(1:nq,1:nq) - dG(:,1:nq);
-            %             D1D2L = d2T(1:nq,nq+(1:nv));
-            %             D2D2L = d2T(nq+(1:nv),nq+(1:nv));
-            
-            
+            D1D1L = d2T(1:nq,1:nq) - dG(:,1:nq);
+            D1D2L = d2T(1:nq,nq+(1:nv));
+            D2D2L = d2T(nq+(1:nv),nq+(1:nv));
             
             
-            dM = reshape(dM,nq*nq,nq+nv);
-            dMdq = dM(:,1:nq);
-            D1L = 0.5*dMdq'*kron(v,v) - G;
-            D2L = M*v;
-            %             D1D1L = -dG(:,1:nq); %throwing out second derivative of M terms here
+%             dM = reshape(dM,nq*nq,nq+nv);
+%             dMdq = dM(:,1:nq);
+            %D1D1L = -dG(:,1:nq); %throwing out second derivative of M terms here
             
             %             tic
-            D1D1L = zeros(nq);
-            step = sqrt(eps(max(q2)));
-            deltaq = step*eye(nq);
-            for k = 1:nq
-                
-                [~,~,~,dMp] = manipulatorDynamics(obj.plant, q2+deltaq(:,k), zeros(nv,1));
-                dMp = reshape(dMp,nq*nq,nq+nv);
-                dMdqp = dMp(:,1:nq);
-                
-                [~,~,~,dMm] = manipulatorDynamics(obj.plant, q2-deltaq(:,k), zeros(nv,1));
-                dMm = reshape(dMm,nq*nq,nq+nv);
-                dMdqm = dMm(:,1:nq);
-                
-                %                 D1p2 = 0.5*dMdqp'*kron(v,v) - Gp;
-                %                 D1m2 = 0.5*dMdqm'*kron(v,v) - Gm;
-                
-                D1p = 0.5*dMdqp'*kron(v,v);
-                D1m = 0.5*dMdqm'*kron(v,v);
-                
-                D1D1L(:,k) = (D1p - D1m)/(2*step);
-                %                 D1D1L2(:,k) = (D1p2  - D1m2)/(2*step);
-            end
-            
-            D1D1L = D1D1L - dG(1:nq, 1:nq);
-            %             valuecheck(D1D1L, D1D1L2, 1e-8)
-            %             D1D1L2 = D1D1L2
-            %             valu
-            %             toc
-            %disp(sprintf('D1D1L error: %d',max(abs(D1D1L_fd(:)-D1D1L(:)))));
-            
-            D1D2L = kron(v',eye(nq))*dMdq;
-            D2D2L = M;
+%             D1D1L = zeros(nq);
+%             step = sqrt(eps(max(q2)));
+%             deltaq = step*eye(nq);
+%             for k = 1:nq
+%                 
+%                 [~,~,~,dMp] = manipulatorDynamics(obj.plant, q2+deltaq(:,k), zeros(nv,1));
+%                 dMp = reshape(dMp,nq*nq,nq+nv);
+%                 dMdqp = dMp(:,1:nq);
+%                 
+%                 [~,~,~,dMm] = manipulatorDynamics(obj.plant, q2-deltaq(:,k), zeros(nv,1));
+%                 dMm = reshape(dMm,nq*nq,nq+nv);
+%                 dMdqm = dMm(:,1:nq);
+%                 
+%                 %                 D1p2 = 0.5*dMdqp'*kron(v,v) - Gp;
+%                 %                 D1m2 = 0.5*dMdqm'*kron(v,v) - Gm;
+%                 
+%                 D1p = 0.5*dMdqp'*kron(v,v);
+%                 D1m = 0.5*dMdqm'*kron(v,v);
+%                 
+%                 D1D1L(:,k) = (D1p - D1m)/(2*step);
+%                 %                 D1D1L2(:,k) = (D1p2  - D1m2)/(2*step);
+%             end
+%             
+%             D1D1L = D1D1L - dG(1:nq, 1:nq);
+%             %             valuecheck(D1D1L, D1D1L2, 1e-8)
+%             %             D1D1L2 = D1D1L2
+%             %             valu
+%             %             toc
+%             %disp(sprintf('D1D1L error: %d',max(abs(D1D1L_fd(:)-D1D1L(:)))));
+%             
+%             D1D2L = kron(v',eye(nq))*dMdq;
+%             D2D2L = M;
             
         end
         

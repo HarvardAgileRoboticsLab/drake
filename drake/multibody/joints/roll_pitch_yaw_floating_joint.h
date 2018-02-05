@@ -72,27 +72,58 @@ class RollPitchYawFloatingJoint
       Scalar cy = cos(yaw);
       Scalar sy = sin(yaw);
 
-      dmotion_subspace->transpose() << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, sr * sy + cr * cy * sp,
-          cr * sy - cy * sp * sr, 0.0, 0.0, 0.0, 0.0, -cy * sr + cr * sp * sy,
-          -cr * cy - sp * sr * sy, 0.0, 0.0, 0.0, 0.0, cp * cr, -cp * sr, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -sr, -cr, 0.0, 0.0, 0.0, 0.0, cp * cr,
-          -cp * sr, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -cy * sp, cp * cy * sr,
-          cp * cr * cy, 0.0, 0.0, 0.0, -sp * sy, cp * sr * sy, cp * cr * sy,
-          0.0, 0.0, 0.0, -cp, -sp * sr, -cr * sp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -cp, -sp * sr, -cr * sp, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, -cp * sy, -cr * cy - sp * sr * sy,
-          cy * sr - cr * sp * sy, 0.0, 0.0, 0.0, cp * cy,
-          -cr * sy + cy * sp * sr, sr * sy + cr * cy * sp, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+      dmotion_subspace->setZero();
+      (*dmotion_subspace)(112) = sr * sy + cr * cy * sp;
+      (*dmotion_subspace)(113) = cr*sy - cy*sp*sr;
+      (*dmotion_subspace)(118) = cr*sy - cy*sp*sr;
+      (*dmotion_subspace)(119) = -cr*cy - sp*sr*sy;
+      (*dmotion_subspace)(124) = cp*cr;
+      (*dmotion_subspace)(125) = -cp*sr;
+      (*dmotion_subspace)(133) = -sr;
+      (*dmotion_subspace)(134) = -cr;
+      (*dmotion_subspace)(139) = cp*cr;
+      (*dmotion_subspace)(140) = -cp*sr;
+      (*dmotion_subspace)(147) = -cy*sp;
+      (*dmotion_subspace)(148) = cp*cy*sr;
+      (*dmotion_subspace)(149) = cp*cr*cy;
+      (*dmotion_subspace)(153) = -sp*sy;
+      (*dmotion_subspace)(154) = cp*sr*sy;
+      (*dmotion_subspace)(155) = cp*cr*sy;
+      (*dmotion_subspace)(159) = -cp;
+      (*dmotion_subspace)(160) = -sp*sr;
+      (*dmotion_subspace)(161) = -cr*sp;
+      (*dmotion_subspace)(174) = -cp;
+      (*dmotion_subspace)(175) = -sp*sr;
+      (*dmotion_subspace)(176) = -cr*sp;
+      (*dmotion_subspace)(183) = -cp*sy;
+      (*dmotion_subspace)(184) = -cr*cy - sp*sr*sy;
+      (*dmotion_subspace)(185) = cy*sr - cr*sp*sy;
+      (*dmotion_subspace)(189) = cp*cy;
+      (*dmotion_subspace)(190) = cy*sp*sr - cr*sy;
+      (*dmotion_subspace)(191) = sr*sy + cr*cy*sp;
+
+
+      // dmotion_subspace->transpose() << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, sr * sy + cr * cy * sp,
+      //     cr * sy - cy * sp * sr, 0.0, 0.0, 0.0, 0.0, -cy * sr + cr * sp * sy,
+      //     -cr * cy - sp * sr * sy, 0.0, 0.0, 0.0, 0.0, cp * cr, -cp * sr, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -sr, -cr, 0.0, 0.0, 0.0, 0.0, cp * cr,
+      //     -cp * sr, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -cy * sp, cp * cy * sr,
+      //     cp * cr * cy, 0.0, 0.0, 0.0, -sp * sy, cp * sr * sy, cp * cr * sy,
+      //     0.0, 0.0, 0.0, -cp, -sp * sr, -cr * sp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -cp, -sp * sr, -cr * sp, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, -cp * sy, -cr * cy - sp * sr * sy,
+      //     cy * sr - cr * sp * sy, 0.0, 0.0, 0.0, cp * cy,
+      //     -cr * sy + cy * sp * sr, sr * sy + cr * cy * sp, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
     }
   }
 
@@ -155,78 +186,149 @@ class RollPitchYawFloatingJoint
     if (dmotion_subspace_dot_times_vdq) {
       dmotion_subspace_dot_times_vdq->resize(motion_subspace_dot_times_v.rows(),
                                              get_num_positions());
-      dmotion_subspace_dot_times_vdq->transpose() << 0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-          -pitchd * rolld * cr - pitchd * yawd * cr * sp -
-              rolld * yawd * cp * sr,
-          pitchd * rolld * sr + pitchd * yawd * sp * sr -
-              rolld * yawd * cp * cr,
-          0.0,
-          xd * (rolld * (cr * sy - cy * sp * sr) +
-                yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
-              zd * (pitchd * cr * sp + rolld * cp * sr) +
-              yd * (-rolld * (cr * cy + sp * sr * sy) +
-                    yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy),
-          -zd * (rolld * cp * cr - pitchd * sp * sr) -
-              xd * (rolld * (sr * sy + cr * cy * sp) -
-                    yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
-              yd * (rolld * (cy * sr - cr * sp * sy) +
-                    yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy),
-          pitchd * yawd * sp, -pitchd * yawd * cp * sr - rolld * yawd * cr * sp,
-          rolld * yawd * sp * sr - pitchd * yawd * cp * cr,
-          -xd * (pitchd * cp * cy - yawd * sp * sy) -
-              yd * (pitchd * cp * sy + yawd * cy * sp) + pitchd * zd * sp,
-          -zd * (pitchd * cp * sr + rolld * cr * sp) -
-              xd * (-rolld * cp * cr * cy + pitchd * cy * sp * sr +
-                    yawd * cp * sr * sy) +
-              yd * (rolld * cp * cr * sy + yawd * cp * cy * sr -
-                    pitchd * sp * sr * sy),
-          -zd * (pitchd * cp * cr - rolld * sp * sr) -
-              xd * (pitchd * cr * cy * sp + rolld * cp * cy * sr +
-                    yawd * cp * cr * sy) -
-              yd * (-yawd * cp * cr * cy + pitchd * cr * sp * sy +
-                    rolld * cp * sr * sy),
-          0.0, 0.0, 0.0, -xd * (yawd * cp * cy - pitchd * sp * sy) -
-                             yd * (pitchd * cy * sp + yawd * cp * sy),
-          yd * (rolld * (sr * sy + cr * cy * sp) -
-                yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
-              xd * (rolld * (cy * sr - cr * sp * sy) +
-                    yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy),
-          yd * (rolld * (cr * sy - cy * sp * sr) +
-                yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
-              xd * (-rolld * (cr * cy + sp * sr * sy) +
-                    yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy);
+      dmotion_subspace_dot_times_vdq->setZero();
+
+      (*dmotion_subspace_dot_times_vdq)(19) = -pitchd * rolld * cr - pitchd * yawd * cr * sp - rolld * yawd * cp * sr;
+      (*dmotion_subspace_dot_times_vdq)(20) = pitchd * rolld * sr + pitchd * yawd * sp * sr - rolld * yawd * cp * cr;
+      (*dmotion_subspace_dot_times_vdq)(22) = xd * (rolld * (cr * sy - cy * sp * sr) + yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
+                                                          zd * (pitchd * cr * sp + rolld * cp * sr) + yd * (-rolld * (cr * cy + sp * sr * sy) +
+                                                          yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy);
+      (*dmotion_subspace_dot_times_vdq)(23) = -zd * (rolld * cp * cr - pitchd * sp * sr) -
+                                                          xd * (rolld * (sr * sy + cr * cy * sp) -
+                                                                yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
+                                                          yd * (rolld * (cy * sr - cr * sp * sy) +
+                                                                yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy);
+      (*dmotion_subspace_dot_times_vdq)(24) = pitchd * yawd * sp;
+      (*dmotion_subspace_dot_times_vdq)(25) = -pitchd * yawd * cp * sr - rolld * yawd * cr * sp;
+      (*dmotion_subspace_dot_times_vdq)(26) = rolld * yawd * sp * sr - pitchd * yawd * cp * cr;
+      (*dmotion_subspace_dot_times_vdq)(27) = -xd * (pitchd * cp * cy - yawd * sp * sy) -
+                                                           yd * (pitchd * cp * sy + yawd * cy * sp) + pitchd * zd * sp;
+      (*dmotion_subspace_dot_times_vdq)(28) = -zd * (pitchd * cp * sr + rolld * cr * sp) -
+                                                          xd * (-rolld * cp * cr * cy + pitchd * cy * sp * sr +
+                                                                yawd * cp * sr * sy) +
+                                                          yd * (rolld * cp * cr * sy + yawd * cp * cy * sr -
+                                                                pitchd * sp * sr * sy);
+      (*dmotion_subspace_dot_times_vdq)(29) = -zd * (pitchd * cp * cr - rolld * sp * sr) -
+                                                          xd * (pitchd * cr * cy * sp + rolld * cp * cy * sr +
+                                                                yawd * cp * cr * sy) -
+                                                          yd * (-yawd * cp * cr * cy + pitchd * cr * sp * sy +
+                                                                rolld * cp * sr * sy);
+      (*dmotion_subspace_dot_times_vdq)(33) = -xd * (yawd * cp * cy - pitchd * sp * sy) -
+                                                           yd * (pitchd * cy * sp + yawd * cp * sy);
+      (*dmotion_subspace_dot_times_vdq)(34) = yd * (rolld * (sr * sy + cr * cy * sp) -
+                                                          yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
+                                                        xd * (rolld * (cy * sr - cr * sp * sy) +
+                                                              yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy);
+      (*dmotion_subspace_dot_times_vdq)(35) = yd * (rolld * (cr * sy - cy * sp * sr) +
+                                                          yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
+                                                        xd * (-rolld * (cr * cy + sp * sr * sy) +
+                                                              yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy);
+
+
+      // dmotion_subspace_dot_times_vdq->transpose() << 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //     -pitchd * rolld * cr - pitchd * yawd * cr * sp -
+      //         rolld * yawd * cp * sr,
+      //     pitchd * rolld * sr + pitchd * yawd * sp * sr -
+      //         rolld * yawd * cp * cr,
+      //     0.0,
+      //     xd * (rolld * (cr * sy - cy * sp * sr) +
+      //           yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
+      //         zd * (pitchd * cr * sp + rolld * cp * sr) +
+      //         yd * (-rolld * (cr * cy + sp * sr * sy) +
+      //               yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy),
+      //     -zd * (rolld * cp * cr - pitchd * sp * sr) -
+      //         xd * (rolld * (sr * sy + cr * cy * sp) -
+      //               yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
+      //         yd * (rolld * (cy * sr - cr * sp * sy) +
+      //               yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy),
+      //     pitchd * yawd * sp, -pitchd * yawd * cp * sr - rolld * yawd * cr * sp,
+      //     rolld * yawd * sp * sr - pitchd * yawd * cp * cr,
+      //     -xd * (pitchd * cp * cy - yawd * sp * sy) -
+      //         yd * (pitchd * cp * sy + yawd * cy * sp) + pitchd * zd * sp,
+      //     -zd * (pitchd * cp * sr + rolld * cr * sp) -
+      //         xd * (-rolld * cp * cr * cy + pitchd * cy * sp * sr +
+      //               yawd * cp * sr * sy) +
+      //         yd * (rolld * cp * cr * sy + yawd * cp * cy * sr -
+      //               pitchd * sp * sr * sy),
+      //     -zd * (pitchd * cp * cr - rolld * sp * sr) -
+      //         xd * (pitchd * cr * cy * sp + rolld * cp * cy * sr +
+      //               yawd * cp * cr * sy) -
+      //         yd * (-yawd * cp * cr * cy + pitchd * cr * sp * sy +
+      //               rolld * cp * sr * sy),
+      //     0.0, 0.0, 0.0, -xd * (yawd * cp * cy - pitchd * sp * sy) -
+      //                        yd * (pitchd * cy * sp + yawd * cp * sy),
+      //     yd * (rolld * (sr * sy + cr * cy * sp) -
+      //           yawd * (cr * cy + sp * sr * sy) + pitchd * cp * cy * sr) +
+      //         xd * (rolld * (cy * sr - cr * sp * sy) +
+      //               yawd * (cr * sy - cy * sp * sr) - pitchd * cp * sr * sy),
+
+      //     yd * (rolld * (cr * sy - cy * sp * sr) +
+      //           yawd * (cy * sr - cr * sp * sy) + pitchd * cp * cr * cy) -
+      //         xd * (-rolld * (cr * cy + sp * sr * sy) +
+      //               yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy);
     }
 
     if (dmotion_subspace_dot_times_vdv) {
       dmotion_subspace_dot_times_vdv->resize(motion_subspace_dot_times_v.rows(),
                                              get_num_velocities());
-      dmotion_subspace_dot_times_vdv->transpose() << 0.0, 0.0, 0.0,
-          -pitchd * cy * sp - yawd * cp * sy,
-          rolld * (sr * sy + cr * cy * sp) - yawd * (cr * cy + sp * sr * sy) +
-              pitchd * cp * cy * sr,
-          rolld * (cr * sy - cy * sp * sr) + yawd * (cy * sr - cr * sp * sy) +
-              pitchd * cp * cr * cy,
-          0.0, 0.0, 0.0, yawd * cp * cy - pitchd * sp * sy,
-          -rolld * (cy * sr - cr * sp * sy) - yawd * (cr * sy - cy * sp * sr) +
-              pitchd * cp * sr * sy,
-          -rolld * (cr * cy + sp * sr * sy) + yawd * (sr * sy + cr * cy * sp) +
-              pitchd * cp * cr * sy,
-          0.0, 0.0, 0.0, -pitchd * cp, rolld * cp * cr - pitchd * sp * sr,
-          -pitchd * cr * sp - rolld * cp * sr, 0.0,
-          -pitchd * sr + yawd * cp * cr, -pitchd * cr - yawd * cp * sr, 0.0,
-          xd * (sr * sy + cr * cy * sp) - yd * (cy * sr - cr * sp * sy) +
-              zd * cp * cr,
-          xd * (cr * sy - cy * sp * sr) - yd * (cr * cy + sp * sr * sy) -
-              zd * cp * sr,
-          -yawd * cp, -sr * (rolld + yawd * sp), -cr * (rolld + yawd * sp),
-          -zd * cp - xd * cy * sp - yd * sp * sy,
-          sr * (-zd * sp + xd * cp * cy + yd * cp * sy),
-          cr * (-zd * sp + xd * cp * cy + yd * cp * sy), -pitchd * cp,
-          rolld * cp * cr - pitchd * sp * sr,
-          -pitchd * cr * sp - rolld * cp * sr, cp * (yd * cy - xd * sy),
-          -xd * (cr * cy + sp * sr * sy) - yd * (cr * sy - cy * sp * sr),
-          xd * (cy * sr - cr * sp * sy) + yd * (sr * sy + cr * cy * sp);
+
+      dmotion_subspace_dot_times_vdv->setZero();
+
+      (dmotion_subspace_dot_times_vdv->transpose())(3) = -pitchd * cy * sp - yawd * cp * sy;
+      (dmotion_subspace_dot_times_vdv->transpose())(4) = rolld * (sr * sy + cr * cy * sp) - yawd * (cr * cy + sp * sr * sy) +
+                                                         pitchd * cp * cy * sr;
+      (dmotion_subspace_dot_times_vdv->transpose())(5) = rolld * (cr * sy - cy * sp * sr) + yawd * (cy * sr - cr * sp * sy) +
+                                                         pitchd * cp * cr * cy;
+      (dmotion_subspace_dot_times_vdv->transpose())(9) = yawd * cp * cy - pitchd * sp * sy;
+      (dmotion_subspace_dot_times_vdv->transpose())(10) = -rolld * (cy * sr - cr * sp * sy) - yawd * (cr * sy - cy * sp * sr) + pitchd * cp * sr * sy;
+      (dmotion_subspace_dot_times_vdv->transpose())(11) = -rolld * (cr * cy + sp * sr * sy) + yawd * (sr * sy + cr * cy * sp) + pitchd * cp * cr * sy;
+      (dmotion_subspace_dot_times_vdv->transpose())(15) = -pitchd * cp;
+      (dmotion_subspace_dot_times_vdv->transpose())(16) = rolld * cp * cr - pitchd * sp * sr;
+      (dmotion_subspace_dot_times_vdv->transpose())(17) = -pitchd * cr * sp - rolld * cp * sr;
+      (dmotion_subspace_dot_times_vdv->transpose())(19) = -pitchd * sr + yawd * cp * cr;
+      (dmotion_subspace_dot_times_vdv->transpose())(20) = -pitchd * cr - yawd * cp * sr;
+      (dmotion_subspace_dot_times_vdv->transpose())(22) = xd * (sr * sy + cr * cy * sp) - yd * (cy * sr - cr * sp * sy) + zd * cp * cr;
+      (dmotion_subspace_dot_times_vdv->transpose())(23) = xd * (cr * sy - cy * sp * sr) - yd * (cr * cy + sp * sr * sy) - zd * cp * sr;
+      (dmotion_subspace_dot_times_vdv->transpose())(24) = -yawd * cp;
+      (dmotion_subspace_dot_times_vdv->transpose())(25) = -sr * (rolld + yawd * sp);
+      (dmotion_subspace_dot_times_vdv->transpose())(26) = -cr * (rolld + yawd * sp);
+      (dmotion_subspace_dot_times_vdv->transpose())(27) = -zd * cp - xd * cy * sp - yd * sp * sy;
+      (dmotion_subspace_dot_times_vdv->transpose())(28) = sr * (-zd * sp + xd * cp * cy + yd * cp * sy);
+      (dmotion_subspace_dot_times_vdv->transpose())(29) = cr * (-zd * sp + xd * cp * cy + yd * cp * sy);
+      (dmotion_subspace_dot_times_vdv->transpose())(30) = -pitchd * cp;
+      (dmotion_subspace_dot_times_vdv->transpose())(31) = rolld * cp * cr - pitchd * sp * sr;
+      (dmotion_subspace_dot_times_vdv->transpose())(32) = -pitchd * cr * sp - rolld * cp * sr;
+      (dmotion_subspace_dot_times_vdv->transpose())(33) = cp * (yd * cy - xd * sy);
+      (dmotion_subspace_dot_times_vdv->transpose())(34) = -xd * (cr * cy + sp * sr * sy) - yd * (cr * sy - cy * sp * sr);
+      (dmotion_subspace_dot_times_vdv->transpose())(35) = xd * (cy * sr - cr * sp * sy) + yd * (sr * sy + cr * cy * sp);
+
+      // dmotion_subspace_dot_times_vdv->transpose() << 0.0, 0.0, 0.0,
+      //     -pitchd * cy * sp - yawd * cp * sy,
+      //     rolld * (sr * sy + cr * cy * sp) - yawd * (cr * cy + sp * sr * sy) +
+      //         pitchd * cp * cy * sr,
+      //     rolld * (cr * sy - cy * sp * sr) + yawd * (cy * sr - cr * sp * sy) +
+      //         pitchd * cp * cr * cy,
+      //     0.0, 0.0, 0.0, yawd * cp * cy - pitchd * sp * sy,
+      //     -rolld * (cy * sr - cr * sp * sy) - yawd * (cr * sy - cy * sp * sr) +
+      //         pitchd * cp * sr * sy,
+      //     -rolld * (cr * cy + sp * sr * sy) + yawd * (sr * sy + cr * cy * sp) +
+      //         pitchd * cp * cr * sy,
+      //     0.0, 0.0, 0.0, -pitchd * cp, rolld * cp * cr - pitchd * sp * sr,
+      //     -pitchd * cr * sp - rolld * cp * sr, 0.0,
+      //     -pitchd * sr + yawd * cp * cr, -pitchd * cr - yawd * cp * sr, 0.0,
+      //     xd * (sr * sy + cr * cy * sp) - yd * (cy * sr - cr * sp * sy) +
+      //         zd * cp * cr,
+      //     xd * (cr * sy - cy * sp * sr) - yd * (cr * cy + sp * sr * sy) -
+      //         zd * cp * sr,
+      //     -yawd * cp, -sr * (rolld + yawd * sp), -cr * (rolld + yawd * sp),
+      //     -zd * cp - xd * cy * sp - yd * sp * sy,
+      //     sr * (-zd * sp + xd * cp * cy + yd * cp * sy),
+      //     cr * (-zd * sp + xd * cp * cy + yd * cp * sy), -pitchd * cp,
+      //     rolld * cp * cr - pitchd * sp * sr,
+      //     -pitchd * cr * sp - rolld * cp * sr, cp * (yd * cy - xd * sy),
+      //     -xd * (cr * cy + sp * sr * sy) - yd * (cr * sy - cy * sp * sr),
+      //     xd * (cy * sr - cr * sp * sy) + yd * (sr * sy + cr * cy * sp);
     }
   }
 

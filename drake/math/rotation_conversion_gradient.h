@@ -24,20 +24,20 @@ dquat2rotmat(const Eigen::MatrixBase<Derived>& quaternion) {
 
   typename drake::math::Gradient<Eigen::Matrix<typename Derived::Scalar, 3, 3>,
                                  drake::kQuaternionSize>::type ret;
-  typename Eigen::MatrixBase<Derived>::PlainObject qtilde;
-  typename drake::math::Gradient<Derived, drake::kQuaternionSize>::type dqtilde;
-  drake::math::NormalizeVector(quaternion, qtilde, &dqtilde);
+  //typename Eigen::MatrixBase<Derived>::PlainObject qtilde;
+  // typename drake::math::Gradient<Derived, drake::kQuaternionSize>::type dqtilde;
+  // drake::math::NormalizeVector(quaternion, qtilde, &dqtilde);
 
   typedef typename Derived::Scalar Scalar;
-  Scalar w = qtilde(0);
-  Scalar x = qtilde(1);
-  Scalar y = qtilde(2);
-  Scalar z = qtilde(3);
+  Scalar w = 2.0*quaternion(0);
+  Scalar x = 2.0*quaternion(1);
+  Scalar y = 2.0*quaternion(2);
+  Scalar z = 2.0*quaternion(3);
 
   ret << w, x, -y, -z, z, y, x, w, -y, z, -w, x, -z, y, x, -w, w, -x, y, -z, x,
       w, z, y, y, z, w, x, -x, -w, z, y, w, -x, -y, z;
-  ret *= 2.0;
-  ret *= dqtilde;
+  // ret *= 2.0;
+  // ret *= dqtilde;
   return ret;
 }
 
