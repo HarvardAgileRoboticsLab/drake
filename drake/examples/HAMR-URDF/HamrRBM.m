@@ -3,6 +3,16 @@ classdef HamrRBM < RigidBodyManipulator
     properties (SetAccess = protected, GetAccess = public)
         x0
         grav = [0; 0; -9.81e-3];
+        
+%         nu              % number of actual inputs
+%         nc              % number of contact pairs
+%         nd              % number of basis vectors in polyhedral friction cone
+        nl              % number of loop constraints
+        ULIM = 3; 
+        valid_loops     % valid loop constraints
+%         pf = [];        % Position of foot in local frame
+%         feet;           % name of foot link
+        
     end
     
     methods
@@ -10,72 +20,124 @@ classdef HamrRBM < RigidBodyManipulator
         function obj=HamrRBM(urdf,options)
             
             typecheck(urdf,'char');
-            if nargin < 1
-                urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaled.urdf');
-            end
             
-            if nargin < 2
-                options = struct();
-            end
- 
             obj = obj@RigidBodyManipulator(urdf,options);
+            
+%             obj.nu = obj.getNumInputs();
             obj.x0 = zeros(2*obj.getNumPositions(), 1);
-                        
+            obj.x0(3) = 12.69;
+
+            
+            % leg position
+%             obj.pf = options.pf;
+%             obj.feet = options.feet;
+            
             %set gravity
-            obj = obj.setGravity(obj.grav); 
+            obj = obj.setGravity(obj.grav);
             obj = compile(obj);
-
-
-        end
-        
-        
-        function [y, Jy] = output(obj, t, x, u)
             
-            nx = numel(x);
-            actuated_dof = obj.getActuatedJoints();
-            y = [x; x(actuated_dof); x(actuated_dof + nx/2)];
+            % set input limits
+
+            % Add contact forces to inputs
+%             [phi,~,d] = obj.contactConstraints(getZeroConfiguration(obj));
+%             nc = length(phi); obj.nc = nc;
+%             nd = 2*length(d); obj.nd = nd;
             
-            if nargout > 1
-                ny = numel(y); nu = numel(u);
-                Jy1 = [zeros(nx, 1), eye(nx), zeros(nx, nu)];       % derivative of state
-                Jy2 = zeros(ny - nx, 1 + nx + nu);                  % derivative of actuated dof q and qd
-                r_ind = (1:ny-nx)';
-                c_ind = 1+[actuated_dof; actuated_dof + nx/2];
-                Jy2(sub2ind([ny-nx, 1 + nx + nu], r_ind, c_ind)) = 1;
-                Jy = [Jy1; Jy2];
-            end
+            % loop const
+            valid_loops = [1;2;8;9;13;15];
+            obj.valid_loops = [valid_loops; 18+valid_loops; 36+valid_loops; 54+valid_loops];
+            nl = length(obj.valid_loops); obj.nl = nl;
+            
+            % Add contact and loop const as inputs
+%             obj = obj.setNumInputs(obj.nu + nc + nc*nd + nl);
+            
         end
         
         function obj = compile(obj)
             obj = compile@RigidBodyManipulator(obj);
-
-                        
-            %Add Ouputs
-            joint_names = {obj.body.jointname}';
-            actuated_dof = obj.getActuatedJoints();
-            obj = obj.setNumOutputs(obj.getNumStates()+ 2*numel(actuated_dof));
-            state_frame = obj.getStateFrame();
-            
-            if obj.getBody(2).floating
-                act_jt_names = [joint_names(actuated_dof - 4); ...
-                    joint_names(actuated_dof - 4)];
-                %                 act_jt_names =
-            else
-                act_jt_names = [joint_names(actuated_dof + 1); ...
-                    joint_names(actuated_dof +1 )];
-            end
-            
-            output_frame = MultiCoordinateFrame( ...
-                {state_frame.getFrameByNum(1), ...
-                state_frame.getFrameByNum(2), ...
-                CoordinateFrame('ActuatorDeflectionandRate', 2*obj.getNumActuatedDOF(), ...
-                {}, act_jt_names)},[ones(obj.getNumPositions(),1); ...
-                2*ones(obj.getNumVelocities(),1); 3*ones(2*numel(actuated_dof),1)]);
-            
-            obj = obj.setOutputFrame(output_frame);
-            
-        end       
+        end
         
+        
+%         function [f, df] = dynamics(obj, t, x, u)
+%             
+%             xin = [t; x; u];
+%             [f,df] = dynamics_fun(obj,xin);
+% %             fprintf('Time: %f \r', t);
+%             
+% %             df_fd = zeros(size(df));
+% %             step = max(1e-8, sqrt(eps(max(abs(xin)))));
+% %             dxin = step*eye(length(xin));
+% %             for k = 1:length(xin)
+% %                 df_fd(:,k) = (dynamics_fun(obj, xin+dxin(:,k)) - dynamics_fun(obj, xin-dxin(:,k)))/(2*step);
+% %             end
+% %             
+% %             disp('Dynamics Derivative Error:');
+% %             disp(max(abs(df_fd(:)-df(:))));
+%             
+%         end
+%         
+%         function[xdot, dxdot] = dynamics_fun(obj,xin)
+%             
+%             % load in parameters
+%             nq = obj.getNumPositions();
+%             nv = obj.getNumVelocities();
+%             nu = obj.nu;
+%             nc = obj.nc;
+%             nl = obj.nl;
+%             nd = obj.nd;
+%             
+%             t = xin(1);
+%             q = xin(1+(1:nq));
+%             v = xin(1+nq+(1:nv));
+%             u = xin(1+nq+nv+(1:nu));
+%             l = xin(1+nq+nv+nu+(1:nl));
+%             c = xin(1+nq+nv+nu+nl+(1:nc));
+%             b = xin(1+nq+nv+nu+nl+nc+(1:nc*nd));
+%             
+%             % Contact basis
+%             kinopts = struct();
+%             kinopts.compute_gradients = true;
+%             kin = obj.doKinematics(q, v, kinopts);
+%             [~,~,~,~,~,~,~,~,n,D,dn,dD] = obj.contactConstraints(kin);
+%             
+%             if isempty(n)
+%                 n = zeros(0,nq);
+%                 dn = zeros(0,nq);
+%             end
+%             
+%             D = reshape(cell2mat(D')',nq,nc*nd)';
+%             dD = reshape(cell2mat(dD)',nq,nc*nd*nq)';
+%             
+%             % loop constraints
+%             [~, K, dK] = obj.positionConstraints(q);
+%             K = K(obj.valid_loops, :);
+%             dK = reshape(dK(obj.valid_loops, :)', nq, nl*nq)'; %
+%             
+%             % Manipulator Dynamics
+%             [H,C,B,dH,dC,dB] = manipulatorDynamics(obj, q, v);
+%             
+%             % form rhs and derivs
+%             rhs = B*u + K'*l+ n'*c + D'*b - C;
+%             
+%             drhs_dq = kron(u', eye(nv))*dB(:,1:nq) + kron(c',eye(nq))*comm(nc,nq)*dn + ...
+%                 kron(l', eye(nv))*dK + kron(b', eye(nv))*comm(nd*nc,nv)*dD - dC(:,1:nq);
+%             drhs_dv = kron(u', eye(nv))*dB(:,nq+(1:nv)) - dC(:, nq+(1:nv));
+%             
+%             % form Hinv and derivs
+%             Hinv = inv(H);
+%             dH = reshape(dH,nq*nq,nq+nv);
+%             dHinv_dq = -kron(Hinv', Hinv)*dH(:,1:nq);
+%             
+%             % Solve for accelerations
+%             qddot = Hinv*rhs;
+%             
+%             % xdot and deriv
+%             xdot = [v; qddot];
+%             dxdot = [zeros(nv, 1), zeros(nv, nq), eye(nv), zeros(nv, nu+nl+nc+nc*nd); ... %dv/dt, dv/dq, dv/dv, dv/du, dv/dl, dv/dc, dv/db
+%                 zeros(nv, 1), kron(rhs', eye(nv))*dHinv_dq + Hinv*drhs_dq, Hinv*drhs_dv, Hinv*B, Hinv*K', Hinv*n', Hinv*D']; %da/dt, da/dq, da/dv, da/du, da/dl, da/dc, da/db
+%             %
+%         end
+%         
         function nActuatedDOF = getNumActuatedDOF(obj)
             nActuatedDOF = numel(obj.getActuatedJoints());
         end
@@ -89,82 +151,6 @@ classdef HamrRBM < RigidBodyManipulator
         function x0 = getInitialState(obj)
             x0 = obj.x0;
         end
-
-    end    
+        
+    end
 end
-
-%       function varargout = manipulatorDynamics(obj,varargin)
-%           q = varargin{1}; v = varargin{2};
-%           varargout = cell(1,nargout);
-%           [varargout{:}]  = obj.hamr_manip.manipulatorDynamics(q, v);
-%           C = varargout{2};
-%           varagout{2} = C + obj.loop_forces(q, v);
-%       end
-
-%      function Floop = loop_forces(obj, q,v)
-%             manip = obj.getManipulator();
-%             nBodies = length(manip.body);
-%             Floop = zeros(numel(q), 1);
-%             net_wrenches = cell(nBodies, 1);
-%             for i = 1:nBodies
-%                 net_wrenches{i} = zeros(6,1);
-%             end
-%             %                         Fextg1 = zeros(1, numel(q));
-%             %             Fextg2 = zeros(1, numel(q));
-%             options.compute_JdotV = true;
-%             options.use_mex = false;
-%             kinsol = obj.doKinematics(q, v, options);               % kinematics
-%             f_ext = zeros(6,getNumBodies(manip));
-%             for i = 1:obj.NLOOP
-%                 fexti = zeros(6, getNumBodies(manip));
-%                 kinopt.base_or_frame_id = obj.LOOP_LINKS(i,1);      % first link in chain
-%                 kinopt.rotation_type = 1;                           % we want euler angles
-%                 [x1to2, J1to2] = obj.forwardKin(kinsol, obj.LOOP_LINKS(i,2), zeros(3,1), kinopt);
-% %                 xd1to2 = J1to2*v;
-%
-% %                 w1to2 = quatdot2angularvel(x1to2(4:7), xd1to2(4:7));
-% %                 aa1to2 = quat2axis(x1to2(4:7));
-%
-% %                 qinv1to2 = quatConjugate(q1to2);
-%
-%                 torque = -obj.KD(i)*x1to2(obj.LOOP_AXES(i));  ...
-%                     %- obj.BD(i)*xd1to2(obj.LOOP_AXES(i));
-%
-% %                 torque = -obj.KD(i)*aa1to2(4)*aa1to2(obj.LOOP_AXES(i)) ...
-% %                     - obj.BD(i)*w1to2(obj.LOOP_AXES(i));
-%
-%                 wrench_on_child_in_child_joint_frame = [zeros(2,1);torque;zeros(3,1)];
-%
-%                 % transform from body frame to joint frame
-%                 AdT_body_to_joint = transformAdjoint(manip.body(obj.LOOP_LINKS(i,2)).T_body_to_joint);
-%                 fexti(:,obj.LOOP_LINKS(i,2)) = f_ext(:, obj.LOOP_LINKS(i,2)) + ...
-%                     AdT_body_to_joint' * wrench_on_child_in_child_joint_frame;
-%
-%                 if obj.LOOP_LINKS(i,1) ~= 0 % don't apply force to world body
-%                     T_parent_body_to_child_joint = homogTransInv(manip.body(obj.LOOP_LINKS(i,2)).Ttree);
-%                     AdT_parent_body_to_child_joint = transformAdjoint(T_parent_body_to_child_joint);
-%                     fexti(:,obj.LOOP_LINKS(i,1)) = - AdT_parent_body_to_child_joint' * wrench_on_child_in_child_joint_frame;
-%                 end
-%                 f_ext = f_ext + fexti;
-%             end
-%             %             f_extN
-%             for i = 2:nBodies
-%                 external_wrench = f_ext(:, i);
-%                 % external wrenches are expressed in body frame. Transform from body to world:
-%                 AdT_world_to_body = transformAdjoint(homogTransInv(kinsol.T{i}));
-%                 external_wrench = AdT_world_to_body' * external_wrench;
-%                 net_wrenches{i} = -external_wrench;
-%             end
-%
-%             for i = nBodies : -1 : 2
-%                 body =manip.body(i);
-%                 joint_wrench = net_wrenches{i};
-%                 Ji = kinsol.J{i};
-%                 tau = Ji'*joint_wrench;
-%                 Floop(body.velocity_num) = tau;
-%                 net_wrenches{body.parent} = net_wrenches{body.parent} + joint_wrench;
-%
-%             end
-% %             Floop
-%             %             nWN = reshape(cell2mat(net_wrenches), 6, 9)
-%         end

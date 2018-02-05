@@ -1,8 +1,11 @@
 classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
     
     properties (SetAccess = protected, GetAccess = public)
-        x0
+        q0
         grav = [0; 0; -9.81e-3];
+        valid_loops;
+        legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
+        ULIM = 0.3; 
     end
     
     methods
@@ -11,21 +14,23 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
             
             typecheck(urdf,'char');
             
-            if nargin < 2
-                options = struct();
-            end
-            if ~isfield(options,'dt')
-                options.dt = 1;
-            end
-            if ~isfield(options,'floating')
-                options.floating = true;
-            end
-            if ~isfield(options,'terrain')
-                options.terrain = RigidBodyFlatTerrain;
-            end
-            
             obj = obj@TimeSteppingRigidBodyManipulator(urdf,options.dt,options);
-            obj.x0 = zeros(obj.getNumDiscStates(), 1);
+            obj.q0 = zeros(obj.getNumPositions(), 1);
+            obj.q0(3) = 12.69;
+            
+            % set input limits
+            umax = obj.ULIM*ones(obj.getNumInputs(), 1);
+            umin = -obj.ULIM*ones(obj.getNumInputs(), 1);             
+            obj = obj.setInputLimits(umin, umax);
+            
+            %set gravity
+            obj.manip = obj.manip.setGravity(obj.grav);
+            obj.manip = compile(obj.manip);
+            
+            % set loops
+            valid_loops = [1;2;8;9;13;15];
+            obj.valid_loops = [valid_loops; 18+valid_loops; 36+valid_loops; 54+valid_loops];
+            
         end
         
         
@@ -49,35 +54,40 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
         function obj = compile(obj)
             obj = compile@TimeSteppingRigidBodyManipulator(obj);
             
-            %set gravity
-            obj.manip = obj.manip.setGravity(obj.grav); 
-            obj.manip = compile(obj.manip); 
             
-            %Add Ouputs
+            %Add Ouputs.
             joint_names = obj.getJointNames();
             actuated_dof = obj.getActuatedJoints();
-            obj = obj.setNumOutputs(obj.getNumStates()+ 2*numel(actuated_dof));
+            obj = obj.setNumOutputs(obj.getNumStates()+ numel(actuated_dof));
             state_frame = obj.getStateFrame();
             
             if obj.getManipulator().getBody(2).floating
-                act_jt_names = [joint_names(actuated_dof - 4); ...
-                    joint_names(actuated_dof - 4)];
-                %                 act_jt_names =
+                act_jt_names = joint_names(actuated_dof - 4);
             else
-                act_jt_names = [joint_names(actuated_dof + 1); ...
-                    joint_names(actuated_dof +1 )];
+                act_jt_names = joint_names(actuated_dof + 1);
             end
             
             output_frame = MultiCoordinateFrame( ...
                 {state_frame.getFrameByNum(1), ...
                 state_frame.getFrameByNum(2), ...
-                CoordinateFrame('ActuatorDeflectionandRate', 2*obj.getNumActuatedDOF(), ...
+                CoordinateFrame('ActuatorDeflection', obj.getNumActuatedDOF(), ...
                 {}, act_jt_names)},[ones(obj.getNumPositions(),1); ...
-                2*ones(obj.getNumVelocities(),1); 3*ones(2*numel(actuated_dof),1)]);
+                2*ones(obj.getNumVelocities(),1); 3*ones(numel(actuated_dof),1)]);
             
             obj = obj.setOutputFrame(output_frame);
             
-        end       
+        end
+        
+%         function hamr_pd = pdtrajtracking(obj, u0, kp, kd)
+%             
+%             qa = obj.getActuatedJoints();
+%             
+%             Kp = kp*eye(numel(qa));
+%             Kd = kd*eye(numel(qa));
+%             
+%             hamr_pd = obj.pdcontrol(Kp, Kd, qa);
+%             
+%         end
         
         function nActuatedDOF = getNumActuatedDOF(obj)
             nActuatedDOF = numel(obj.getActuatedJoints());
@@ -90,84 +100,10 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
         end
         
         function x0 = getInitialState(obj)
-            x0 = obj.x0;
+            x0 = [obj.q0; 0*obj.q0];
+            x0(3) = 12.69;
         end
-
-    end    
+        
+    end
 end
 
-%       function varargout = manipulatorDynamics(obj,varargin)
-%           q = varargin{1}; v = varargin{2};
-%           varargout = cell(1,nargout);
-%           [varargout{:}]  = obj.hamr_manip.manipulatorDynamics(q, v);
-%           C = varargout{2};
-%           varagout{2} = C + obj.loop_forces(q, v);
-%       end
-
-%      function Floop = loop_forces(obj, q,v)
-%             manip = obj.getManipulator();
-%             nBodies = length(manip.body);
-%             Floop = zeros(numel(q), 1);
-%             net_wrenches = cell(nBodies, 1);
-%             for i = 1:nBodies
-%                 net_wrenches{i} = zeros(6,1);
-%             end
-%             %                         Fextg1 = zeros(1, numel(q));
-%             %             Fextg2 = zeros(1, numel(q));
-%             options.compute_JdotV = true;
-%             options.use_mex = false;
-%             kinsol = obj.doKinematics(q, v, options);               % kinematics
-%             f_ext = zeros(6,getNumBodies(manip));
-%             for i = 1:obj.NLOOP
-%                 fexti = zeros(6, getNumBodies(manip));
-%                 kinopt.base_or_frame_id = obj.LOOP_LINKS(i,1);      % first link in chain
-%                 kinopt.rotation_type = 1;                           % we want euler angles
-%                 [x1to2, J1to2] = obj.forwardKin(kinsol, obj.LOOP_LINKS(i,2), zeros(3,1), kinopt);
-% %                 xd1to2 = J1to2*v;
-%
-% %                 w1to2 = quatdot2angularvel(x1to2(4:7), xd1to2(4:7));
-% %                 aa1to2 = quat2axis(x1to2(4:7));
-%
-% %                 qinv1to2 = quatConjugate(q1to2);
-%
-%                 torque = -obj.KD(i)*x1to2(obj.LOOP_AXES(i));  ...
-%                     %- obj.BD(i)*xd1to2(obj.LOOP_AXES(i));
-%
-% %                 torque = -obj.KD(i)*aa1to2(4)*aa1to2(obj.LOOP_AXES(i)) ...
-% %                     - obj.BD(i)*w1to2(obj.LOOP_AXES(i));
-%
-%                 wrench_on_child_in_child_joint_frame = [zeros(2,1);torque;zeros(3,1)];
-%
-%                 % transform from body frame to joint frame
-%                 AdT_body_to_joint = transformAdjoint(manip.body(obj.LOOP_LINKS(i,2)).T_body_to_joint);
-%                 fexti(:,obj.LOOP_LINKS(i,2)) = f_ext(:, obj.LOOP_LINKS(i,2)) + ...
-%                     AdT_body_to_joint' * wrench_on_child_in_child_joint_frame;
-%
-%                 if obj.LOOP_LINKS(i,1) ~= 0 % don't apply force to world body
-%                     T_parent_body_to_child_joint = homogTransInv(manip.body(obj.LOOP_LINKS(i,2)).Ttree);
-%                     AdT_parent_body_to_child_joint = transformAdjoint(T_parent_body_to_child_joint);
-%                     fexti(:,obj.LOOP_LINKS(i,1)) = - AdT_parent_body_to_child_joint' * wrench_on_child_in_child_joint_frame;
-%                 end
-%                 f_ext = f_ext + fexti;
-%             end
-%             %             f_extN
-%             for i = 2:nBodies
-%                 external_wrench = f_ext(:, i);
-%                 % external wrenches are expressed in body frame. Transform from body to world:
-%                 AdT_world_to_body = transformAdjoint(homogTransInv(kinsol.T{i}));
-%                 external_wrench = AdT_world_to_body' * external_wrench;
-%                 net_wrenches{i} = -external_wrench;
-%             end
-%
-%             for i = nBodies : -1 : 2
-%                 body =manip.body(i);
-%                 joint_wrench = net_wrenches{i};
-%                 Ji = kinsol.J{i};
-%                 tau = Ji'*joint_wrench;
-%                 Floop(body.velocity_num) = tau;
-%                 net_wrenches{body.parent} = net_wrenches{body.parent} + joint_wrench;
-%
-%             end
-% %             Floop
-%             %             nWN = reshape(cell2mat(net_wrenches), 6, 9)
-%         end

@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<robot name="SingleLeg">
+
+
+  <link name="Chassis">
+    <inertial>
+      <origin xyz="0 0 -0.379657560961688" rpy="0 0 0" />
+      <mass value=" 1.2066" />
+      <inertia ixx="49.0722" ixy="8.7197e-04" ixz="0.2372"
+        iyy="68.1039" iyz="-0.0032" izz="99.7537" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="../meshes/Chassis.obj" scale="1000" />
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+ </link>
+
+ <link name="L1">
+  <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0001" />
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <geometry>
+      <sphere radius="0.5"/>
+      </geometry>
+      <material name="Green"> 
+        <color rgba="0 1 0 1" />
+      </material>
+    </visual>
+ </link>
+
+ <link name="L2">
+  <inertial>
+      <origin xyz="0.0261 0.9512 -1.6472" rpy="0 0 0" />
+      <mass value="0.0676" />
+      <inertia ixx="1.9112" ixy="0.0521" ixz="0.3478" 
+        iyy="1.4472" iyz="-0.4488" izz="1.3143" />
+  </inertial>
+  <visual>
+    <origin xyz="0 0 -7.485" rpy="0 0 0" />
+    <geometry>
+      <cylinder length="14.97" radius="0.5"/>
+      </geometry>
+      <material name=""> 
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -14.97"/>
+      <geometry>
+        <sphere radius="0" />
+      </geometry>
+    </collision>
+ </link>
+
+
+  <joint name="swing" type="continuous">
+    <origin xyz="12.75300579825,  9.91, 0.46" rpy="0 0 0" />
+    <parent link="Chassis" />
+    <child link="L1" />
+    <axis xyz="0 1 0" />
+    <limit lower="-pi/9" upper="pi/9"/>    
+  </joint>
+
+  <joint name="lift" type="continuous">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="L1" />
+    <child link="L2" />
+    <axis xyz="1 0 0" />
+    <limit lower="0.1695" upper="0.8677"/>
+  </joint>
+
+
+<!--- Actuator Inputs -->
+
+<transmission type="SimpleTransmission" name="S">
+    <actuator name="uS" />
+    <joint name="swing" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+<transmission type="SimpleTransmission" name="L">
+    <actuator name="uL" />
+    <joint name="lift" />
+    <mechanicalReduction>1</mechanicalReduction>
+</transmission>
+
+</robot>

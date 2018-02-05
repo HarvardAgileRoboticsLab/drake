@@ -8,7 +8,7 @@ plant = VariationalFourBarPlant(file, options);
 plant = compile(plant);
 
 v = plant.constructVisualizer(); 
-
+v.inspector(); 
 % Time% Steps
 N=21;
 
@@ -30,19 +30,19 @@ tf = 4;
 [qopt,utraj,ctraj,btraj,psitraj,etatraj,jltraj, klopt, straj] = variationalFourBar(plant, N, x0, tf);
 %% PLotting 
 
-qsim = q.eval(q.getBreaks());
+% qsim = q.eval(q.getBreaks());
 qqopt = qopt.eval(qopt.getBreaks());
 
 figure(3); clf;
-for i=1:size(q, 1)
-    subplot(2,size(q,1)/2,i); hold on;
-    plot(rad2deg(qsim(i,:)), 'b');
-    if i == 1
-        plot(rad2deg(10*pi/11)*ones(size(qsim(i,:))), 'k'); 
-    end
+for i=1:size(qopt, 1)
+    subplot(2,size(qopt,1)/2,i); hold on;
+%     plot(rad2deg(qsim(i,:)), 'b');
+%     if i == 1
+%         plot(rad2deg(10*pi/11)*ones(size(qsim(i,:))), 'k'); 
+%     end
     plot(rad2deg(qqopt(i,:)), 'r--');
     hold off;
-    legend('MidpointRule', 'TrajOpt')
+%     legend('MidpointRule', 'TrajOpt')
 end
 
 % good_ind= [1; 3];
@@ -51,18 +51,18 @@ kllopt = circshift(klopt.eval(klopt.getBreaks()),1,2);
 figure(4); clf;
 for i=1:size(kllopt, 1)
     subplot(size(kllopt,1),1,i); hold on;
-    if i == 1
-        plot(2*kl(i,1:end), 'b');
-    end
-    if i == 3
-        plot(2*kl(2,1:end), 'b');
-    end
-    if i == 5
-        plot(2*kl(3,1:end), 'b');
-    end
+%     if i == 1
+%         plot(2*kl(i,1:end), 'b');
+%     end
+%     if i == 3
+%         plot(2*kl(2,1:end), 'b');
+%     end
+%     if i == 5
+%         plot(2*kl(3,1:end), 'b');
+%     end
     plot(kllopt(i,1:end), 'r--');
     hold off;
-    legend('MidpointRule', 'TrajOpt')
+%     legend('MidpointRule', 'TrajOpt')
 end
 tilefigs; 
 
