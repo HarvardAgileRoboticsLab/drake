@@ -20,9 +20,9 @@ options.z_inactive_guess_tol = 0.1;
 options.use_bullet = false;
 
 % options to change
-options.dt = 1;
+options.dt = .3;
 % options.mu = 0.6;
-gait = 'TROT';
+gait = 'PRONK';
 SAVE_FLAG = 1;
 ISFLOAT = false; % floating (gnd contact) or in air (not floating)
 
@@ -48,7 +48,7 @@ nv = hamr.getNumVelocities();
 % v.inspector(x0);
 
 %% Build Actuators
-dp.Vb = 200;
+dp.Vb = 150;
 dp.Vg = 0;
 
 nact = 8;
@@ -92,8 +92,8 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Build (open-loop) control input
 
-fd = 0.002;         % drive frequency (Hz)
-tsim = 5e3;
+fd = 0.060;         % drive frequency (Hz)
+tsim = 500;
 
 t = 0:options.dt:tsim;
 
@@ -121,7 +121,7 @@ switch gait
 end
 
 % ramp
-tramp = 1/fd;
+tramp = 5/fd;
 ramp = t/tramp; ramp(t >= tramp) = 1;
 
 Vact = bsxfun(@times, ramp, Vact) + 0.5*(dp.Vb - dp.Vg);

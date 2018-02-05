@@ -567,7 +567,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         end
         
         function [f,df] = midpoint_contact(obj,xin)
-            mu = 0.5; %This is currently hard-coded in Drake
+            mu = 0.35; %This is currently hard-coded in Drake
             nC = obj.nC;
             nD = obj.nD;
             nQ = obj.plant.getNumPositions();

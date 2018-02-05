@@ -2,8 +2,8 @@ clear; clc; close all;
 %% Load Transmission Trajectories
 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.25N_2Hz_TYM';
-trajTrans = load([save_dir, fname, '_SP_VariationalSmooth_PlusAct.mat']); %, '_VariationalMU.mat']);
+fname = 'TROT_0.15N_30Hz_TYM_SP';
+trajTrans = load([save_dir, fname, '_VariationalSmooth_PlusAct.mat']); %, '_VariationalMU.mat']);
 xtrajd = trajTrans.xtraj();
 ttd = xtrajd.getBreaks();
 hhd = mean(diff(ttd));
@@ -103,8 +103,8 @@ hamr_OL = cascade(vtraj, hamrWact);
 xtraj_sim = simulate(hamr_OL, [0 ncyc*ttd(end)], x0);
 
 %% Simulate Closed Loop
-kp = 40; %100; %0.05; %0.5; 
-kd = 50; %20; %0.15; %0.05; %0.3; 
+kp = 50; %100; %0.05; %0.5; 
+kd = 40; %20; %0.15; %0.05; %0.3; 
 
 % qa = hamr.getActuatedJoints();
 % xtrajA = PPTrajectory(foh(0:hhd:(ncyc*ttd(end) - hhd), ...

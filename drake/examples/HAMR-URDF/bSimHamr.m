@@ -1,6 +1,6 @@
 clear; clc; close all;
 global kl_traj jl_traj c_traj beta_traj psi_traj eta_traj
-save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
+save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/AgileBehaviors/';
 
 %% Load Rigid Body
 
@@ -20,9 +20,9 @@ options.z_inactive_guess_tol = 0.1;
 options.use_bullet = false;
 
 % options to change
-options.dt = 2;
+options.dt = 1;
 gait = 'TROT';
-SAVE_FLAG = 1;
+SAVE_FLAG = 0;
 ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 
 if ISFLOAT
@@ -45,37 +45,74 @@ v = hamr.constructVisualizer();
 
 %% Build (open-loop) control input
 
-fd = 0.002;         % drive frequency (Hz)
-tsim = 3e3;
+fd = 0.01;         % drive frequency (Hz)
+tsim = 500;
 FmaxS = 0.25;
-FmaxL = 0.25;
+FmaxL = 0.35;
 
 
 t = 0:options.dt:tsim;
 
 switch gait
     case 'SINGLE_JUMP'
-        t0 = 25; ind0 = find(t > t0, 1, 'first');
-        t1 = 75; ind1 = find(t > t1, 1, 'first');
-        t2 = 95; ind2 = find(t > t2, 1, 'first');
+        t0 = 20; ind0 = find(t >= t0, 1, 'first');
+        t1 = 35; ind1 = find(t > t1, 1, 'first');
+        t2 = 45; ind2 = find(t > t2, 1, 'first');
+%         t3 = 100; ind3 = find(t > t3, 1, 'first');
+%         t4 = 120; ind4 = find(t > t4, 1, 'first');
+        
+        %         t3 = 65; ind3 = find(t > t3, 1, 'first');
         
         uu = zeros(8, numel(t));
-        uu(2:2:end, 1:ind0) = repmat((-FmaxL/t0)*t(1:ind0), 4, 1);         % pull lifts up
-        uu(2:2:end, ind0+1:ind1) = -FmaxL;                                 % hold
-        uu(2:2:end, ind1+1:ind2) = repmat(2*FmaxL/(t2-t1)*(t(ind1+1:ind2) - t(ind1)) ...
-            - FmaxL, 4, 1);         % bring down rapidly
+        uu(2:2:end, 1:ind0) = repmat((-0.8*FmaxL/t0)*t(1:ind0), 4, 1);         % pull lifts up
+        uu(2:2:end, ind0+1:ind1) = -0.8*FmaxL;                                 % hold
+        uu(2:2:end, ind1+1:ind2) = repmat(1.8*FmaxL/(t2-t1)*(t(ind1+1:ind2) - t(ind1)) ...
+            - 0.8*FmaxL, 4, 1);         % bring down rapidly
         uu(2:2:end, ind2+1:end) = FmaxL;            % hold at bottom
+%         uu(2:2:end, ind3+1:ind4) = repmat(-FmaxL/(t4-t3)*(t(ind3+1:ind4) - t(ind3)) ...
+%             + FmaxL, 4, 1);                % hold at bottom
+
         uu([2, 4], :) = -uu([2, 4], :);             % flip signs for left side
         
-    case 'MULTI_JUMP'
-        uu = [0*FmaxS*sin(2*pi*fd*t + pi/2);            % FLswing
-            FmaxL*sin(2*pi*fd*t);                       % FLlift
-            0*FmaxS*sin(2*pi*fd*t - pi/2);              % RLSwing
-            FmaxL*sin(2*pi*fd*t);                       % RLLift
-            0*FmaxS*sin(2*pi*fd*t - pi/2);              % FRswing
-            FmaxL*sin(2*pi*fd*t + pi);                  % FRlift
-            0*FmaxS*sin(2*pi*fd*t + pi/2);              % RRSwing
-            FmaxL*sin(2*pi*fd*t + pi)];                      % RRLift      
+    case 'WHEELI'
+        t0 = 20; ind0 = find(t >= t0, 1, 'first');
+        t0a = 30; ind0a = find(t >= t0a, 1, 'first');
+        t1 = 35; ind1 = find(t > t1, 1, 'first');
+        t1a = 35; ind1a = find(t >= t1a, 1, 'first');
+        t2 = 55; ind2 = find(t > t2, 1, 'first');
+        t2a = 55; ind2a = find(t >= t2a, 1, 'first');
+        
+        twl = 100; indw = find(t >= twl, 1, 'first');
+        tws = twl + 0.25/fd; indws = find(t >= tws, 1, 'first');
+        
+        
+        uu = zeros(8, numel(t));
+        
+        uu([2,6], 1:ind0) = repmat((-FmaxL/t0)*t(1:ind0), 2, 1);         % pull front lifts up
+        uu([1,5],1:ind0a) = repmat((FmaxS/t0a)*t(1:ind0a), 2, 1);      % pull swings back
+        
+        uu([2,6], ind0+1:ind1) = -FmaxL;                                 % hold
+        uu([1,5],ind0a+1:end) = FmaxS;
+        
+        uu([2,6], ind1+1:ind2) = repmat(2*FmaxL/(t2-t1)*(t(ind1+1:ind2) - t(ind1)) - FmaxL, 2, 1);         % bring down rapidly        
+        uu([1,5], ind1a+1:ind2a) = repmat(-2*FmaxS/(t2a-t1a)*(t(ind1a+1:ind2a) - t(ind1a)) + FmaxS, 2, 1);         % bring forward rapidly
+%         uu([3,7], ind1+1:ind2) = repmat(FmaxS/(t2-t1)*(t(ind1+1:ind2) - t(ind1)), 2, 1);  
+        
+        uu([2,6], ind2+1:end) = FmaxL;            % hold at bottom
+        uu([1,5], ind2a+1:end) = -FmaxS;            % hold at front
+  
+        uu([2, 4], :) = -uu([2, 4], :);             % flip signs for left side
+        uu([3, 5], :) = -uu([3, 5], :);             % flip signs for left side
+        
+        uu(4, indw+1:end) = 0.3*FmaxL*sin(2*pi*fd*(t(indw+1:end)-twl)); 
+        uu(8, indw+1:end) = 0.3*FmaxL*sin(2*pi*fd*(t(indw+1:end)-twl) + pi);
+        
+        uu(3, indws+1:end) = FmaxS*sin(2*pi*fd*(t(indws+1:end)-tws)); 
+        uu(7, indws+1:end) = FmaxS*sin(2*pi*fd*(t(indws+1:end)-tws) + pi);
+        
+%         uu(4, :) = FmaxL*sin(2*pi*fd*(t-t2) + pi); 
+%         uu(8, :) = FmaxL*sin(2*pi*fd*(t-t2) + pi);
+        
         
     case 'TROT'
         uu = [FmaxS*sin(2*pi*fd*t + pi/2);            % FLswing
@@ -109,6 +146,8 @@ u = setOutputFrame(u, hamr.getInputFrame());
 
 figure(1); clf;
 plot(t, uu(1,:), t, uu(2,:), '--');
+plot(t, uu(3,:), t, uu(4,:), '--');
+
 legend('Swing Drive', 'Lift Drive')
 
 %% Simulate Open loop
@@ -222,5 +261,5 @@ end
 if SAVE_FLAG
     fname = [gait, '_', num2str(FmaxS), 'N_', num2str(1e3*fd), 'Hz'];
     disp(['Saving as ', fname]);
-    save([save_dir, fname, '_SP_TYM.mat'], 'tt', 'xx', 'uu', 'kl_traj', 'jl_traj', 'c_traj', 'beta_traj', 'eta_traj', 'psi_traj');
+    save([save_dir, fname, '_TYM.mat'], 'tt', 'xx', 'uu', 'kl_traj', 'jl_traj', 'c_traj', 'beta_traj', 'eta_traj', 'psi_traj');
 end

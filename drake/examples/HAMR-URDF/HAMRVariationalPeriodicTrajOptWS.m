@@ -41,7 +41,8 @@ T = tt(end);
 N = 51;
 t_init = linspace(0, T, N);
 xx0 = traj_init.x.eval(t_init(1));
-xxf = traj_init.x.eval(t_init(N)); xxf(1) = 10; 
+xxf = traj_init.x.eval(t_init(N)); 
+% xxf(1) = 10; 
 t_init = linspace(0, T, N);
 
 % traj_init.x = traj_init.x.eval(t_init);
@@ -56,29 +57,30 @@ T_span = [0.9*T 1.1*T];
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
 
 % -- Costs ---%
-traj_opt = traj_opt.addFinalCost(@final_cost);                          % close to final goal
+traj_opt = traj_opt.ad4dFinalCost(@final_cost);                          % close to final goal
 % traj_opt = traj_opt.addRunningCost(@running_cost); 
 traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);         % display
 
-
+% 
+% xxd = traj_init.x.eval(t_init); 
 % % track nominal trajectory (loose)
 % for ind = 1:N
 %     traj_opt = traj_opt.addCost(FunctionHandleObjective(nq,@(x)tracking_cost(x, xxd(1:nq,ind)),1), ...
 %         traj_opt.x_inds(1:nq,ind));
 % end
 
-% try to get smooth u
-for ind = 1:N-2
-    traj_opt = traj_opt.addCost(FunctionHandleObjective(2*nu,@(u1, u2)udiff_cost(u1, u2)), ...
-        {traj_opt.u_inds(:,ind); traj_opt.u_inds(:,ind+1)});
-end
+% % try to get smooth u
+% for ind = 1:N-2
+%     traj_opt = traj_opt.addCost(FunctionHandleObjective(2*nu,@(u1, u2)udiff_cost(u1, u2)), ...
+%         {traj_opt.u_inds(:,ind); traj_opt.u_inds(:,ind+1)});
+% end
 
-% try to get smooth accelerations
-for ind = 2:N-1
-    traj_opt = traj_opt.addCost(FunctionHandleObjective(2*nv,@vdiff_cost_fun), ...
-        {traj_opt.h_inds(ind-1); traj_opt.h_inds(ind); traj_opt.x_inds(:,ind-1); ...
-        traj_opt.x_inds(:,ind); traj_opt.x_inds(:,ind+1)});
-end
+% % try to get smooth accelerations
+% for ind = 2:N-1
+%     traj_opt = traj_opt.addCost(FunctionHandleObjective(2*nv,@vdiff_cost_fun), ...
+%         {traj_opt.h_inds(ind-1); traj_opt.h_inds(ind); traj_opt.x_inds(:,ind-1); ...
+%         traj_opt.x_inds(:,ind); traj_opt.x_inds(:,ind+1)});
+% end
 
 
 %  `
@@ -232,7 +234,7 @@ toc
         vm1 = traj_opt.qdiff(q1,q2,h1);
         vm2 = traj_opt.qdiff(q2,q3,h2);
         
-        a = 40; 
+        a = 5; 
         vdiff = (vm1 - vm2);
         c = 0.5*a*(vdiff'*vdiff);
         I = eye(nv);
@@ -249,12 +251,12 @@ toc
 %     end
 
 
-%     function [c, dc] = tracking_cost(x, xd)
-%         Q = 0.01*eye(nq);
-%         c = (1/2)*(x-xd)'*Q*(x-xd);
-%         dc = (x-xd)'*Q;
-% %         fprintf('Tracking Cost: %f \r', c)
-%     end
+    function [c, dc] = tracking_cost(x, xd)
+        Q = 0.1*eye(nq);
+        c = (1/2)*(x-xd)'*Q*(x-xd);
+        dc = (x-xd)'*Q;
+%         fprintf('Tracking Cost: %f \r', c)
+    end
 
     function displayTraj(h,x,u)
         disp('Displaying Trajectory...')

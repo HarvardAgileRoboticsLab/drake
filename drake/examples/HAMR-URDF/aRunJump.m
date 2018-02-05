@@ -2,7 +2,7 @@ clear; clc; close all;
 
 load_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/AgileBehaviors/';
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/AgileBehaviors/';
-fname = 'MULTI_JUMP_0.2N_15Hz_TYM';
+fname = 'SINGLE_JUMP_0.25N_10Hz_TYM';
 
 sim_traj = load([load_dir, fname, '.mat']);
 
@@ -14,6 +14,7 @@ traj_init.b = PPTrajectory(zoh(traj_init.t, sim_traj.beta_traj));
 traj_init.psi = PPTrajectory(zoh(traj_init.t, sim_traj.psi_traj)); 
 traj_init.eta =  PPTrajectory(zoh(traj_init.t, sim_traj.eta_traj)); 
 traj_init.kl =  PPTrajectory(zoh(traj_init.t, sim_traj.kl_traj)); 
+
 
 [hamr,xtraj,utraj,ctraj,btraj,...
     psitraj,etatraj,jltraj, kltraj, straj, ...
@@ -92,7 +93,7 @@ for i = 1:size(phi, 1)
 end
 
 %%
-save([save_dir, fname, 'b.mat'], 'xtraj', 'utraj', ...
+save([save_dir, fname, '4.mat'], 'xtraj', 'utraj', ...
     'ctraj', 'btraj', 'psitraj', 'etatraj',  'jltraj', 'kltraj', 'straj');
 
 

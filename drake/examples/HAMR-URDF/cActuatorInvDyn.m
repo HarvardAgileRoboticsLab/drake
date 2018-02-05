@@ -20,8 +20,8 @@ hamr = compile(hamr);
 
 %% Trajectory
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
-fname = 'TROT_0.25N_10Hz_TYM';
-append = '_TEF_VariationalSmooth';
+fname = 'TROT_0.1N_30Hz_TYM_TEF_VariationalSmooth_converted';
+append = '';
 trajTrans = load([save_dir, fname, append, '.mat']); %, '_VariationalMU.mat']);
 
 % Time
