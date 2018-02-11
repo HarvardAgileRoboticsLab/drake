@@ -1,31 +1,42 @@
 classdef FoamyPendulumPlant < DrakeSystem
     
     properties
-        
+        m_package = 0; %Package mass
     end
     
     methods
         
-        function obj = FoamyPendulumPlant()
+        function obj = FoamyPendulumPlant(m_p)
             obj = obj@DrakeSystem(26,0,4,26,0,1);
             obj = obj.setStateFrame(CoordinateFrame('FoamyPendulumState',26,'x',{'x1','x2','x3','q0','q1','q2','q3','x4','x5','x6','q4','q5','q6','q7','v1','v2','v3','w1','w2','w3','v4','v5','v6','w4','w5','w6'}));
             obj = obj.setInputFrame(CoordinateFrame('FoamyPendulumInput',4,'u',{'thr','ail','elev','rud'}));
             obj = obj.setOutputFrame(obj.getStateFrame); %full state feedback
             %quaternion unit-norm constraint -- why doesn't the index input work?
             %obj = obj.addStateConstraint(QuadraticConstraint(.5,.5,blkdiag(zeros(3),eye(4),zeros(6)),zeros(13,1)));
-        end
+            if nargin == 0
+                obj.m_package = 0;
+            else
+                obj.m_package = m_p;
+            end
+           end
+
         
+        function obj = change_m_package(obj,m_p)
+            obj = set.m_package(obj,m_p);
+       % obj = obj.m_package = m_p;
+        end
+
         function [xdot, dxdot] = dynamics(obj,t,x,u)
             if nargout == 1
                 %xdot = foamy_pendulum_dynamics(t,x,u);
-                xdot = foamy_pendulum_dynamics_mex(t,x,u);
+                xdot = foamy_pendulum_dynamics_mex(t,x,u,obj.m_package);
                 dxdot = 0;
             else %Need Jacobian
                 options.grad_level = 0;
                 options.grad_method = 'numerical';
                 options.diff_type = 'central';
                 %[xdot, dxdot] = geval(@(t1,x1,u1) foamy_pendulum_dynamics(t1,x1,u1),t,x,u,options);
-                [xdot, dxdot] = geval(@(t1,x1,u1) foamy_pendulum_dynamics_mex(t1,x1,u1),t,x,u,options);
+                [xdot, dxdot] = geval(@(t1,x1,u1) foamy_pendulum_dynamics_mex(t1,x1,u1,obj.m_package),t,x,u,options);
             end
         end
         

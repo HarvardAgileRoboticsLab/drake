@@ -1,22 +1,28 @@
 classdef HybridFoamyPendulumPlant < HybridDrakeSystem
     
    properties
-        
+        m_package = 0;
     end
     
     methods
         
-        function obj = HybridFoamyPendulumPlant()
+        function obj = HybridFoamyPendulumPlant(m_p)
             obj = obj@HybridDrakeSystem(4,26);
             %obj = obj@DrakeSystem(13,0,4,13,0,1);
             %obj = obj.setStateFrame(CoordinateFrame('FoamyState',13,'x',{'x1','x2','x3','q0','q1','q2','q3','v1','v2','v3','w1','w2','w3'}));
             %obj = obj.setInputFrame(CoordinateFrame('FoamyInput',4,'u',{'thr','ail','elev','rud'}));
             %obj = obj.setOutputFrame(CoordinateFrame('FoamyState',13,'x',{'x1','x2','x3','q0','q1','q2','q3','v1','v2','v3','w1','w2','w3'}));
-            mode_1 = FoamyPendulumPlant;
+            if nargin == 0
+                obj.m_package = 0;
+            else
+                obj.m_package = m_p;
+            end
+            
+            mode_1 = FoamyPendulumPlant(0);
             obj = setInputFrame(obj,mode_1.getInputFrame);
             obj = setOutputFrame(obj,mode_1.getOutputFrame);
             [obj,mode_1] = addMode(obj,mode_1,'pre-collision');
-            mode_2 = FoamyPendulumPlant;
+            mode_2 = FoamyPendulumPlant(obj.m_package);
             obj = setInputFrame(obj,mode_2.getInputFrame);
             obj = setOutputFrame(obj,mode_2.getOutputFrame);
             [obj,mode_2] = addMode(obj,mode_2,'post-collision');
@@ -37,41 +43,86 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             end
             
             function [g,dg] = packageGuardz(obj,t,x,u)
-            g = x(10) - 0.5;
-            dg = [0,zeros(1,9),1,zeros(1,20)];
-            %dg = [0,-1,zeros(1,29)];
+                %g = x(10) - 0.5;
+                q = x(11:14);
+                v = q(2:4);
+                hat = [ 0  -v(3) v(2);
+                v(3)  0  -v(1);
+                 -v(2) v(1)  0];
+                R_p = eye(3) + 2*hat*(hat + q(1)*eye(3));
+                p_l = [0;0;-.3];
+                p_end = x(8:10)-R_p*p_l;
+
+                package_location = [0;0;0];
+                hoop_length = 0.25;
+
+                pend_pack = p_end-package_location;
+
+                g = norm(pend_pack)-hoop_length;
+                %g = p_end(3)-0;
+                %g = x(10);
+                %dg = [0,zeros(1,9),1,zeros(1,20)];
+                dpden = 1/(norm(pend_pack));
+                dpdxpend = pend_pack;
+
+                dqs = (3/5)*[q(3) -q(2) 0; q(4) -q(1) -2*q(2);...
+                            q(1) q(4) -2*q(3); q(2) q(3) 0]';
+
+
+
+                dg = [0,zeros(1,7),(dpden.*dpdxpend)', dpden*pend_pack'*dqs,zeros(1,16)];
+
+                %dg = [0,-1,zeros(1,29)];
             end
             
+            function R = qtoR(q)
+                 R = eye(3) + 2*hat(q(2:4))*(hat(q(2:4)) + q(1)*eye(3));
+            end
+            
+            function C = hat(x)
+            C = [ 0  -x(3) x(2);
+            x(3)  0  -x(1);
+             -x(2) x(1)  0];
+            end
         
             function [to_mode_xn,to_mode_num,status,dxp] = transition(obj,from_mode_num,t,mode_x,u)
                 mode_x = double(mode_x);
                 u = double(u);
-                to_mode_xn = mode_x;
+                dt = 0.05;
+                [xdot,dxdot] = impact_dynamics(obj,t,mode_x,u,dt);
+                to_mode_xn = mode_x + dt*xdot;
+                %to_mode_xn = mode_x;
                 to_mode_num = 2;
                 status = 0;
                 %[tempa,tempb] = obj.modes{from_mode_num}.dynamics(t,[mode_x],u);
                 %dxp = obj.dynamics(t,[from_mode_num;mode_x],u);
                 %dxp = [zeros(13,1),tempb];
-                dxp = [zeros(26,2),eye(26),zeros(26,4)];
+                
+                dxp_pre = [zeros(26,1),dxdot];
+                dxp_pre = dt*dxp_pre + [zeros(26,2),eye(26),zeros(26,4)];
+                
+                dxp = dxp_pre;
+                %dxp = [zeros(26,2),eye(26),zeros(26,4)];
             end
         
-%         function [xdot, dxdot] = dynamics(obj,t,x,u)
-%             if nargout == 1
-%                 %xdot = foamy_dynamics(t,x,u);
-%                 xdot = foamy_dynamics_mex(t,x,u);
-%                 dxdot = 0;
-%             else %Need Jacobian
-%                 options.grad_level = 0;
-%                 options.grad_method = 'numerical';
-%                 options.diff_type = 'central';
-%                 %[xdot, dxdot] = geval(@(t1,x1,u1) foamy_dynamics(t1,x1,u1),t,x,u,options);
-%                 [xdot, dxdot] = geval(@(t1,x1,u1) foamy_dynamics_mex(t1,x1,u1),t,x,u,options);
-%             end
-%         end
-%         
-%         function y = output(obj,t,x,u)
-%             y = x;
-%         end
+        function [xdot, dxdot] = impact_dynamics(obj,t,x,u,dt)
+            F_impact = 0;
+            if nargout == 1
+                %xdot = impact_foamy_pendulum_dynamics(t,x,u,obj.m_package,F_impact,dt);
+                xdot = impact_foamy_pendulum_dynamics_mex(t,x,u,obj.m_package,dt);
+                dxdot = 0;
+            else %Need Jacobian
+                options.grad_level = 0;
+                options.grad_method = 'numerical';
+                options.diff_type = 'central';
+                %[xdot, dxdot] = geval(@(t1,x1,u1) impact_foamy_pendulum_dynamics(t1,x1,u1,obj.m_package,F_impact,dt),t,x,u,options);
+                [xdot, dxdot] = geval(@(t1,x1,u1) impact_foamy_pendulum_dynamics_mex(t1,x1,u1,obj.m_package,dt),t,x,u,options);
+            end
+        end
+        
+        function y = output(obj,t,x,u)
+            y = x;
+        end
         
         function [xtraj,utraj] = runDircol(obj,display)
 
@@ -89,7 +140,7 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
 
             tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
 
-            N = [10;10];
+            N = [17;17];
             
             options.u_const_across_transitions = false;
             

@@ -1,5 +1,5 @@
-function p = foamy_pendulum_parameters(m_package)
-
+function p = hybrid_foamy_pendulum_parameters(m_p)
+%Recieves package weight as an input
 % ----- Model Parameters for McFoamy RC Airplane ----- %
 
 g = 9.81; %Gravitational acceleration (m/s^2)
@@ -84,17 +84,13 @@ Clcoef = [-9.781885297556400 38.779513049043175 -52.388499489940138 19.266141214
 Cdcoef = [-0.353585618276247 3.607550808703421 -10.272069825351215 -4.489225907857385 -2.746985301074068 3.480420330498847 0.085904634206004 0.063691497636087]';
 
 %Pendulum stuff
-m_p = .25;
-m_p0 = m_p;
-J_p = diag([m_p*(.6*.6)/12; m_p*(.6*.6)/12; m_p*.01*.01])+...
-    diag([m_package*(.3*.3); m_package*(.3*.3);0]);
-J_p0 = diag([m_p*(.6*.6)/12; m_p*(.6*.6)/12; m_p*.01*.01]);
+%m_p = .25;
+J_p = diag([m_p*(.6*.6)/12; m_p*(.6*.6)/12; m_p*.01*.01]);
 J_pinv = inv(J_p);
-J_pinv0 = inv(J_p0);
 r1 = [0 0 .05]';
 r2 = [0 0 -.30]';
-m_p = m_p + m_package;
 Minv = blkdiag((1/m)*eye(3), Jinv, (1/m_p)*eye(3), J_pinv);
+
 % --- Pack everything into a struct --- %
 p = struct();
 p.g = g;
@@ -156,11 +152,8 @@ p.z_fus = z_fus;
 p.Clcoef = Clcoef;
 p.Cdcoef = Cdcoef;
 p.m_p = m_p;
-p.m_p0 = m_p0;
 p.J_p = J_p;
 p.J_pinv = J_pinv;
-p.J_p0 = J_p0;
-p.J_pinv0 = J_pinv0;
 p.r1 = r1;
 p.r2 = r2;
 p.Minv = Minv;
