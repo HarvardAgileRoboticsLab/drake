@@ -1,4 +1,4 @@
-function xdot = foamy_pendulum_dynamics(t,x,u,m_package)
+function xdot = hybrid_foamy_pendulum_dynamics_1(t,x,u)
 
     %TODO: Add body aerodynamic forces
 
@@ -34,8 +34,7 @@ function xdot = foamy_pendulum_dynamics(t,x,u,m_package)
 %     rud = min(1, max(-1, rud));
 
     % ---------- Model Parameters ---------- %
-    
-    p = foamy_pendulum_parameters(m_package); %load model parameters
+    p = hybrid_foamy_pendulum_parameters(0.25); %load model parameters
 
     % ---------- Map Control Inputs to Angles ---------- %
     delta_ail = (ail-p.trim_ail)*p.g_ail;

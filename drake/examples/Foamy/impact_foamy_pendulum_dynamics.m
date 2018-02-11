@@ -1,4 +1,4 @@
-function xdot = foamy_pendulum_dynamics(t,x,u,m_package)
+function xdot = impact_foamy_pendulum_dynamics(t,x,u,m_package,dt)
 
     %TODO: Add body aerodynamic forces
 
@@ -124,8 +124,20 @@ function xdot = foamy_pendulum_dynamics(t,x,u,m_package)
     T_fus = cross([-p.r_fus; 0; -p.z_fus],F_fus);
     
     % --- Pendulum --- %
+    %F_impact = 2;
+    
+    %p.J_pinv*p.J_p0-eye(6)
+    F_impact = norm(((p.m_p0/p.m_p)-1)*v_p/dt);
+    
     F_p = [0 0 -p.m_p*p.g]'; %TODO: add aerodynamic forces
     T_p = [0 0 0]'; %TODO: add a damper to the pendulum joint
+    % -----Impact Forces --- %
+    %r_tip = r_p - R_p*p.r2;
+    F_package = [0 0 -F_impact]';
+    F_pack_along = R_p*F_package;
+    %M_package = cross(r_tip,F_package);
+    F_p = F_p + F_pack_along;
+    %T_p = T_p + M_package;
     
     % ---------- Add Everything Together ---------- %
 
@@ -164,6 +176,9 @@ function xdot = foamy_pendulum_dynamics(t,x,u,m_package)
             p.Jinv*(T + G(:,4:6)'*lambda);
             (F_p - lambda)/p.m_p
             p.J_pinv*(T_p + G(:,10:12)'*lambda)];
+%xdot = x;
+%xdot(21:23) = ((p.m_p-m_package)/p.m_p)*xdot(21:23);
+%xdot(24:26) = p.J_pinv*p.J_pinv0*xdot(24:26);
 end
 
 function a = alpha(v)
