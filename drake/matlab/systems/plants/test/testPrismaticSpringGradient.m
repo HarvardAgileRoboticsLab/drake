@@ -1,18 +1,19 @@
 function testPrismaticSpringGradient 
 
-p = RigidBodyManipulator('PrismaticSpring.urdf');
+options.floating = true; 
+p = RigidBodyManipulator('PrismaticSpring.urdf', options);
 fun = @(q,qd)vectorComputeSpatialForce(p,q,qd);
 
 % some random states to test
-q = 100*rand(1,10);
-qd = 100*rand(1,10);
+q = 100*rand(p.getNumPositions(),10);
+qd = 100*rand(p.getNumVelocities(),10);
 
 for i=1:size(q,2)
   f1=cell(1,2);
-  [f1{:}]=geval(1,fun,q(i),qd(i),struct('grad_method','user'));
+  [f1{:}]=geval(1,fun,q(:,i),qd(:,i),struct('grad_method','user'));
 
   f2=cell(1,2);
-  [f2{:}]=geval(1,fun,q(i),qd(i),struct('grad_method','numerical'));
+  [f2{:}]=geval(1,fun,q(:,i),qd(:,i),struct('grad_method','numerical'));
   
   if (any(any(abs(f1{1}-f2{1}))>1e-5))
     error('forces when computing gradients don''t match!');

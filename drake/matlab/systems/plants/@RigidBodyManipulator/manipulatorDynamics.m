@@ -113,34 +113,6 @@ else
     end
 end
 
-%ADDED BY NEEL (7/18/17) -- computes torques applied about the axis of a loop joint
-%(loop.axis)
-if ~isempty(obj.loop)
-    if isempty(f_ext)
-        NB = obj.getNumBodies();
-        f_ext = zeros(6,NB);
-    end
-    for i=1:length(obj.loop)
-        % compute spatial force should return something that is the same length
-        % as the number of bodies in the manipulator
-        if compute_gradients
-            [force,dforce] = computeSpatialForce(obj.loop(i),obj,q,v);
-            dforce = reshape(dforce,numel(force),[]);
-        else
-            force = computeSpatialForce(obj.loop(i),obj,q,v);
-        end
-        f_ext = f_ext + force;
-        if compute_gradients
-            if isempty(df_ext)
-                df_ext = dforce; 
-            else
-                df_ext = df_ext + dforce;
-            end
-        end
-    end
-end
-
-
 end
 
 function [H, dH] = computeMassMatrix(manipulator, kinsol, crbs, dcrbs)
