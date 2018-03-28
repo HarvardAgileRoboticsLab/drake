@@ -2,7 +2,7 @@
 
 [x0, u0, K, t] = foamy_tvlqr(plane,eye(12),eye(4),eye(12),xtraj,utraj,0.05);
 
-x0 = x0(:, 1:(end-1));
+x0 = x0(:, 1:(end-1));z
 u0 = u0(:, 1:(end-1));
 
 nx = size(x0, 1);
@@ -19,7 +19,7 @@ end
 K = reshape(K, [nk * m, N]);
 
 % open new file
-fileID = fopen('K_header_file_discrete_tvlqr.cpp', 'w');
+fileID = fopen('K_header_file_discrete_tvlqr_columns.cpp', 'w');
 
 % write t
 fprintf(fileID, 'double t[%d] = {', N);
