@@ -1,4 +1,4 @@
-function [x0, u0, K, t] = foamy_tvlqr(plant,Q,R,Qn,xtraj,utraj,ts)
+function [x0, u0, K, t, P] = foamy_tvlqr(plant,Q,R,Qn,xtraj,utraj,ts)
 
 t = xtraj.tspan(1):ts:xtraj.tspan(2);
 N = length(t);
