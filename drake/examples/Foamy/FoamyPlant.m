@@ -66,6 +66,75 @@ classdef FoamyPlant < DrakeSystem
 
             tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
 
+            N = 5;
+            prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
+            prog = addStateConstraint(prog,ConstantConstraint(x0),1);
+            prog = addStateConstraint(prog,ConstantConstraint(xf),N);
+            prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,4:7);
+            prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),1:N);
+            prog = addRunningCost(prog,@cost);
+            %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
+
+            %--- snopt options ---%
+            prog = setSolver(prog,'snopt');
+            prog = prog.setSolverOptions('snopt','majoroptimalitytolerance',1e-5);
+            prog = prog.setSolverOptions('snopt','majorfeasibilitytolerance',1e-5);
+
+            t_init = linspace(0,tf0,N);
+
+            %Set initial guess for controls to be trim conditions
+            traj_init.u = setOutputFrame(PPTrajectory(foh(t_init,kron(ones(1,N),u0))),getInputFrame(obj));
+
+            %Simulate with u0 input to generate initial guess
+            [t_guess, x_guess] = ode45(@(t,x) obj.dynamics(t,x,u0),t_init,x0);
+            traj_init.x = setOutputFrame(PPTrajectory(foh(t_guess,x_guess')),getStateFrame(obj));
+
+            tic
+            [xtraj,utraj,Z,~,info]=solveTraj(prog,t_init,traj_init);
+            toc
+
+            if nargin == 2 && display
+               visualizeFoamy(obj,xtraj,true);
+            end
+
+            function [g,dg] = cost(dt,x,u)
+                R = eye(4);
+                g = 0.5*(u-u0)'*R*(u-u0);
+                dg = [0, zeros(1,13), (u-u0)'*R];
+            end
+
+            function [h,dh] = finalCost(t,x,xf)
+                hx = .5*(x(1:3)-xf(1:3))'*(x(1:3)-xf(1:3));
+                %hv = .5*(x(8:10)-xf(8:10))'*(x(8:10)-xf(8:10));
+                %hw = .5*(x(11:13)-xf(11:13))'*(x(11:13)-xf(11:13));
+
+                %This is to handle the quaternion double cover issue
+                hq1 = 1 - xf(4:7)'*x(4:7);
+                hq2 = 1 + xf(4:7)'*x(4:7);
+                if hq1 <= hq2
+                    h = hx + hq1;
+                    dh = [0,x(1:3)'-xf(1:3)',-xf(4:7)',zeros(1,6)];
+                else
+                    h = hx + hq2;
+                    dh = [0,x(1:3)'-xf(1:3)',xf(4:7)',zeros(1,6)];
+                end
+            end
+            
+        end
+        
+      function [xtraj,utraj] = runDircol_trim(obj,display)
+
+            % initial conditions:
+            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
+            x0(1) = -6;
+            x0(3) = 1.5;
+
+            % final conditions:
+            xf = x0;
+            xf(1) = 6; %translated in x
+
+            tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
+
             N = 7;
             prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
             prog = addStateConstraint(prog,ConstantConstraint(x0),1);
@@ -99,8 +168,13 @@ classdef FoamyPlant < DrakeSystem
 
             function [g,dg] = cost(dt,x,u)
                 R = eye(4);
-                g = 0.5*(u-u0)'*R*(u-u0);
-                dg = [0, zeros(1,13), (u-u0)'*R];
+                Q = eye(13); %Trim state cost
+                Q(1,1) = 0;
+                [xdot,dxdot] = dynamics(obj,dt,x,u);
+                %g = 0.5*(u-u0)'*R*(u-u0)
+                g =  0.5*xdot'*Q*xdot;
+                %dg = [0, zeros(1,13), (u-u0)'*R];
+                dg = [xdot'*Q*dxdot];
             end
 
             function [h,dh] = finalCost(t,x,xf)
@@ -182,7 +256,113 @@ classdef FoamyPlant < DrakeSystem
                 dg = [0, zeros(1,13), (u-u0)'*R];
         end
         
-    end
+     end
+    
+     
+     function [xtraj,utraj] = runDircol_trim2(obj,display)
+
+            % initial conditions:
+            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
+            x0(1) = -6;
+            x0(3) = 1.5;
+
+            % final conditions:
+            xf = x0;
+            xf(1) = 6; %translated in x
+
+            tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
+
+            N = 7;
+            N_trim_start = 2; %Index to start trim condition
+            trim_length = 3; %Length, in knot points, of trim condition
+            trim_inds = {};
+            for i = 1:trim_length
+                trim_inds{i} = [N_trim_start-1+i,N_trim_start+i];   
+            end
+            
+            
+            
+            prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
+            prog = addStateConstraint(prog,ConstantConstraint(x0),1);
+            prog = addStateConstraint(prog,ConstantConstraint(xf),N);
+            prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,4:7);
+            
+            %options.
+            num_trims = [2 3 4 5 6 7 8 9 10 11 12 13];
+            tr_var = length(num_trims);
+            %for j = 1:length(num_trims)
+            %prog = addStateConstraint(prog,FunctionHandleConstraint(0,0,2,@trim_constraint),trim_inds,num_trims(j));
+            %end
+            prog = addStateConstraint(prog,FunctionHandleConstraint(zeros(tr_var,1),zeros(tr_var,1),tr_var*2,@trim_constraint),trim_inds,num_trims);
+            
+            
+            prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),1:N);
+            prog = addRunningCost(prog,@cost);
+            %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
+
+            %--- snopt options ---%
+            prog = setSolver(prog,'snopt');
+            prog = prog.setSolverOptions('snopt','majoroptimalitytolerance',1e-5);
+            prog = prog.setSolverOptions('snopt','majorfeasibilitytolerance',1e-5);
+
+            t_init = linspace(0,tf0,N);
+
+            %Set initial guess for controls to be trim conditions
+            traj_init.u = setOutputFrame(PPTrajectory(foh(t_init,kron(ones(1,N),u0))),getInputFrame(obj));
+
+            %Simulate with u0 input to generate initial guess
+            [t_guess, x_guess] = ode45(@(t,x) obj.dynamics(t,x,u0),t_init,x0);
+            traj_init.x = setOutputFrame(PPTrajectory(foh(t_guess,x_guess')),getStateFrame(obj));
+
+            tic
+            [xtraj,utraj,~,~,info]=solveTraj(prog,t_init,traj_init);
+            toc
+
+            if nargin == 2 && display
+               visualizeFoamy(obj,xtraj,true);
+            end
+            
+         function [c,dc] = trim_constraint(x1,x2)
+             %trim_states = [2,3,4,5,6,7,8,9,10,11,12,13];
+             %c = abs(x1(trim_states)-x2(trim_states));
+             l = length(x1);
+             c = x2-x1;
+             %dc = repmat([-1 ,1],length(c),1);
+             %dc = [0,0];
+             dc = [-1*eye(l),eye(l)];
+             %dc = [zeros(l,2*l)];
+             
+         end
+
+            function [g,dg] = cost(dt,x,u)
+                R = eye(4);
+                Q = eye(13); %Trim state cost
+                Q(1,1) = 0;
+                [xdot,dxdot] = dynamics(obj,dt,x,u);
+                %g = 0.5*(u-u0)'*R*(u-u0)
+                g =  0.5*xdot'*Q*xdot;
+                %dg = [0, zeros(1,13), (u-u0)'*R];
+                dg = [xdot'*Q*dxdot];
+            end
+
+            function [h,dh] = finalCost(t,x,xf)
+                hx = .5*(x(1:3)-xf(1:3))'*(x(1:3)-xf(1:3));
+                %hv = .5*(x(8:10)-xf(8:10))'*(x(8:10)-xf(8:10));
+                %hw = .5*(x(11:13)-xf(11:13))'*(x(11:13)-xf(11:13));
+
+                %This is to handle the quaternion double cover issue
+                hq1 = 1 - xf(4:7)'*x(4:7);
+                hq2 = 1 + xf(4:7)'*x(4:7);
+                if hq1 <= hq2
+                    h = hx + hq1;
+                    dh = [0,x(1:3)'-xf(1:3)',-xf(4:7)',zeros(1,6)];
+                else
+                    h = hx + hq2;
+                    dh = [0,x(1:3)'-xf(1:3)',xf(4:7)',zeros(1,6)];
+                end
+            end
+            
+        end
         
         function [xtrim, utrim] = findTrim(obj,v,varargin)
             %Trim the plane for level forward flight at speed v

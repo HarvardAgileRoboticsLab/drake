@@ -1,5 +1,7 @@
 function [ output_args ] = foamy_pend_plotter(xtraj,utraj)
 
+
+figure(10);
 tspan1 = [0 xtraj.traj{1}.tspan(2)];
 tspan2 = [xtraj.traj{2}.tspan(1) xtraj.traj{2}.tspan(2)];
 

@@ -8,10 +8,7 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
         
         function obj = HybridFoamyPendulumPlant(m_p)
             obj = obj@HybridDrakeSystem(4,26);
-            %obj = obj@DrakeSystem(13,0,4,13,0,1);
-            %obj = obj.setStateFrame(CoordinateFrame('FoamyState',13,'x',{'x1','x2','x3','q0','q1','q2','q3','v1','v2','v3','w1','w2','w3'}));
-            %obj = obj.setInputFrame(CoordinateFrame('FoamyInput',4,'u',{'thr','ail','elev','rud'}));
-            %obj = obj.setOutputFrame(CoordinateFrame('FoamyState',13,'x',{'x1','x2','x3','q0','q1','q2','q3','v1','v2','v3','w1','w2','w3'}));
+          
             if nargin == 0
                 obj.m_package = 0;
             else
@@ -26,24 +23,19 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             obj = setInputFrame(obj,mode_2.getInputFrame);
             obj = setOutputFrame(obj,mode_2.getOutputFrame);
             [obj,mode_2] = addMode(obj,mode_2,'post-collision');
-            %guard1 = inline('-x(1)','obj','t','x','u');
             
             
-            %obj = addTransition(obj,mode_1,@packageGuard,@transition,1,1)
-            obj = addTransition(obj,mode_1,andGuards(obj,@packageGuardx,@packageGuardz),@transition,1,1)
-            
-            %obj = obj.setOutputFrame(obj.getStateFrame); %full state feedback
-            %quaternion unit-norm constraint -- why doesn't the index input work?
-            %obj = obj.addStateConstraint(QuadraticConstraint(.5,.5,blkdiag(zeros(3),eye(4),zeros(6)),zeros(13,1)));
+            obj = addTransition(obj,mode_1,andGuards(obj,@packageGuardx,@packageGuardz),@transition,1,1);
         end
             
             function [g,dg] = packageGuardx(obj,t,x,u)
+            %Mode Transition shouldn't occur until it passes the package
             g = -x(1);
             dg = [0,-1,zeros(1,29)];
             end
             
             function [g,dg] = packageGuardz(obj,t,x,u)
-                %g = x(10) - 0.5;
+            %Mode transition occurs once package holding loop is taut    
                 q = x(11:14);
                 v = q(2:4);
                 hat = [ 0  -v(3) v(2);
@@ -52,27 +44,22 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
                 R_p = eye(3) + 2*hat*(hat + q(1)*eye(3));
                 p_l = [0;0;-.3];
                 p_end = x(8:10)-R_p*p_l;
-
+                
                 package_location = [0;0;0];
                 hoop_length = 0.25;
 
                 pend_pack = p_end-package_location;
 
                 g = norm(pend_pack)-hoop_length;
-                %g = p_end(3)-0;
-                %g = x(10);
-                %dg = [0,zeros(1,9),1,zeros(1,20)];
+
                 dpden = 1/(norm(pend_pack));
                 dpdxpend = pend_pack;
 
                 dqs = (3/5)*[q(3) -q(2) 0; q(4) -q(1) -2*q(2);...
                             q(1) q(4) -2*q(3); q(2) q(3) 0]';
 
-
-
                 dg = [0,zeros(1,7),(dpden.*dpdxpend)', dpden*pend_pack'*dqs,zeros(1,16)];
 
-                %dg = [0,-1,zeros(1,29)];
             end
             
             function R = qtoR(q)
@@ -88,21 +75,12 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             function [to_mode_xn,to_mode_num,status,dxp] = transition(obj,from_mode_num,t,mode_x,u)
                 mode_x = double(mode_x);
                 u = double(u);
-                dt = 0.05;
-                [xdot,dxdot] = impact_dynamics(obj,t,mode_x,u,dt);
-                to_mode_xn = mode_x + dt*xdot;
-                %to_mode_xn = mode_x;
+                dt = 0.05; %Euler step size for impulse duration
+                [xdot,dxdot] = impact_dynamics(obj,t,mode_x,u,dt); %Impact dynamics function: Impulse along pendulum length
+                to_mode_xn = mode_x + dt*xdot; %Euler integration
                 to_mode_num = 2;
                 status = 0;
-                %[tempa,tempb] = obj.modes{from_mode_num}.dynamics(t,[mode_x],u);
-                %dxp = obj.dynamics(t,[from_mode_num;mode_x],u);
-                %dxp = [zeros(13,1),tempb];
-                
-                dxp_pre = [zeros(26,1),dxdot];
-                dxp_pre = dt*dxp_pre + [zeros(26,2),eye(26),zeros(26,4)];
-                
-                dxp = dxp_pre;
-                %dxp = [zeros(26,2),eye(26),zeros(26,4)];
+                dxp = dt*[zeros(26,1),dxdot] + [zeros(26,2),eye(26),zeros(26,4)];
             end
         
         function [xdot, dxdot] = impact_dynamics(obj,t,x,u,dt)
@@ -124,23 +102,23 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             y = x;
         end
         
-        function [xtraj,utraj] = runDircol(obj,display)
+        function [xtraj,utraj] = runDircol(obj,display,trim)
 
             % initial conditions:
             [x0, u0] = findTrim(obj,5); %find trim conditions for level flight at 6 m/s
-            x0(1) = -6;
+            x0(1) = -10;
             x0(3) = x0(3) + 1.5;
-            x0(8) = x0(8) - 6;
+            x0(8) = x0(8) - 10;
             x0(10) = x0(10)+1.5;
             
             % final conditions:
             xf = x0;
-            xf(1) = x0(1)+12; %translated in x
-            xf(8) = x0(8)+12;
+            xf(1) = x0(1)+20; %translated in x
+            xf(8) = x0(8)+20;
 
             tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
 
-            N = [17;17];
+            N = [15;15];
             
             options.u_const_across_transitions = false;
             
@@ -154,9 +132,24 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             prog = addModeInputConstraint(prog,2,BoundingBoxConstraint([0.001; -1; -1; -1], [1; 1; 1; 1]),1:N(2));
             prog = addModeRunningCost(prog,1,@cost);
             prog = addModeRunningCost(prog,2,@cost);
+            
+            if(trim)
+                N_trim_start = 12; %Index to start trim condition
+                trim_length = 3; %Length, in knot points, of trim condition
+                trim_inds = {};
+
+                for i = 1:trim_length
+                    trim_inds{i} = [N_trim_start-1+i,N_trim_start+i];   
+                end
+                
+                trim_vars = [15 16 17 18 19 20];%State indexes incorporated into trim condition(hybrid so x(1) = mode#)
+                num_trims = length(trim_vars);
+                
+                prog = addModeStateConstraint(prog,1,FunctionHandleConstraint(zeros(num_trims,1),zeros(num_trims,1),num_trims*2,@trim_constraint),trim_inds,trim_vars);
+            end
+            
             %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
 
-            %--- snopt options ---%
 
             %--- snopt options ---%
             prog = setSolver(prog,'snopt');
@@ -185,18 +178,10 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             t_guess{2} = t_guess2;
             x_guess{1} = x_guess1;
             x_guess{2} = x_guess2;
-            %t_guess = [t_guess;t_guess2];
-            %x_guess = [x_guess;x_guess2];
-            %x_guess = [[ones(5,1);2*ones(5,1)],x_guess]
             
             traj_init{1}.x = setOutputFrame(PPTrajectory(foh(t_guess{1},x_guess{1}')),getOutputFrame(obj));
             traj_init{2}.x = setOutputFrame(PPTrajectory(foh(t_guess{2},x_guess{2}')),getOutputFrame(obj));
             
-
-            
-            
-            %traj_init{1}.x0 = x0';
-            %traj_init{2}.x0 = x_guess1(end,:)';
             
             prog = prog.compile();
             tic
@@ -205,8 +190,14 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             toc
 
 
-            if nargin == 2 && display
+            if nargin == 3 && display
                visualizeFoamy(obj,xtraj,true);
+            end
+            
+            function [c,dc] = trim_constraint(x1,x2)
+             l = length(x1);
+             c = (x2-x1);
+             dc = [-1*eye(l),eye(l)];
             end
 
             function [g,dg] = cost(dt,x,u)
@@ -281,6 +272,8 @@ classdef HybridFoamyPendulumPlant < HybridDrakeSystem
             q(10) = -.35; %Pendulum position under airplane
             q(12) = 1; %Pendulum quaternion
         end
+        
+        
     end
     
 end
