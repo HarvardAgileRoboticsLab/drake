@@ -144,17 +144,6 @@ classdef FoamyTVLQRController < DrakeSystem
 
             Gk = [-vk'; sk*eye(3) + hat(vk)];
             
-<<<<<<< HEAD
-            % discrete matrices?
-            A = blkdiag(eye(3),Gk',eye(6))*Aq*blkdiag(eye(3),Gk,eye(6));
-            B = blkdiag(eye(3),Gk',eye(6))*Bq;
-        end
-        
-    end
-end
-
-
-=======
             if (sx == 13)
                 % discrete matrices?
                 A = blkdiag(eye(3),Gk',eye(6))*Aq*blkdiag(eye(3),Gk,eye(6));
@@ -175,7 +164,6 @@ end
     end
 end
 
->>>>>>> d09690b2f4232bfcfef9048f8b5eb182ec8886eb
 % ---------- Helper Functions ---------- %
 function y = applyControlLimits(u)
     y(1) = threshold(u(1), 0.00001, 1);

@@ -133,7 +133,7 @@ classdef FoamyTVLQRController < DrakeSystem
             options.grad_method = 'user_then_numerical';
             [f, df] = geval(@plant.dynamics, t, x0, u0, options);
             
-            sx = size(obj.xtraj, 1);
+            sx = obj.nx + 1;
             
             Aq = df(:, 1 + (1:sx));
             Bq = df(:, sx + 1 + (1:obj.nu));
@@ -143,39 +143,15 @@ classdef FoamyTVLQRController < DrakeSystem
             vk = qk(2:4);
 
             Gk = [-vk'; sk*eye(3) + hat(vk)];
-            
-<<<<<<< HEAD
+
             % discrete matrices?
             A = blkdiag(eye(3),Gk',eye(6))*Aq*blkdiag(eye(3),Gk,eye(6));
             B = blkdiag(eye(3),Gk',eye(6))*Bq;
         end
-        
-    end
-end
-
-
-=======
-            if (sx == 13)
-                % discrete matrices?
-                A = blkdiag(eye(3),Gk',eye(6))*Aq*blkdiag(eye(3),Gk,eye(6));
-                B = blkdiag(eye(3),Gk',eye(6))*Bq;
-            elseif (sx == 26)
-                % construct second Gk (for pendulum)
-                qp = x0(4:7);
-                sp = qk(1);
-                vp = qk(2:4);
-
-                Gk = [-vk'; sk*eye(3) + hat(vk)];
-                
-                % discrete matrices?
-                A = blkdiag(eye(3),Gk',eye(6))*Aq*blkdiag(eye(3),Gk,eye(6));
-                B = blkdiag(eye(3),Gk',eye(6))*Bq;
-        end
             
     end
 end
 
->>>>>>> d09690b2f4232bfcfef9048f8b5eb182ec8886eb
 % ---------- Helper Functions ---------- %
 function y = applyControlLimits(u)
     y(1) = threshold(u(1), 0.00001, 1);
