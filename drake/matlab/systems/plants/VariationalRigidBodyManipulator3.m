@@ -1,4 +1,4 @@
-classdef VariationalRigidBodyManipulator < DrakeSystem
+classdef VariationalRigidBodyManipulator3 < DrakeSystem
     %This class implements a 2nd order midpoint variational integrator with
     %support for rigid body contact
     
@@ -23,7 +23,7 @@ classdef VariationalRigidBodyManipulator < DrakeSystem
     end
     
     methods
-        function obj = VariationalRigidBodyManipulator(manipulator_or_urdf_filename,timestep,options)
+        function obj = VariationalRigidBodyManipulator3(manipulator_or_urdf_filename,timestep,options)
             if (nargin<3)
                 options=struct();
             end
@@ -31,7 +31,7 @@ classdef VariationalRigidBodyManipulator < DrakeSystem
                 options.active_collision_options.terrain_only = true;
             end
             if ~isfield(options,'integration_method')
-                options.integration_method = VariationalRigidBodyManipulator.MIDPOINT;
+                options.integration_method = VariationalRigidBodyManipulator3.SIMPSON;
             end
             if ~isfield(options,'multiple_contacts')
                 options.multiple_contacts = false;
@@ -113,35 +113,54 @@ classdef VariationalRigidBodyManipulator < DrakeSystem
             p0 = M*v0;
             
             %initial guess
-            xg = [q0; zeros(nC,1); zeros(nC*nD,1); zeros(nC,1); zeros(nC*nD,1); 1];
+            xg = [q0; q0; zeros(3*nC*(1+nD),1); 1];
             
             %Bounds
-            lb = [-inf*ones(nQ,1); zeros(2*nC*(1+nD),1); 1e-6];
-            ub = inf*ones(1+nQ+2*nC*(1+nD),1);
+            lb = [-inf*ones(2*nQ,1); zeros(3*nC*(1+nD),1); 1e-6];
+            ub = inf*ones(1+2*nQ+3*nC*(1+nD),1);
             
-            opts = optimoptions('fmincon','Display','none','Algorithm','sqp','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'StepTolerance',1e-12);%,'FiniteDifferenceType','central','CheckGradients',true);
-            xopt = fmincon(@(x)SObj(obj,x),xg,[],[],[],[],lb,ub,@(x)MidpointConstr(obj,q0,p0,u,x),opts);
+            opts = optimoptions('fmincon','Display','notify-detailed','Algorithm','sqp','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'StepTolerance',1e-12);%,'FiniteDifferenceType','central','CheckGradients',true);
+            xopt = fmincon(@(x)SObj(obj,x),xg,[],[],[],[],lb,ub,@(x)SimpsonConstr(obj,q0,p0,u,x),opts);
             
             q1 = xopt(1:nQ);
-            c = xopt(nQ+(1:nC));
-            b = xopt(nQ+nC+(1:(nD*nC)));
-            qm = obj.qavg(q0,q1);
-            vm = obj.qdiff(q0,q1,h);
-            [D1L,D2L,~,~,~,B,~] = obj.LagrangianDerivs(qm,vm);
-            %Contact basis
-            kinopts = struct();
-            kinopts.compute_gradients = true;
-            kin = obj.plant.doKinematics(q1, vm, kinopts);
-            [~,~,~,~,~,~,~,~,n,D] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
-            if isempty(n)
-                n = zeros(0,nQ);
-            end
-            D = reshape(cell2mat(D')',nQ,nC*nD)';
+            q2 = xopt(nQ+(1:nQ));
+%             c1 = xopt(2*nQ+(1:nC));
+%             b1 = xopt(2*nQ+nC+(1:(nD*nC)));
+%             c2 = xopt(2*nQ+nC*(1+nD)+(1:nC));
+%             b2 = xopt(2*nQ+nC*(1+nD)+nC+(1:(nD*nC)));
+%             psi = xopt(2*nQ+2*nC*(1+nD)+(1:nC));
+%             eta = xopt(2*nQ+2*nC*(1+nD)+nC+(1:(nD*nC)));
+%             s = xopt(end);
+            
+            %Velocities at knot points
+%             v0 = (-3*q0 + 4*q1 - q2)/h;
+%             v1 = (q2 - q0)/h;
+            v2 = (q0 - 4*q1 + 3*q2)/h;
+            
+%             [D1L0,D2L0] = obj.LagrangianDerivs(q0,v0);
+%             [D1L1,D2L1,~,~,~,B1,~] = obj.LagrangianDerivs(q1,v1);
+%             [D1L2,D2L2,~,~,~,B2,~] = obj.LagrangianDerivs(q2,v2);
+%             
+%             %Contact basis
+%             kinopts = struct();
+%             kinopts.compute_gradients = true;
+%             kin = obj.plant.doKinematics(q1, v1, kinopts);
+%             [~,~,~,~,~,~,~,~,n1,D1] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
+%             kin = obj.plant.doKinematics(q2, v2, kinopts);
+%             [~,~,~,~,~,~,~,~,n2,D2] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
+%             if isempty(n1)
+%                 n1 = zeros(0,nQ);
+%             end
+%             if isempty(n2)
+%                 n2 = zeros(0,nQ);
+%             end
+%             D1 = reshape(cell2mat(D1')',nQ,nC*nD)';
+%             D2 = reshape(cell2mat(D2')',nQ,nC*nD)';
 
-            p1 = D2L + (h/2)*D1L + h*(B*u + n'*c + D'*b);
-            M = manipulatorDynamics(obj.plant, q1, zeros(nV,1));
-            v1 = M\p1;
-            xn = [q1; v1];
+            %p2 = SimpsonRightDLT(q0,q1,q2) + %(h/6)*(B*u + n'*c + D'*b);
+            %M2 = manipulatorDynamics(obj.plant, q2, zeros(nV,1));
+            %v2 = M2\p2;
+            xn = [q2; v2];
         end
         
         function [f,df] = SObj(obj,x)
@@ -150,7 +169,7 @@ classdef VariationalRigidBodyManipulator < DrakeSystem
             df = [zeros(1,length(x)-1), exp(s)];
         end
         
-        function [cin,ceq,dcin,dceq] = MidpointConstr(obj,q0,p0,u,x)
+        function [cin,ceq,dcin,dceq] = SimpsonConstr(obj,q0,p0,u,x)
             h = obj.timestep;
             nD = obj.nD;
             nC = obj.nC;
@@ -161,102 +180,146 @@ classdef VariationalRigidBodyManipulator < DrakeSystem
             mu = 1;
             
             q1 = x(1:nQ);
-            c = x(nQ+(1:nC));
-            b = x(nQ+nC+(1:(nD*nC)));
-            psi = x(nQ+nC+(nD*nC)+(1:nC));
-            eta = x(nQ+nC+(nD*nC)+nC+(1:(nD*nC)));
+            q2 = x(nQ+(1:nQ));
+            c1 = x(2*nQ+(1:nC));
+            b1 = x(2*nQ+nC+(1:(nD*nC)));
+            c2 = x(2*nQ+nC*(1+nD)+(1:nC));
+            b2 = x(2*nQ+nC*(1+nD)+nC+(1:(nD*nC)));
+            psi = x(2*nQ+2*nC*(1+nD)+(1:nC));
+            eta = x(2*nQ+2*nC*(1+nD)+nC+(1:(nD*nC)));
             s = x(end);
             
-            qm = obj.qavg(q0,q1);
-            dqm = 0.5*eye(nQ);
-            vm = obj.qdiff(q0,q1,h);
-            dvm = (1/h)*eye(nQ);
+            %Velocities at knot points
+            v0 = (-3*q0 + 4*q1 - q2)/h;
+            v1 = (q2 - q0)/h;
+            v2 = (q0 - 4*q1 + 3*q2)/h;
             
-            [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dB] = obj.LagrangianDerivs(qm,vm);
+            dv0dq1 = (4/h)*eye(nQ);
+            dv0dq2 = -(1/h)*eye(nQ);
+            %dv1dq1 = zeros(nQ);
+            dv1dq2 = (1/h)*eye(nQ);
+            dv2dq1 = -(4/h)*eye(nQ);
+            dv2dq2 = (3/h)*eye(nQ);
+            dv2 = [dv2dq1, dv2dq2];
+            
+            [D1L0,D2L0,D1D1L0,D1D2L0,D2D2L0,B0,dB0] = obj.LagrangianDerivs(q0,v0);
+            [D1L1,D2L1,D1D1L1,D1D2L1,D2D2L1,B1,dB1] = obj.LagrangianDerivs(q1,v1);
+            [D1L2,D2L2,D1D1L2,D1D2L2,D2D2L2,B2,dB2] = obj.LagrangianDerivs(q2,v2);
             
             %Contact basis
             kinopts = struct();
             kinopts.compute_gradients = true;
-            kin = obj.plant.doKinematics(q1, vm, kinopts);
-            [phi,~,~,~,~,~,~,~,n,D,dn,dD] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
-            if isempty(n)
-                n = zeros(0,nQ);
-                dn = zeros(0,nQ);
+            kin = obj.plant.doKinematics(q1, v1, kinopts);
+            [~,~,~,~,~,~,~,~,n1,D1,dn1,dD1] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
+            kin = obj.plant.doKinematics(q2, v2, kinopts);
+            [phi2,~,~,~,~,~,~,~,n2,D2,dn2,dD2] = obj.plant.contactConstraints(kin, obj.options.multiple_contacts, obj.options.active_collision_options);
+            if isempty(n1)
+                n1 = zeros(0,nQ);
+                dn1 = zeros(0,nQ);
             end
-            D = reshape(cell2mat(D')',nQ,nC*nD)';
-            dD = reshape(cell2mat(dD)',nQ,nC*nD*nQ)';
+            if isempty(n2)
+                n2 = zeros(0,nQ);
+                dn2 = zeros(0,nQ);
+            end
+            D1 = reshape(cell2mat(D1')',nQ,nC*nD)';
+            dD1 = reshape(cell2mat(dD1)',nQ,nC*nD*nQ)';
+            D2 = reshape(cell2mat(D2')',nQ,nC*nD)';
+            dD2 = reshape(cell2mat(dD2)',nQ,nC*nD*nQ)';
             
             e = ones(nD,1);
             E = kron(eye(nC),e');
             
             %Discrete Euler-Lagrange equation
-            ceq1 = -p0 - (h/2)*D1L + D2L - h*(B*u + n'*c + D'*b); % = 0
-            dceq1 = [(-h/2)*(D1D1L*dqm + D1D2L'*dvm) + D1D2L*dqm + D2D2L*dvm + -h*kron(u',eye(nQ))*dB - h*kron(c',eye(nQ))*comm(nC,nQ)*dn - h*kron(b',eye(nQ))*comm(nC*nD,nQ)*dD, -h*n', -h*D', zeros(nQ,1+nC*(1+nD))];
-           
+            ceq1 = [p0 + (h/6)*D1L0 - (1/2)*D2L0 - (2/3)*D2L1 + (1/6)*D2L2 + (h/3)*(B1*u + n1'*c1 + D1'*b1);
+                    (2/3)*D2L0 + (2*h/3)*D1L1 - (2/3)*D2L2 + (2*h/3)*(B2*u + n2'*c2 + D2'*b2)];
+                
+            dceq1 = [(h/6)*D1D2L0'*dv0dq1 - (1/2)*D2D2L0*dv0dq1 - (2/3)*D1D2L1 + (1/6)*D2D2L2*dv2dq1 + (h/3)*(kron(u',eye(nQ))*dB1 + kron(c1',eye(nQ))*comm(nC,nQ)*dn1 + kron(b1',eye(nQ))*comm(nC*nD,nQ)*dD1),...
+                     (h/6)*D1D2L0'*dv0dq2 - (1/2)*D2D2L0*dv0dq2 - (2/3)*D2D2L1*dv1dq2 + (1/6)*(D1D2L2 + D2D2L2*dv2dq2),...
+                     (h/3)*n1', (h/3)*D1', zeros(nQ,1+2*nC*(1+nD));
+                     
+                     (2/3)*D2D2L0*dv0dq1 + (2*h/3)*D1D1L1 - (2/3)*D2D2L2*dv2dq1,...
+                     (2/3)*D2D2L0*dv0dq2 + (2*h/3)*D1D2L1'*dv1dq2 - (2/3)*(D1D2L2 + D2D2L2*dv2dq2) + (2*h/3)*(kron(u',eye(nQ))*dB2 + kron(c2',eye(nQ))*comm(nC,nQ)*dn2 + kron(b2',eye(nQ))*comm(nC*nD,nQ)*dD2),...
+                     zeros(nQ,nC*(1+nD)), (2*h/3)*n2', (2*h/3)*D2', zeros(nQ,1+nC*(1+nD))];
+            
             %Tangential velocity
-            ceq2 = D*vm + E'*psi - eta; % = 0
-            dceq2 = [D*dvm + kron(vm',eye(nC*nD))*dD, zeros(nC*nD, nC*(1+nD)), E', -eye(nC*nD), zeros(nC*nD,1)];
+            ceq2 = D2*v2 + E'*psi - eta; % = 0
+            dceq2 = [D2*dv2 + [zeros(nC*nD,nQ), kron(v2',eye(nC*nD))*dD2], zeros(nC*nD, 2*nC*(1+nD)), E', -eye(nC*nD), zeros(nC*nD,1)];
             
             ceq = [ceq1; ceq2];
             dceq = [dceq1; dceq2]';
             
             %Signed distance
-            cin1 = -phi; % <= 0
-            dcin1 = [-n, zeros(nC,2*nC*(1+nD)+1)];
+            cin1 = -phi2; % <= 0
+            dcin1 = [zeros(nC,nQ), -n2, zeros(nC,3*nC*(1+nD)+1)];
             
             %Friction cone
-            cin2 = E*b - mu*c; % <= 0
-            dcin2 = [zeros(nC, nQ), -mu*eye(nC), E, zeros(nC,nC*(1+nD)+1)];
+            cin2 = [E*b1 - mu*c1;
+                    E*b2 - mu*c2]; % <= 0
+            dcin2 = [zeros(nC, 2*nQ), -mu*eye(nC), E, zeros(nC,2*nC*(1+nD)+1);
+                     zeros(nC, 2*nQ), zeros(nC,nC*(1+nD)), -mu*eye(nC), E, zeros(nC,nC*(1+nD)+1)];
             
             %Normal force complementarity
-            cin3 = phi'*c - s; % <= 0
-            dcin3 = [c'*n, phi', zeros(1,nC*nD+nC+nC*nD), -1];
+            cin3 = [phi2'*c1 - s;
+                    phi2'*c2 - s]; % <= 0
+            dcin3 = [zeros(1,nQ), c1'*n2, phi2', zeros(1,nC*nD + 2*nC*(1+nD)), -1;
+                     zeros(1,nQ), c2'*n2, zeros(1,nC*(1+nD)), phi2', zeros(1,nC*nD + nC*(1+nD)), -1];
                 
             %Tangential velocity complementarity
-            cin4 = (mu*c - E*b)'*psi - s; % <= 0
-            dcin4 = [zeros(1,nQ), mu*psi', -psi'*E, (mu*c - E*b)', zeros(1,nD*nC), -1];
+            cin4 = [(mu*c1 - E*b1)'*psi - s;
+                    (mu*c2 - E*b2)'*psi - s];% <= 0
+            dcin4 = [zeros(1,2*nQ), mu*psi', -psi'*E, zeros(1,nC*(1+nD)), (mu*c1 - E*b1)', zeros(1,nD*nC), -1;
+                     zeros(1,2*nQ), zeros(1,nC*(1+nD)), mu*psi', -psi'*E, (mu*c2 - E*b2)', zeros(1,nD*nC), -1];
             
             %Friction complementarity
-            cin5 = eta'*b - s; % <= 0
-            dcin5 = [zeros(1,nQ), zeros(1,nC), eta', zeros(1,nC), b', -1];
+            cin5 = [eta'*b1 - s;
+                    eta'*b2 - s];% <= 0
+            dcin5 = [zeros(1,2*nQ), zeros(1,nC), eta', zeros(1,nC*(1+nD)), zeros(1,nC), b1', -1;
+                     zeros(1,2*nQ), zeros(1,nC*(1+nD)), zeros(1,nC), eta', zeros(1,nC), b2', -1];
             
             cin = [cin1; cin2; cin3; cin4; cin5];
             dcin = [dcin1; dcin2; dcin3; dcin4; dcin5]';
             
         end
         
-        
-        function [r,drdq1] = MidpointDEL(obj,p0,q0,q1)
-            h = obj.timestep;
-            [D1L,D2L,D1D1L,D1D2L,D2D2L] = obj.LagrangianDerivs((q0+q1)/2,(q1-q0)/h);
-            r = p0 + (h/2)*D1L - D2L;
+        function [r, dr] = SimpsonDEL(p0, q1, q2, q3)
             
-            drdq1 = (h/2)*((1/2)*D1D1L + (1/h)*D1D2L') - ((1/2)*D1D2L + (1/h)*D2D2L);
+            %velocities at timestep k+1 knot points
+            vn1 = (-3*q1 + 4*q2 - q3)/h;
+            vn2 = (q3 - q1)/h;
+            vn3 = (q1 - 4*q2 + 3*q3)/h;
+            
+            r = [p0 + (h/6)*D1L(q1,vn1) - (1/2)*D2L(q1,vn1) - (2/3)*D2L(q2,vn2) + (1/6)*D2L(q3,vn3);
+                (2/3)*D2L(q1,vn1) + (2*h/3)*D1L(q2,vn2) - (2/3)*D2L(q3,vn3)];
+            
+            dr = [(2/3)*D1D2L(q1,vn1) - (2/h)*D2D2L(q1,vn1) - (2/3)*D1D2L(q2,vn2) - (2/(3*h))*D2D2L(q3,vn3), -(1/6)*D1D2L(q1,vn1) + (1/(2*h))*D2D2L(q1,vn1) - (2/(3*h))*D2D2L(q2,vn2) + (1/6)*D1D2L(q3,vn3) + (1/(2*h))*D2D2L(q3,vn3);
+                  (8/(3*h))*D2D2L(q1,vn1) + (2*h/3)*D1D1L(q2,vn2) + (8/(3*h))*D2D2L(q3,vn3), -(2/(3*h))*D2D2L(q1,vn1) + (2/3)*D1D2L(q2,vn2) - (2/3)*D1D2L(q3,vn3) - (2/h)*D2D2L(q3,vn3)];
         end
         
-        function p1 = MidpointRightDLT(obj,q0,q1)
-            %Right Discrete Legendre transform gives momentum at end of timestep
-            h = obj.timestep;
-            [D1L,D2L] = obj.LagrangianDerivs(obj.qavg(q0,q1),obj.qdiff(q0,q1,h));
-            p1 = (h/2)*D1L + D2L;
+        function p1 = SimpsonLeftDLT(q1, q2, q3)
+            v1 = (-3*q1 + 4*q2 - q3)/h;
+            v2 = (q3 - q1)/h;
+            v3 = (q1 - 4*q2 + 3*q3)/h;
+            
+            p1 = -(h/6)*D1L(q1,v1) + (1/2)*D2L(q1,v1) + (2/3)*D2L(q2,v2) - (1/6)*D2L(q3,v3);
         end
         
-        function p0 = MidpointLeftDLT(obj,q0,q1)
-            %Left Discrete Legendre transform gives momentum at end of timestep
-            h = obj.timestep;
-            [D1L,D2L] = obj.LagrangianDerivs(obj.qavg(q0,q1),obj.qdiff(q0,q1,h));
-            p0 = -(h/2)*D1L + D2L;
+        function p2 = SimpsonRightDLT(q1, q2, q3)
+            v1 = (-3*q1 + 4*q2 - q3)/h;
+            v2 = (q3 - q1)/h;
+            v3 = (q1 - 4*q2 + 3*q3)/h;
+            
+            p2 = -(1/6)*D2L(q1,v1) + (2/3)*D2L(q2,v2) + (h/6)*D1L(q3,v3) + (1/2)*D2L(q3,v3);
         end
         
-        function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivs(obj,q2,v)
-            nq = length(q2);
+        function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivs(obj,q,v)
+            nq = length(q);
             nv = length(v);
             
-            [M,G,B,dM,dG,dB] = obj.plant.manipulatorDynamics(q2, zeros(nv,1));
+            [M,G,B,dM,dG,dB] = obj.plant.manipulatorDynamics(q, zeros(nv,1));
             dM = reshape(dM,nq*nq,nq+nv);
             dMdq = dM(:,1:nq);
 
-            [~,d2T] = obj.plant.kineticEnergyDerivatives(q2, v);
+            [~,d2T] = obj.plant.kineticEnergyDerivatives(q, v);
             
             dBdq = dB(:,1:nq);
             
@@ -268,19 +331,6 @@ classdef VariationalRigidBodyManipulator < DrakeSystem
             D2D2L = M;
         end
         
-
-        
-        function qm = qavg(obj,q1,q2)
-            qm = (q1+q2)/2;
-            if ~isempty(obj.angle_inds)
-                qm(obj.angle_inds) = angleAverage(q1(obj.angle_inds),q2(obj.angle_inds));
-            end
-        end
-        
-        function vm = qdiff(obj,q1,q2,h)
-            vm = (q2-q1)/h;
-            vm(obj.angle_inds) = angleDiff(q1(obj.angle_inds),q2(obj.angle_inds))/h;
-        end
         
         function x0 = getInitialState(obj)
             if ~isempty(obj.initial_state)

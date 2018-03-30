@@ -64,4 +64,8 @@ drake/examples/HAMR-URDF/dev/SingleLeg
 
 drake/examples/HAMR-URDF/Trajectories/
 
-drake/exmaple/HAMR-URDF/dev/SimpleHamr/*.mat
+drake/exmaples/HAMR-URDF/dev/SimpleHamr/*.mat
+
+drake/examples/LittleDog2/*.mat
+
+drake/examples/KukaArm/*.mat
