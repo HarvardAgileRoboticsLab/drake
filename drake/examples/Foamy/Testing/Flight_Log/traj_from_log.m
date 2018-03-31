@@ -1,4 +1,4 @@
-function [xtraj,utraj] = traj_from_log(log_name,p)
+function [xtraj,utraj,vehicle] = traj_from_log(log_name,p)
 
 %log name is a character array of the log name
 %p is a foamy plant object
@@ -27,10 +27,12 @@ end
 local_position_filename = log_name + "_vehicle_local_position_0.csv";
 vehicle_attitude_filename = log_name + "_vehicle_attitude_0.csv";
 actuator_controls_filename = log_name + "_actuator_controls_0_0.csv";
+testing_data_filename = log_name + "_testing_data_0.csv";
 
 local_pos = csvread(strcat(dir_log2,"/"+local_position_filename),1,0);
 veh_att = csvread(strcat(dir_log2,"/"+vehicle_attitude_filename),1,0);
-controls = csvread(strcat(dir_log2,"/"+actuator_controls_filename),1,0);
+test_data = csvread(strcat(dir_log2,"/"+testing_data_filename),1,0);
+%controls = csvread(strcat(dir_log2,"/"+actuator_controls_filename),1,0);
 
 size(local_pos(:,6))
 
@@ -58,6 +60,15 @@ pos_time = 10^(-6)*(local_pos(:,1)-veh_att(1,1));
 
 vehicle.x = (vehicle.x-vehicle.x(1));
 vehicle.y = -1*(vehicle.y-vehicle.y(1));
+
+vehicle.xd = test_data(:,2:14);
+vehicle.x_meas = test_data(:,15:27);
+vehicle.u_comm = test_data(:,16:19);
+vehicle.dx = test_data(:,20:31);
+vehicle.Kdx = test_data(:,32:35);
+vehicle.x_init = test_data(:,36:38);
+vehicle.times = test_data(:,39)*(10^-6);
+
 
 %xtraj = [local_pos(:,1),vehicle.x,vehicle.y,vehicle.z,...
 %    vehicle.q0,vehicle.q1,vehicle.q2,vehicle.q3,...
