@@ -27,6 +27,18 @@ elseif (type == "HybridFoamyPendulumPlant")
             xtraj = xtraj_mode_1.append(xtraj_mode_2);
             v = FoamyPendulumVisualizer(obj);
             v.playback(xtraj,struct('slider',slider));
+            
+ elseif (type == "HybridTrimFoamyPendulumPlant")
+            xtraj_mode_1 = xtraj.traj{1}.trajs{2};
+            xtraj_mode_1=xtraj_mode_1.setOutputFrame(obj.getOutputFrame);
+            xtraj_mode_2 = xtraj.traj{2}.trajs{2};
+            xtraj_mode_2=xtraj_mode_2.setOutputFrame(obj.getOutputFrame);
+            xtraj_mode_3 = xtraj.traj{3}.trajs{2};
+            xtraj_mode_3=xtraj_mode_3.setOutputFrame(obj.getOutputFrame);
+            xtraj = xtraj_mode_1.append(xtraj_mode_2);
+            xtraj = xtraj.append(xtraj_mode_3);
+            v = FoamyPendulumVisualizer(obj);
+            v.playback(xtraj,struct('slider',slider));
     
 else
     disp("Please call the function for the correct class");

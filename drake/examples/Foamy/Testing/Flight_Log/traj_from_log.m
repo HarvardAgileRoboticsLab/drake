@@ -3,6 +3,16 @@ function [xtraj,utraj,vehicle] = traj_from_log(log_name,p)
 %log name is a character array of the log name
 %p is a foamy plant object
 
+%INSTRUCTIONS: Make a FoamyPlant type: p = FoamyPlant();
+%Place a log file (ends in csv) in this directory and call with the log
+%name. Example, for file "Outdoor_flight_log.csv" type:
+%[xtraj,utraj,vehicle] = traj_from_log("Outdoor_flight_log",p);
+%xtraj and utraj are interpolated trajectories which can be visualized,
+%and the vehicle stores all relevant data
+
+%Log data is found on sd card from pixhawk or in the directory
+%build_posix_sitl_default/logs when using sitl gazebo simulation
+
 
 csv_files = dir('*.csv');
 
@@ -63,16 +73,11 @@ vehicle.y = -1*(vehicle.y-vehicle.y(1));
 
 vehicle.xd = test_data(:,2:14);
 vehicle.x_meas = test_data(:,15:27);
-vehicle.u_comm = test_data(:,16:19);
-vehicle.dx = test_data(:,20:31);
-vehicle.Kdx = test_data(:,32:35);
-vehicle.x_init = test_data(:,36:38);
-vehicle.times = test_data(:,39)*(10^-6);
-
-
-%xtraj = [local_pos(:,1),vehicle.x,vehicle.y,vehicle.z,...
-%    vehicle.q0,vehicle.q1,vehicle.q2,vehicle.q3,...
-%    vehicle.vx,vehicle.vy,vehicle.vz,vehicle.w_roll,vehicle.w_pitch,vehicle.w_yaw];
+vehicle.u_comm = test_data(:,28:31);
+vehicle.dx = test_data(:,32:43);
+vehicle.Kdx = test_data(:,44:47);
+vehicle.x_init = test_data(:,48:51);
+vehicle.times = test_data(:,52)*(10^-6);
 
 
 xtraj_val = [vehicle.x,vehicle.y,vehicle.z,...

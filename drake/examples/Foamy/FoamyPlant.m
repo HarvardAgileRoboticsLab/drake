@@ -56,17 +56,17 @@ classdef FoamyPlant < DrakeSystem
         function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
-            x0(1) = -6;
+            [x0, u0] = findTrim(obj,17); %find trim conditions for level flight at 6 m/s
+            x0(1) = -20;
             x0(3) = 1.5;
 
             % final conditions:
             xf = x0;
-            xf(1) = 6; %translated in x
+            xf(1) = 20; %translated in x
 
-            tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
+            tf0 = (xf(1)-x0(1))/17; % initial guess at duration 
 
-            N = 5;
+            N = 10;
             prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
             prog = addStateConstraint(prog,ConstantConstraint(x0),1);
             prog = addStateConstraint(prog,ConstantConstraint(xf),N);
@@ -262,15 +262,15 @@ classdef FoamyPlant < DrakeSystem
      function [xtraj,utraj] = runDircol_trim2(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
-            x0(1) = -6;
+            [x0, u0] = findTrim(obj,20); %find trim conditions for level flight at 6 m/s
+            x0(1) = -20;
             x0(3) = 1.5;
 
             % final conditions:
             xf = x0;
-            xf(1) = 6; %translated in x
+            xf(1) = 20; %translated in x
 
-            tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
+            tf0 = (xf(1)-x0(1))/20; % initial guess at duration 
 
             N = 7;
             N_trim_start = 2; %Index to start trim condition
@@ -288,7 +288,7 @@ classdef FoamyPlant < DrakeSystem
             prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,4:7);
             
             %options.
-            num_trims = [2 3 4 5 6 7 8 9 10 11 12 13];
+            num_trims = [4 5 6 11 12 13];
             tr_var = length(num_trims);
             %for j = 1:length(num_trims)
             %prog = addStateConstraint(prog,FunctionHandleConstraint(0,0,2,@trim_constraint),trim_inds,num_trims(j));
@@ -333,6 +333,8 @@ classdef FoamyPlant < DrakeSystem
              %dc = [zeros(l,2*l)];
              
          end
+         
+         
 
             function [g,dg] = cost(dt,x,u)
                 R = eye(4);
