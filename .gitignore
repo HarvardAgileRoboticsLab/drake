@@ -65,3 +65,17 @@ drake/examples/HAMR-URDF/dev/SingleLeg
 drake/examples/HAMR-URDF/Trajectories/
 
 drake/exmaple/HAMR-URDF/dev/SimpleHamr/*.mat
+
+drake/examples/HAMR-URDF/GaitRecoveryTransition/old/
+
+drake/examples/HAMR-URDF/GaitRecoveryTransition/data_25-Mar-2018/
+
+drake/examples/HAMR-URDF/GaitRecoveryTransition/data_24-Mar-2018/
+
+drake/examples/HAMR-URDF/GaitRecoveryTransition/data_23-Mar-2018/
+
+drake/examples/HAMR-URDF/GaitRecoveryTransition/data_10-Apr-2018/
+
+drake/examples/HAMR-URDF/ActuatorToLegVelocity\.mat
+
+drake/examples/HAMR-URDF/TYM_LinearEstimateDrake\.mat
