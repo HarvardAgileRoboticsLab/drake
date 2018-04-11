@@ -1,6 +1,6 @@
 clear; clc; close all;
 addpath('../')
-save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SysIDFiles/';
+save_dir = '~/Dropbox/GaitRecoveryandTransition/LinearModelFit/';
 
 global u_traj kl_traj
 u_traj = []; 
@@ -20,7 +20,7 @@ band = [0, 2*f1*dt];
 %% Build robot
 
 % options
-name = 'FL_scaled';
+name = 'HAMR_scaledV2_TYM';
 urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', [name, '.urdf']);
 options.ignore_self_collisions = true;
 options.collision_meshes = false;
@@ -39,7 +39,7 @@ SL = SL.setJointLimits(-Inf(nq, 1), Inf(nq, 1));
 SL = compile(SL); 
 
 %% Build Actuators
-dp.Vb = 200;
+dp.Vb = 22;
 dp.Vg = 0;
 
 nact = nu;
@@ -67,9 +67,9 @@ input_select(1).input = act_in.getFrameByName('DriveVoltage');
 
 % mimo outputs
 output_select(1).system = 2;
-output_select(1).output = sl_out.getFrameByName('RearLeftSingleLegPosition');
+output_select(1).output = sl_out.getFrameByName('FrontLeftSingleLegPosition');
 output_select(2).system = 2;
-output_select(2).output = sl_out.getFrameByName('RearLeftSingleLegVelocity');
+output_select(2).output = sl_out.getFrameByName('FrontLeftSingleLegVelocity');
 output_select(3).system = 1;
 output_select(3).output = sl_actuators.getOutputFrame();
 
@@ -169,4 +169,4 @@ plot(t, x(nq+nv+2,:));
 plot(t, tau(2,:)); 
 legend('U', 'Tau')
 
-save([save_dir, 'sysid_traj_', name, '_', num2str(f1*1e3), 'Hz_', num2str(dp.Vb), 'V'], 't', 'tramp', 'x', 'tau')
+save([save_dir, 'sysid_traj_', name, '_', num2str(f1*1e3), 'Hz_', num2str(dp.Vb), 'V'], 't', 'tramp', 'V', 'x', 'tau')

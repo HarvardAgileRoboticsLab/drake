@@ -78,17 +78,7 @@ classdef HamrTSRBM < TimeSteppingRigidBodyManipulator
             
         end
         
-%         function hamr_pd = pdtrajtracking(obj, u0, kp, kd)
-%             
-%             qa = obj.getActuatedJoints();
-%             
-%             Kp = kp*eye(numel(qa));
-%             Kd = kd*eye(numel(qa));
-%             
-%             hamr_pd = obj.pdcontrol(Kp, Kd, qa);
-%             
-%         end
-        
+
         function nActuatedDOF = getNumActuatedDOF(obj)
             nActuatedDOF = numel(obj.getActuatedJoints());
         end

@@ -65,7 +65,7 @@ end
 %%
 vv = zeros(size(uu));
 for i = 1:(numel(tt)-1)
-    [vv(:,i), dvv] = ipzt_fun(hamr, hr_actuators, tt(i), xx_act_m(:,i), uu(:,i));
+    [vv(:,i), dvv] = ipzt_fun(hamr, hr_actuators, tt(i), xx_act_m(:,i), uu(1:(nu-nl),i));
     vv(vv(:,i) < 0, i) = 0; 
     vv(vv(:,i) > 225, i) = 225; 
 end

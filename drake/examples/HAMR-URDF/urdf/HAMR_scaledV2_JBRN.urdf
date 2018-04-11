@@ -2,6 +2,10 @@
 <robot
   name="Hamr">
 
+  <material name="black">
+    <color rgba = "0 0 0 1"/>
+  </material>
+
   <link name="Chassis">
     <inertial>
       <origin xyz="0 0 -0.379657560961688" rpy="0 0 0" />
@@ -14,9 +18,7 @@
       <geometry>
         <mesh filename="../meshes/Chassis.obj" scale="1000" />
       </geometry>
-      <material name=""> 
-        <color rgba="1 1 1 1" />
-      </material>
+      <material name="black"/>               
     </visual>
  </link>
 
@@ -1810,49 +1812,49 @@
  <!-- Actuator Springs --> 
 
   <force_element name="FL_ksact">
-    <prismatic_spring stiffness="1.1556" rest_length="0">
+    <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="FLqsact" />
     </prismatic_spring>
   </force_element>
 
   <force_element name="FL_klact">
-     <prismatic_spring stiffness="1.1556" rest_length="0">
+     <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="FLqlact" />
     </prismatic_spring>
   </force_element>
 
   <force_element name="RL_ksact">
-    <prismatic_spring stiffness="1.1556" rest_length="0">
+    <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="RLqsact" />
     </prismatic_spring>
   </force_element>
 
   <force_element name="RL_klact">
-     <prismatic_spring stiffness="1.1556" rest_length="0">
+     <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="RLqlact" />
     </prismatic_spring>
   </force_element>
 
   <force_element name="FR_ksact">
-    <prismatic_spring stiffness="1.1556" rest_length="0">
+    <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="FRqsact" />
     </prismatic_spring>
   </force_element>
 
   <force_element name="FR_klact">
-     <prismatic_spring stiffness="1.1556" rest_length="0">
+     <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="FRqlact" />
     </prismatic_spring>
   </force_element>
 
   <force_element name="RR_ksact">
-    <prismatic_spring stiffness="1.1556" rest_length="0">
+    <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="RRqsact" />
     </prismatic_spring>
   </force_element>
 
   <force_element name="RR_klact">
-    <prismatic_spring stiffness="1.1556" rest_length="0">
+    <prismatic_spring stiffness="1.9953" rest_length="0">
       <joint name="RRqlact" />
     </prismatic_spring>
   </force_element>

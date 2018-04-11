@@ -22,7 +22,7 @@ end
 function [V, dV] = ipzt(obj, act, xin)
 
 nq = obj.getNumActuatedDOF();
-nu = obj.getNumInputs();
+nu = nq; %obj.getNumInputs();
 
 t = xin(1);
 qact = xin(1+(1:nq));
