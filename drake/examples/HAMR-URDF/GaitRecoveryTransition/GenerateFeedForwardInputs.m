@@ -81,13 +81,13 @@ for i = 1:Nf
             uuopt = utraj.eval(ttopt);
             vvopt = vtraj.eval(ttopt);
             
-%             figure(1); clf;
-%             for l = 1:nqa
-%                 subplot(nqa/2, 2, l); hold on;
-%                 plot(ttopt, xxopt(qa(l),:))
-%                 plot(linspace(0, in_params.T, NSAMP), trajd(:,l+1)', 'k--')
-%             end
-%             drawnow;
+            figure(1); clf;
+            for l = 1:nqa
+                subplot(nqa/2, 2, l); hold on;
+                plot(ttopt, xxopt(qa(l),:))
+                plot(linspace(0, in_params.T, NSAMP), trajd(:,l+1)', 'k--')
+            end
+            drawnow;
             
             figure(2); clf;
             NCYC = 2;
@@ -98,7 +98,7 @@ for i = 1:Nf
                 ylim([actuators.dummy_bender(1).dp.Vg, actuators.dummy_bender(1).dp.Vb])
             end
             drawnow;
-            tilefigs;
+%             tilefigs;
             
             %% Playback
 %             ttpb = ttopt/1e3; 

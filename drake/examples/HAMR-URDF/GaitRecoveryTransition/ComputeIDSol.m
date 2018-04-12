@@ -16,7 +16,7 @@ nqa = params.nqa;
 % build trajectory optimization
 % options.periodic = true; 
 x0 = [zeros(nq,1); zeros(nv,1)];
-traj_opt = DircolTrajectoryOptimization(hamr, NSAMP, T); %, options);
+traj_opt = DirtranTrajectoryOptimization(hamr, NSAMP, T); %, options);
 traj_init.x = PPTrajectory(foh([0,T],[x0,x0]));
 
 % initial state
@@ -26,10 +26,10 @@ traj_init.x = PPTrajectory(foh([0,T],[x0,x0]));
 QXperiodic = [-eye(nq+nv), eye(nq+nv)];       
 periodic_state_cnst = LinearConstraint(zeros(nq+nv,1), zeros(nq+nv,1),QXperiodic);
 periodic_state_cnst = periodic_state_cnst.setName('periodicity_state');
-traj_opt = traj_opt.addStateConstraint(periodic_state_cnst,{[1 NSAMP]});
+traj_opt = traj_opt.addStateConstraint(periodic_state_cnst,{[1, NSAMP]});
  
 % add periodic input constraint
-QUperiodic = 1/2*[-eye(nu), -eye(nu), eye(nu), eye(nu)];%blkdiag([-eye(nu), zeros(nu), eye(nu), zeros(nu)], [-eye(nu), eye(nu), eye(nu), -eye(nu)]);
+QUperiodic = (1/2)*[-eye(nu), -eye(nu), eye(nu), eye(nu)];%blkdiag([-eye(nu), zeros(nu), eye(nu), zeros(nu)], [-eye(nu), eye(nu), eye(nu), -eye(nu)]);
 periodic_input_cnst = LinearConstraint(zeros(nu,1),zeros(nu,1),QUperiodic);
 periodic_input_cnst = periodic_input_cnst.setName('periodicity_input');
 traj_opt = traj_opt.addInputConstraint(periodic_input_cnst,{[1, 2, NSAMP-1, NSAMP]});
