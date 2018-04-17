@@ -409,7 +409,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;v0;q1;u;c;b;jl;kl];
             %             tic
             [f,df] = midpoint_first_step(obj,xin);
-            fprintf('First Step: %f \r',  max(abs(f)));
+            %fprintf('First Step: %f \r',  max(abs(f)));
             % 
             %             df_fd = zeros(size(df));
             %             dxin = 1e-6*eye(length(xin));
@@ -461,7 +461,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl];     %NDD: added joint limit forces
 
             [f,df] = obj.midpoint_dynamics(xin);
-            fprintf('Dynamics: %f \r',  max(abs(f)));
+            %fprintf('Dynamics: %f \r',  max(abs(f)));
             
             %             df_fd = zeros(size(df));
             %             step = sqrt(eps(max(xin)));
@@ -567,7 +567,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h;q1;q2;psi;eta;c;b;s];
             [f,df] = obj.midpoint_contact(xin);
-            fprintf('Slack: %f \r', s);
+            %fprintf('Slack: %f \r', s);
             
             %             df_fd = zeros(size(df));
             %             dxin = 1e-6*eye(length(xin));
@@ -690,7 +690,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [q1; q2];
 
             [f,df] = obj.midpoint_kinematic_loop_constraint(xin);
-            fprintf('Loop: %f \r',  max(abs(f)));
+            %fprintf('Loop: %f \r',  max(abs(f)));
             
             %             df_fd = zeros(size(df));
             %             dxin = 1e-6*eye(length(xin));
