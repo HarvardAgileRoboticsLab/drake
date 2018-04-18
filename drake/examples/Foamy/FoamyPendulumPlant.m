@@ -2,6 +2,9 @@ classdef FoamyPendulumPlant < DrakeSystem
     
     properties
         m_package = 0; %Package mass
+        disturbance_type = 1; %1 = package mass, 2 = airplane mass, 3 = package dynamcis, 4 = wind gusts
+       
+        
     end
     
     methods
@@ -18,7 +21,23 @@ classdef FoamyPendulumPlant < DrakeSystem
             else
                 obj.m_package = m_p;
             end
-           end
+        end
+           
+           
+   function nw = getNumDisturbances(obj)
+        switch obj.disturbance_type
+            case 1
+                nw = 1;
+            case 2
+                nw = 1;
+            case 3
+                nw = obj.getNumContStates();
+            case 4
+                nw = 3;
+            otherwise
+                error('Unknown disturbance type');
+        end
+    end
 
         
         function obj = change_m_package(obj,m_p)
@@ -39,6 +58,80 @@ classdef FoamyPendulumPlant < DrakeSystem
                 [xdot, dxdot] = geval(@(t1,x1,u1) foamy_pendulum_dynamics_mex(t1,x1,u1,obj.m_package),t,x,u,options);
             end
         end
+        
+  function [f,df,d2f] = dynamics_w(obj,t,x,u,w)
+        
+        [f,df] = dynamics_w_mp(obj,t,x,u,w);
+        
+        if nargout == 3
+            %Finite diff to get 2nd derivatives
+            nx = length(x);
+            nu = length(u);
+            nw = length(w);
+            
+            Dx = 1e-6*eye(nx);
+            Du = 1e-6*eye(nu);
+            Dw = 1e-6*eye(nw);
+            
+            d2f = zeros(nx, 1+nx+nu+nw, 1+nx+nu+nw);
+            for k = 1:nx
+                [~,df_p] = dynamics_w_mp(obj,t,x+Dx(:,k),u,w);
+                d2f(:,:,1+k) = df_p-df;
+            end
+            for k = 1:nu
+                [~,df_p] = dynamics_w_mp(obj,t,x,u+Du(:,k),w);
+                d2f(:,:,1+nx+k) = df_p-df;
+            end
+            for k = 1:nw
+                [~,df_p] = dynamics_w_mp(obj,t,x,u,w+Dw(:,k));
+                d2f(:,:,1+nx+nu+k) = df_p-df;
+            end
+            
+            d2f = reshape(d2f,nx,(1+nx+nu+nw)*(1+nx+nu+nw));
+            
+        end
+
+  end
+    
+ function [f,df] = dynamics_w_mp(obj,t,x,u,w)
+      % w is the weight difference for the perceived package
+
+      nq = obj.getNumPositions;
+      q=x(1:nq); 
+      
+      if (nargout>1)
+        nx = obj.getNumStates;
+        nu = obj.getNumInputs;
+
+        %kinsol = doKinematics(obj, q, [], struct('compute_gradients', true));
+        %[~,J,dJ] = obj.forwardKin(kinsol,findLinkId(obj,obj.hand_name),[0;0;0]);
+        %uw = J'*w;
+ 
+        %dJtw = zeros(nq,nq);
+        %for i=1:nq
+        %  dJtw(:,i) = dJ(:,(i-1)*nq+(1:nq))'*w;
+        %end
+      
+        [f,df] = geval(@(t1,x1,u1,w1) foamy_pendulum_dynamics_mex(t1,x1,u1,obj.m_package+w1),t,x,u,w,options);
+        df_du = df(:,1+nx+(1:nu)); 
+        df_dq = df(:,1+(1:nq));
+        %df_dq = df(:,1+(1:nq)) + df_du*dJtw;
+        df_dqd = df(:,1+nq+(1:nq));
+        %df_dw = df_du*J';
+        df_dw = df(:,1+nq+(1:nq));
+        
+        df = [df(:,1),df_dq,df_dqd,df_du,df_dw];
+      else
+        %kinsol = doKinematics(obj, q, []);
+        %[~,J] = obj.forwardKin(kinsol,findLinkId(obj,obj.hand_name),[0;0;0]);
+        %uw = J'*w;
+      
+        %[f,df] = dynamics(obj,t,x,u+uw);
+        
+        [f,df] = geval(@(t1,x1,u1,w1) foamy_pendulum_dynamics_mex(t1,x1,u1,obj.m_package+w1),t,x,u,w,options);
+      end
+
+    end
         
         function y = output(obj,t,x,u)
             y = x;

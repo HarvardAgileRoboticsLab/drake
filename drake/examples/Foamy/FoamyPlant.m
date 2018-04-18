@@ -56,22 +56,28 @@ classdef FoamyPlant < DrakeSystem
         function [xtraj,utraj] = runDircol(obj,display)
 
             % initial conditions:
-            [x0, u0] = findTrim(obj,17); %find trim conditions for level flight at 6 m/s
+            [x0, u0] = findTrim(obj,10); %find trim conditions for level flight at 6 m/s
             x0(1) = -20;
             x0(3) = 1.5;
-
+    
+            
+            xm = x0;
+            xm(1) = 0;
+            xm(3) = 0;
+            
             % final conditions:
             xf = x0;
             xf(1) = 20; %translated in x
 
-            tf0 = (xf(1)-x0(1))/17; % initial guess at duration 
+            tf0 = (xf(1)-x0(1))/10; % initial guess at duration 
 
             N = 10;
             prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
             prog = addStateConstraint(prog,ConstantConstraint(x0),1);
             prog = addStateConstraint(prog,ConstantConstraint(xf),N);
+            prog = addStateConstraint(prog,ConstantConstraint(xm),ceil(N/2));
             prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N,4:7);
-            prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),1:N);
+            prog = addInputConstraint(prog,BoundingBoxConstraint([0.001; -1; -1; -1], [1; 1; 1; 1]),1:N);
             prog = addRunningCost(prog,@cost);
             %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
 

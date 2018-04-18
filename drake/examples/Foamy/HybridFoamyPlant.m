@@ -36,6 +36,10 @@ classdef HybridFoamyPlant < HybridDrakeSystem
             dg = [0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
             end
             
+            function n = getNumDisturbances(~)
+                n = 1;
+            end
+            
         
             function [to_mode_xn,to_mode_num,status,dxp] = transition(obj,from_mode_num,t,mode_x,u)
                 mode_x = double(mode_x);
@@ -211,8 +215,124 @@ classdef HybridFoamyPlant < HybridDrakeSystem
             q = zeros(7,1);
             q(5) = 1; %Quaternion - plane oriented right-side up
         end
-    end
+
     
+    function [xtraj,utraj] = runDirtrel(obj,display,const_K)
+
+            % initial conditions:
+            [x0, u0] = findTrim(obj,6); %find trim conditions for level flight at 6 m/s
+            x0(1) = -6;
+            x0(3) = 1.5;
+            % final conditions:
+            xf = x0;
+            xf(1) = 6; %translated in x
+
+            tf0 = (xf(1)-x0(1))/6; % initial guess at duration 
+
+            N = [5;5];
+            
+            options.u_const_across_transitions = false;
+            options.mode_sequence = [1;2];
+            options.integration_method = RobustDirtranTrajectoryOptimization.FORWARD_EULER;
+            options.constant_K = const_K;
+            
+            %D = .2^2;
+            D = .2^2;
+            E0 = zeros(13);
+            Q = eye(13);
+            Qf = 10*eye(13);
+            Ru = 0.1*eye(4); 
+            duration = [1;tf0];
+            prog = HybridRobustDirtranTrajectoryOptimization(obj,N,D,E0,Q,Ru,Qf,duration,options);
+            %prog = DircolTrajectoryOptimization(obj,N,[0 tf0]);
+            
+            prog = addStateConstraint(prog,ConstantConstraint(x0),1);
+            prog = addStateConstraint(prog,ConstantConstraint(xf),N(1)+N(2));
+            prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),1:N(1),4:7);
+            prog = addStateConstraint(prog,QuadraticConstraint(.5,.5,eye(4),zeros(4,1)),N(1)+1:N(1)+N(2),4:7);
+            prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),1:N(1));
+            prog = addInputConstraint(prog,BoundingBoxConstraint([0; -1; -1; -1], [1; 1; 1; 1]),N(1)+1:N(1)+N(2)-1);
+            prog = addRunningCost(prog,@cost);
+            prog = addRobustCost(prog,Q,Ru,Qf);
+            %prog = addRunningCost(prog,@cost);
+            %prog = addFinalCost(prog,@(t,x) finalCost(t,x,xf));
+
+            %--- snopt options ---%
+            prog = setSolver(prog,'snopt');
+            prog = prog.setSolverOptions('snopt','majoroptimalitytolerance',1e-5);
+            prog = prog.setSolverOptions('snopt','majorfeasibilitytolerance',1e-5);
+            %prog = prog.setSolverOptions('snopt','iterationslimit',1000);
+
+            t_init_full = linspace(0,tf0,N(1)+N(2));
+            t_init{1} = t_init_full(1:N(1));
+            t_init{2} = t_init_full(N(1)+1:end);
+            
+            %Warm Starting
+            %[xtraj_temp,utraj_temp] = obj.modes{1}.runDircol(0);
+
+            %Set initial guess for controls to be trim conditions
+            traj_init_full.u = setOutputFrame(PPTrajectory(foh(t_init_full,kron(ones(1,N(1)+N(2)),u0))),getInputFrame(obj));
+            traj_init{1}.u = setOutputFrame(PPTrajectory(foh(t_init{1},kron(ones(1,N(1)),u0))),getInputFrame(obj));
+            traj_init{2}.u = setOutputFrame(PPTrajectory(foh(t_init{2},kron(ones(1,N(2)),u0))),getInputFrame(obj));
+         
+            
+            %Simulate with u0 input to generate initial guess
+            [t_guess1, x_guess1] = ode45(@(t,x) obj.dynamics(t,[1;x],u0),t_init{1},x0);
+            [t_guess2, x_guess2] = ode45(@(t,x) obj.dynamics(t,[2;x],u0),t_init{2},x_guess1(end,:));
+            [t_guess_full, x_guess_full] = ode45(@(t,x) obj.dynamics(t,[2;x],u0),t_init_full,x0);
+            t_guess{1} = t_guess1;
+            t_guess{2} = t_guess2;
+            x_guess{1} = x_guess1;
+            x_guess{2} = x_guess2;
+            %t_guess = [t_guess;t_guess2];
+            %x_guess = [x_guess;x_guess2];
+            %x_guess = [[ones(5,1);2*ones(5,1)],x_guess]
+            
+            traj_init{1}.x = setOutputFrame(PPTrajectory(foh(t_guess{1},x_guess{1}')),getOutputFrame(obj));
+            traj_init{2}.x = setOutputFrame(PPTrajectory(foh(t_guess{2},x_guess{2}')),getOutputFrame(obj));
+            traj_init_full.x = setOutputFrame(PPTrajectory(foh(t_guess_full,x_guess_full')),getOutputFrame(obj));
+            
+
+            
+            
+            %traj_init{1}.x0 = x0';
+            %traj_init{2}.x0 = x_guess1(end,:)';
+            
+            %prog = prog.compile();
+            tic
+            [xtraj,utraj,~,~,info]=solveTraj(prog,t_init_full,traj_init_full);
+            toc
+
+
+            if nargin == 3 && display
+                visualizeFoamy(obj,xtraj,true);
+            end
+
+            function [g,dg] = cost(dt,x,u)
+                R = eye(4);
+                g = 0.5*(u-u0)'*R*(u-u0);
+                dg = [0, zeros(1,13), (u-u0)'*R];
+            end
+
+            function [h,dh] = finalCost(t,x,xf)
+                hx = .5*(x(1:3)-xf(1:3))'*(x(1:3)-xf(1:3));
+                %hv = .5*(x(8:10)-xf(8:10))'*(x(8:10)-xf(8:10));
+                %hw = .5*(x(11:13)-xf(11:13))'*(x(11:13)-xf(11:13));
+
+                %This is to handle the quaternion double cover issue
+                hq1 = 1 - xf(4:7)'*x(4:7);
+                hq2 = 1 + xf(4:7)'*x(4:7);
+                if hq1 <= hq2
+                    h = hx + hq1;
+                    dh = [0,x(1:3)'-xf(1:3)',-xf(4:7)',zeros(1,6)];
+                else
+                    h = hx + hq2;
+                    dh = [0,x(1:3)'-xf(1:3)',xf(4:7)',zeros(1,6)];
+                end
+            end
+            
+        end    
+    end  
 end
 
 
