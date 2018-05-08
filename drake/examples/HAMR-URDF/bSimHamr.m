@@ -21,7 +21,7 @@ options.use_bullet = false;
 
 % options to change
 options.dt = 1;
-gait = 'TROT';
+gait = 'WHEELI';
 SAVE_FLAG = 0;
 ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 

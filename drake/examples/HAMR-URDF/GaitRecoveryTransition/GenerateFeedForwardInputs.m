@@ -31,13 +31,14 @@ qa = hamrID.getActuatedJoints();
 nqa = numel(qa);
 
 % build desired actuator trajectory
-gait = 'TROT';
+gait = 'PRONK';
 freq = 10e-3; %linspace(10, 50, 5)*1e-3;        % frequency
-DC = linspace(50, 80, 4);                       % duty cycle for swing
-DL = linspace(-25, 75, 5);                      % percent "push" into the ground
+DC = 70; %linspace(50, 80, 4);                  % duty cycle for swing
+DL = 70; %linspace(-25, 75, 5);                 % percent "push" into the ground
 LIFTAMP = 0.15;                                 % lift actuator motion (mm)
 SWINGAMP = 0.175;                               % swing actuator motion (mm)
 NSAMP = 100;                                    % number of samples
+TYPE = 2; 
 
 Nf = numel(freq);
 Ndc = numel(DC);
@@ -49,7 +50,7 @@ for i = 1:Nf
     for j = 1:Ndc
         for k = 1:Ndl
             
-            [trajd, brkVals] = GenerateHueristicActTraj(gait, freq(i), DC(j), DL(k), NSAMP);
+            [trajd, brkVals] = GenerateHueristicActTraj(gait, freq(i), DC(j), DL(k), NSAMP, TYPE);
             
             trajd(:, 2:2:end) = SWINGAMP*trajd(:, 2:2:end);
             trajd(:, 3:2:end) = LIFTAMP*trajd(:, 3:2:end);
@@ -109,10 +110,12 @@ for i = 1:Nf
             %% Saving
             ffinput_jk.params.NSAMP = NSAMP;
             ffinput_jk.params.DC = DC(j);
-            ffinput_jk.params.DL = DL(j);
+            ffinput_jk.params.DL = DL(k);
             ffinput_jk.params.GAIT = gait;
             ffinput_jk.params.LIFTAMP = LIFTAMP;
             ffinput_jk.params.SWINGAMP = SWINGAMP;
+            ffinput_jk.params.TYPE = TYPE;
+            
             ffinput_jk.ttopt = ttopt;
             ffinput_jk.xxopt = xxopt;
             ffinput_jk.uuopt = uuopt;

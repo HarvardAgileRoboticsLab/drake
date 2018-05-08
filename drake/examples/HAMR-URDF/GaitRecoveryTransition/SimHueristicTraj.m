@@ -20,10 +20,12 @@ options.use_bullet = false;
 % options to change
 dt = 0.2;
 options.dt = dt;
-gait = 'TROT';
+gait = 'PRONK';
 DC = 80;                % duty cycle for swing
-LIFTAMP = 0.025;        % lift actuator motion (mm)     
-SWINGAMP = 0.225;       % swing actuator motion (mm)
+DL = 80; 
+LIFTAMP = 0.15;        % lift actuator motion (mm)     
+SWINGAMP = 0.175;       % swing actuator motion (mm)
+TYPE = 2; 
 SAVE_FLAG = 0;
 ISFLOAT = false; % floating (gnd contact) or in air (not floating)
 
@@ -55,11 +57,11 @@ dp.Vg = 0;
 
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [-1; -1; 1; 1; -1; -1; 1; 1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
 
-for i = 2:2:nact
-    hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1);
-end
+% for i = 2:2:nact
+%     hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1);
+% end
 
 %% Connect system
 
@@ -135,13 +137,14 @@ vtraj = setOutputFrame(vtraj, hamrWact.getInputFrame());
 %% Generate Hueristic Trajectories in body frame
 
 % generate trajectory 
-NPTS = 50;
-traj = HueristicFootTraj(gait, fd, DC, NPTS);
+NPTS = 100;
+[traj, brkVal] = GenerateHueristicActTraj(gait, fd, DC, DL, NPTS, TYPE); 
+% traj = HueristicFootTraj(gait, fd, DC, NPTS);
 tcyc = traj(:, 1); 
 qcyc = traj(:,2:end);
 
-qcyc(:,[1, 7]) = -qcyc(:,[1, 7]); 
-qcyc(:,[6, 8]) = -qcyc(:,[6, 8]); 
+% qcyc(:,[1, 7]) = -qcyc(:,[1, 7]); 
+% qcyc(:,[6, 8]) = -qcyc(:,[6, 8]); 
 
 % qcyc(:, [1, 3, 5, 7]) = 0; 
 
@@ -187,8 +190,8 @@ xtraj_sim = simulate(hamr_OL, [0 tsim], x0);
 
 % sets all errors to ~ 1
 Qpos = 2*(2/(LIFTAMP + SWINGAMP))^2;
-Qvel = 0.005*(2/(2*pi*fd)/(LIFTAMP + SWINGAMP))^2;
-rho = 0.1*(1/dp.Vb)^2;
+Qvel = 0; %0.005*(2/(2*pi*fd)/(LIFTAMP + SWINGAMP))^2;
+rho = 1*(1/dp.Vb)^2;
 
 tracking_opt.ctype = 'actlqr';
 tracking_opt.rho = rho;
@@ -233,7 +236,7 @@ for i = 1:numel(act_dof)
     plot(tt_sol, vv_sol_OL(i,:));
     plot(tt_sol, vv_sol_CL(i,:));
     legend('OL Inputs', 'CL Inputs'); 
-    ylim([dp.Vg, dp.Vb])
+%     ylim([dp.Vg, dp.Vb])
 end
 
 
@@ -244,7 +247,7 @@ for i = 1:numel(act_dof)
     plot(tt_sol, xx_sol_CL(act_dof(i), :));
     plot(ttd, xxd(act_dof(i), :));
     legend('OL Act Defl', 'CL Act Defl', 'Desired Act Defl');
-    ylim([-SWINGAMP, SWINGAMP])
+%     ylim([-SWINGAMP, SWINGAMP])
 end
 
 
