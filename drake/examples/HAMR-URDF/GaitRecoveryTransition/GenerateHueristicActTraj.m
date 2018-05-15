@@ -59,8 +59,8 @@ dl = dl/100;                % normal push
 tn = linspace(0, 1, NSAMP)';         % one period of normalized time
 
 tknots = [0, (1-dc)/4, 3*(1-dc)/4, 1-dc, 1-3*dc/4,  1-dc/4, 1];
-qknots = direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
-vknots = direction*[0,  2/(1-dc),  2/(1-dc), 0, -2/dc,  -2/dc, 0];
+qknots = -direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
+vknots = -direction*[0,  2/(1-dc),  2/(1-dc), 0, -2/dc,  -2/dc, 0];
 pps = hermite_spline(tknots, qknots, vknots);
 swing = ppval(pps, tn);
 
@@ -108,8 +108,8 @@ dcl = dcl/100;        % duty cycle lift
 tn = linspace(0, 1, NSAMP)';         % one period of normalized time
 
 tknots = [0, (1-dcs)/4, 3*(1-dcs)/4, 1-dcs, 1-3*dcs/4,  1-dcs/4, 1];
-qknots = direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
-vknots = direction*[0,  2/(1-dcs),  2/(1-dcs), 0, -2/dcs,  -2/dcs, 0];
+qknots = -direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
+vknots = -direction*[0,  2/(1-dcs),  2/(1-dcs), 0, -2/dcs,  -2/dcs, 0];
 pps = hermite_spline(tknots, qknots, vknots);
 swing = ppval(pps, tn);
 
@@ -120,7 +120,7 @@ ppl = hermite_spline(tknotl, qknotl, vknotl);
 lift = ppval(ppl, tn);
 
 swing = circshift(swing, phase*numel(tn));
-lift = circshift(lift, (phase - 0.25)*numel(tn));
+lift = circshift(lift, phase*numel(tn));
 
 %         figure(99); hold on;
 %         plot(tn, swing);

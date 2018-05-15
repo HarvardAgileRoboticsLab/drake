@@ -20,12 +20,12 @@ options.use_bullet = false;
 % options to change
 dt = 0.2;
 options.dt = dt;
-gait = 'PRONK';
-DC = 80;                % duty cycle for swing
-DL = 80; 
+gait = 'TROT';
+DC = 50;                % duty cycle for swing
+DL = 50; 
 LIFTAMP = 0.15;        % lift actuator motion (mm)     
 SWINGAMP = 0.175;       % swing actuator motion (mm)
-TYPE = 2; 
+TYPE = 1; 
 SAVE_FLAG = 0;
 ISFLOAT = false; % floating (gnd contact) or in air (not floating)
 
@@ -96,14 +96,13 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build (open-loop) control input
 
 Vff = 0; %100;        % feed forward voltage
-fd = 0.02;             % drive frequency (kHz)
-NCYC = 3;
+fd = 0.01;             % drive frequency (kHz)
+NCYC = 5;
 tsim = NCYC/fd;
 
 t = 0:options.dt:tsim;
 % [-1; -1; 1; 1; -1; -1; 1; 1]
-switch gait
-    
+switch gait    
     case 'TROT'
         vv = [(Vff/2)*sin(2*pi*fd*t);            % FLswing
             (Vff/2)*sin(2*pi*fd*t - pi/2 );                     % FLlift
@@ -151,7 +150,7 @@ qcyc = traj(:,2:end);
 % rescale
 qcyc(:, 1:2:end) = SWINGAMP*qcyc(:, 1:2:end);
 qcyc(:, 2:2:end) = LIFTAMP*qcyc(:, 2:2:end);
-
+ 
 % Finite diff to find v_cyc
 hhd = (1/fd)/NPTS; 
 e = 1./(2*hhd*ones(NPTS,1));
@@ -163,14 +162,16 @@ vcyc = D1*qcyc;
 
 tlabel = {'FL', 'RL', 'FR', 'RR'};
 figure(1); clf;
-for j =1:nact
-    subplot(nact/2, 2, j); hold on; 
-    plotyy(tcyc, qcyc(:,j), tcyc, vcyc(:,j))    
-    if rem(j,2) == 0
-        title(['L', tlabel{j/2}]); 
-    else
-        title(['S', tlabel{floor(j/2)+1}]); 
-    end
+for j =1:nact/2
+    subplot(nact/4, 2, j); hold on; 
+    plot(tcyc, qcyc(:,2*j-1)); %, tcyc, vcyc(:,j))    
+    plot(tcyc, qcyc(:,2*j));
+%     if rem(j,2) == 0
+%         title(['L', tlabel{j/2}]); 
+%     else
+%         title(['S', tlabel{floor(j/2)+1}]); 
+%     end
+legend('Swing', 'Lift')
 end
 
 % create trajectory 
