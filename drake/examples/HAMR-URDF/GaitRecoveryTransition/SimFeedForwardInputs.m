@@ -13,15 +13,15 @@ DL = linspace(-25, 75, 5);
 
 %% Load Data
 
-data_dir = 'data_12-Apr-2018';
-freq = 20;
+data_dir = 'data_16-May-2018';
+freq = 10;
 
 ffinputs = load([data_dir, '/FFInputs_', num2str(freq), 'Hz.mat']);
 ffinputs = ffinputs.ffinputs;
 
 N = randperm(size(ffinputs, 1), 1) %size(ff_inputs, 1);
 M = randperm(size(ffinputs, 2), 1) %size(ff_inputs, 2);
-TYPE = 1; 
+TYPE = 2; 
 
 ff_inputs_nm = ffinputs{N, M};
 
@@ -47,7 +47,7 @@ options.use_bullet = false;
 % options to change
 dt = 0.4;
 options.dt = dt;
-ISFLOAT = true; % floating (gnd contact) or in air (not floating)
+ISFLOAT = false; % floating (gnd contact) or in air (not floating)
 
 if ISFLOAT
     options.floating = ISFLOAT;
@@ -130,7 +130,7 @@ vv_plot = repmat(vv_sol, 1, NCYC);
 figure(1); clf;
 for l = 1:nqa
     subplot(nqa/2, 2, l); hold on;
-    plot(tt_sol, xx_sol(qa(l) - 6,:))
+    plot(tt_sol, xx_sol(qa(l),:))
     plot(1e3*xx_des(:,1), xx_des(:,l+1), 'k')
 %     plot(linspace(0, in_params.T, NSAMP), trajd(:,l+1)', 'k--')
 end
@@ -160,7 +160,6 @@ vv_sim(1:2:end, :) =  -(vv_sim(1:2:end, :) - hr_actuators.dummy_bender(1).dp.Vb/
 vtraj = PPTrajectory(foh(tt_plot, vv_sim));
 vtraj = setOutputFrame(vtraj, hamrWact.getInputFrame());
 
-x0 = zeros(nq+nv, 1); x0(3) = 12.69;
 hamr_OL = cascade(vtraj, hamrWact);
 xtraj_sim = simulate(hamr_OL, [0 tt_plot(end)], x0);
 

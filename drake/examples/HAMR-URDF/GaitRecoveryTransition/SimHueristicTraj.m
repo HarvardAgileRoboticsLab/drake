@@ -22,7 +22,7 @@ dt = 0.2;
 options.dt = dt;
 gait = 'TROT';
 DC = 50;                % duty cycle for swing
-DL = 50; 
+DL = 70; 
 LIFTAMP = 0.15;        % lift actuator motion (mm)     
 SWINGAMP = 0.175;       % swing actuator motion (mm)
 TYPE = 1; 
@@ -57,7 +57,7 @@ dp.Vg = 0;
 
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [], dp);
 
 % for i = 2:2:nact
 %     hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1);
@@ -101,7 +101,7 @@ NCYC = 5;
 tsim = NCYC/fd;
 
 t = 0:options.dt:tsim;
-% [-1; -1; 1; 1; -1; -1; 1; 1]
+
 switch gait    
     case 'TROT'
         vv = [(Vff/2)*sin(2*pi*fd*t);            % FLswing

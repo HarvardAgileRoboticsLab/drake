@@ -17,7 +17,7 @@ switch gait
         actphase = [pi/2, 0, pi/2, 0, -pi/2, pi, -pi/2, pi];
 end
 
-DIRECTIONS = [1, 1; -1, 1; -1, -1; 1, -1];
+DIRECTIONS = [-1, 1; 1, 1; 1, -1; -1, -1];
 traj = zeros(NSAMP, numel(DIRECTIONS));
 brkVal = cell(numel(DIRECTIONS),1);
 
@@ -59,8 +59,8 @@ dl = dl/100;                % normal push
 tn = linspace(0, 1, NSAMP)';         % one period of normalized time
 
 tknots = [0, (1-dc)/4, 3*(1-dc)/4, 1-dc, 1-3*dc/4,  1-dc/4, 1];
-qknots = -direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
-vknots = -direction*[0,  2/(1-dc),  2/(1-dc), 0, -2/dc,  -2/dc, 0];
+qknots = direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
+vknots = direction*[0,  2/(1-dc),  2/(1-dc), 0, -2/dc,  -2/dc, 0];
 pps = hermite_spline(tknots, qknots, vknots);
 swing = ppval(pps, tn);
 
@@ -108,14 +108,14 @@ dcl = dcl/100;        % duty cycle lift
 tn = linspace(0, 1, NSAMP)';         % one period of normalized time
 
 tknots = [0, (1-dcs)/4, 3*(1-dcs)/4, 1-dcs, 1-3*dcs/4,  1-dcs/4, 1];
-qknots = -direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
-vknots = -direction*[0,  2/(1-dcs),  2/(1-dcs), 0, -2/dcs,  -2/dcs, 0];
+qknots = direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
+vknots = direction*[0,  2/(1-dcs),  2/(1-dcs), 0, -2/dcs,  -2/dcs, 0];
 pps = hermite_spline(tknots, qknots, vknots);
 swing = ppval(pps, tn);
 
 tknotl = [0, (1-dcl)/4, 3*(1-dcl)/4, 1-dcl, 1-3*dcl/4,  1-dcl/4, 1];
 qknotl = direction*[-1, -1/2,       1/2,      1,   1/2,  -1/2, -1];
-vknotl =direction*[0,  2/(1-dcl),  2/(1-dcl), 0, -2/dcl,  -2/dcl, 0];
+vknotl = direction*[0,  2/(1-dcl),  2/(1-dcl), 0, -2/dcl,  -2/dcl, 0];
 ppl = hermite_spline(tknotl, qknotl, vknotl);
 lift = ppval(ppl, tn);
 

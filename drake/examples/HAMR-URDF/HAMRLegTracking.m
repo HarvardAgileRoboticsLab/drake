@@ -46,7 +46,7 @@ classdef HAMRLegTracking < DrakeSystem
                 case 'legpd'
                     obj.K = [diag(-orien)*opt.kp, diag(-orien)*opt.kd];
                 case 'actlqr'
-                    lti_approx = load('TYM_LinearEstimateDrake.mat');     
+                    lti_approx = load('TYM_LinearEstimate.mat');     
                     nx_sl = size(lti_approx.Ap, 2);
                     nu_sl = size(lti_approx.Bp, 2);
                     nl_lti = size(lti_approx.Ap,3);

@@ -5,34 +5,13 @@ classdef HamrActuators < DrakeSystem
         names
         dummy_bender = [];
         nact;
+        orien = [-1; -1; 1; 1; -1; -1; 1; 1];
     end
     
     methods
         
         function obj = HamrActuators(nact, names, orien, dp)
             % TODO: add option to change actuator shape by passing gp
-            
-            if numel(names) ~= nact
-                error('Need a name for each acutator mofo')
-            end
-            
-            if nargin < 3
-                orien = ones(nact, 1);
-            else
-                if numel(orien) ~= nact
-                    disp('Orien is wrong length, setting to ones')
-                    orien = ones(nact,1);
-                end
-            end
-            
-            if nargin < 4
-                dp.Vb = 225;
-                dp.Vg = 0;
-            end
-            
-            %             if numel(actuated_dof) ~=nact
-            %                 error('Over (or under) constrained system')
-            %             end
             
             input_frame = MultiCoordinateFrame({CoordinateFrame('DriveVoltage', nact, {}, names), ...
                 CoordinateFrame('ActuatorDeflection', nact)} ...
@@ -50,6 +29,27 @@ classdef HamrActuators < DrakeSystem
             
             obj = obj.setInputFrame(input_frame);
             obj = obj.setOutputFrame(output_frame);
+            
+            
+            if numel(names) ~= nact
+                error('Need a name for each acutator mofo')
+            end
+            
+            if nargin < 3
+                orien = ones(nact, 1);
+            else
+                if isempty(orien)
+                    %                     disp('Orien is wrong length, setting to ones')
+                    disp('Using default actuator orientation')
+                    orien = obj.orien;
+                end
+            end
+            
+            if nargin < 4
+                dp.Vb = 225;
+                dp.Vg = 0;
+            end           
+               
             
             obj.names = names;
             for i = 1:nact
@@ -69,7 +69,7 @@ classdef HamrActuators < DrakeSystem
                 y(i) = obj.dummy_bender(i).output(t, x, [u(i);...
                     u(i+obj.nact)]);
             end
-%             fprintf('Time: %f \n', t);
+            %             fprintf('Time: %f \n', t);
             
         end
         

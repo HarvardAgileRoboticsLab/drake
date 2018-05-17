@@ -48,7 +48,7 @@ dp.Vg = 0;
 nact = 8;
 act_names = {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'};
-hr_actuators = HamrActuators(nact, act_names, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+hr_actuators = HamrActuators(nact, act_names, [], dp);
 
 % for i = 2:2:nact
 %     hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.115); 

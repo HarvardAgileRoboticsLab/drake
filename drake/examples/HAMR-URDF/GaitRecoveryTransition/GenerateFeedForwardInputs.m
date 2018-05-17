@@ -20,7 +20,7 @@ dp.Vg = 0;
 
 nact = 8;
 actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [], dp);
 
 % dimensions
 nq = hamrID.getNumPositions();
