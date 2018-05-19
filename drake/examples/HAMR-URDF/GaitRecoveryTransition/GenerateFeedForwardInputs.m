@@ -32,9 +32,9 @@ nqa = numel(qa);
 
 % build desired actuator trajectory
 gait = 'PRONK';
-freq = 10e-3; %linspace(10, 50, 5)*1e-3;        % frequency
-DC = 70; %linspace(50, 80, 4);                  % duty cycle for swing
-DL = 70; %linspace(-25, 75, 5);                 % percent "push" into the ground
+freq = linspace(10, 50, 5)*1e-3;        % frequency
+DC = linspace(50, 80, 4);                  % duty cycle for swing
+DL = linspace(20, 75, 5);                  % percent "push" into the ground
 LIFTAMP = 0.15;                                 % lift actuator motion (mm)
 SWINGAMP = 0.175;                               % swing actuator motion (mm)
 NSAMP = 100;                                    % number of samples
@@ -116,6 +116,7 @@ for i = 1:Nf
             ffinput_jk.params.SWINGAMP = SWINGAMP;
             ffinput_jk.params.TYPE = TYPE;
             
+            ffinput_jk.trajd = trajd;
             ffinput_jk.ttopt = ttopt;
             ffinput_jk.xxopt = xxopt;
             ffinput_jk.uuopt = uuopt;
@@ -127,7 +128,7 @@ for i = 1:Nf
         
     end  
     
-    save([save_dir, 'FFInputs_' num2str(1e3*freq(i)), 'Hz'], 'ffinputs')
+    save([save_dir, 'FFInputs_Type', num2str(TYPE), '_' num2str(1e3*freq(i)), 'Hz'], 'ffinputs')
     
 end
 

@@ -20,12 +20,12 @@ options.use_bullet = false;
 % options to change
 dt = 0.2;
 options.dt = dt;
-gait = 'TROT';
+gait = 'PRONK';
 DC = 50;                % duty cycle for swing
 DL = 70; 
 LIFTAMP = 0.15;        % lift actuator motion (mm)     
 SWINGAMP = 0.175;       % swing actuator motion (mm)
-TYPE = 1; 
+TYPE = 2; 
 SAVE_FLAG = 0;
 ISFLOAT = false; % floating (gnd contact) or in air (not floating)
 
@@ -138,14 +138,8 @@ vtraj = setOutputFrame(vtraj, hamrWact.getInputFrame());
 % generate trajectory 
 NPTS = 100;
 [traj, brkVal] = GenerateHueristicActTraj(gait, fd, DC, DL, NPTS, TYPE); 
-% traj = HueristicFootTraj(gait, fd, DC, NPTS);
 tcyc = traj(:, 1); 
 qcyc = traj(:,2:end);
-
-% qcyc(:,[1, 7]) = -qcyc(:,[1, 7]); 
-% qcyc(:,[6, 8]) = -qcyc(:,[6, 8]); 
-
-% qcyc(:, [1, 3, 5, 7]) = 0; 
 
 % rescale
 qcyc(:, 1:2:end) = SWINGAMP*qcyc(:, 1:2:end);
