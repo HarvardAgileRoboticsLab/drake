@@ -46,7 +46,7 @@ classdef HAMRLegTracking < DrakeSystem
                 case 'legpd'
                     obj.K = [diag(-orien)*opt.kp, diag(-orien)*opt.kd];
                 case 'actlqr'
-                    lti_approx = load('TYM_LinearEstimate.mat');
+                    lti_approx = load('LinearEstimate_Drake.mat');
                     nx_sl = size(lti_approx.Ap, 2);
                     nu_sl = size(lti_approx.Bp, 2);
                     nl_lti = size(lti_approx.Ap,3);
@@ -63,13 +63,12 @@ classdef HAMRLegTracking < DrakeSystem
                         Blti((i-1)*nx_sl+(1:nx_sl), (i-1)*nu_sl+(1:nu_sl)) = lti_approx.Bp(:,:,i);
                     end
                     
-                    %                     % LQR gains
-                    e = [opt.Qpos; opt.Qvel]*ones(1, nx_lti/2);
-                    Qlti = diag(e(:));
-                    %                     Qlti([1,2, 5, 6, 9, 10, 13, 14], :) = 0;
-                    Rlti = opt.rho*eye(nu_lti);
-                    [P, ~, obj.K] = dare(Alti, Blti, Qlti, Rlti);
+                    % LQR gains
+                    e = [opt.QposS; opt.Qvel; opt.QposL; opt.Qvel]*ones(1,numel(obj.qa)/2); 
+                    Qlti = diag(e(:)); 
                     
+                    Rlti = opt.rho*eye(nu_lti);
+                    [~, ~, obj.K] = dare(Alti, Blti, Qlti, Rlti);                   
                     
                 case 'act_tvlqr'
             end

@@ -25,7 +25,7 @@ end
 
 % options to change
 gait = 'TROT';
-NCYC = 20;
+NCYC = 25;
 RAMPCYC = 10;             % number of cycles to ramp
 NPTS = 100;              % number of pts/cycle in desired traj
 LIFTAMP = 0.15;          % lift actuator motion (mm)
@@ -108,6 +108,7 @@ params.X0 = x0;
 cl_sols = cell(Ndc, Ndl);
 
 for i = 1:Nf
+
     for j = 1:Ndc
         for k = 1:Ndl
             params.FREQ = freq(i);
