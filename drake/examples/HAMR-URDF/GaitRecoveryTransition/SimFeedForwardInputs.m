@@ -1,14 +1,6 @@
 clear; clc; close all;
 warning('off', 'MATLAB:nargchk:deprecated');
 addpath('../', '../urdf/')
-
-global lp_b
-
-lp_b = [0, 7.58, -11.350;
-    0, 7.58, -11.350;
-    0, -7.58, -11.350;
-    0, -7.58, -11.350];
-
 DL = linspace(-25, 75, 5); 
 
 %% Load Data
@@ -36,7 +28,7 @@ end
 % save([data_dir, '/FFInputs_', num2str(freq), 'Hz.mat'], 'ffinputs')
 %% Load Rigid Body Model
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
 
 % options
 options.ignore_self_collisions = true;
@@ -78,7 +70,7 @@ dp.Vg = 0;
 
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [1; 1; -1; -1; 1; 1; -1; -1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [], dp);
 
 
 %% Connect system

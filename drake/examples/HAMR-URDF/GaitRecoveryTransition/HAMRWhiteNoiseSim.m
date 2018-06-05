@@ -18,7 +18,7 @@ band = [0, 2*f1*dt];
 
 %% Build robot
 
-name = 'HAMR_scaledV2_TYM';
+name = 'HAMR_scaledV2';
 urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', [name, '.urdf']);
 
 options.terrain = RigidBodyFlatTerrain();

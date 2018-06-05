@@ -128,8 +128,8 @@ vtraj = PPTrajectory(foh(ttopt, vvopt));
         [k, K, ~] = obj.positionConstraints(q);
 %         dK = reshape(dK(obj.valid_loops, :)', nq, nl*nq)';
 
-        f = k(obj.valid_loops); % K(obj.valid_loops,:)*qd]; 
-        df = [K(obj.valid_loops, :), zeros(nl, nv)]; ; ...
+        f = k(obj.VALID_LOOPS); % K(obj.valid_loops,:)*qd]; 
+        df = [K(obj.VALID_LOOPS, :), zeros(nl, nv)]; ; ...
             %kron(qd', eye(nl))*dK, K(obj.valid_loops,:)];
     end
 

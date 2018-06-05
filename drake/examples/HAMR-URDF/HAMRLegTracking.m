@@ -29,11 +29,11 @@ classdef HAMRLegTracking < DrakeSystem
             
             obj.rwact = rwact;
             obj.robot = r;
-            obj.act = act; 
+            obj.act = act;
             obj.nq = r.getNumPositions();
             obj.nv = r.getNumVelocities();
             obj.qa = r.getActuatedJoints();
-                        
+            
             orien = zeros(numel(obj.qa), 1);
             for i = 1:numel(obj.qa)
                 orien(i) = act.dummy_bender(i).orien;
@@ -46,13 +46,13 @@ classdef HAMRLegTracking < DrakeSystem
                 case 'legpd'
                     obj.K = [diag(-orien)*opt.kp, diag(-orien)*opt.kd];
                 case 'actlqr'
-                    lti_approx = load('TYM_LinearEstimate.mat');     
+                    lti_approx = load('TYM_LinearEstimate.mat');
                     nx_sl = size(lti_approx.Ap, 2);
                     nu_sl = size(lti_approx.Bp, 2);
                     nl_lti = size(lti_approx.Ap,3);
                     
                     nx_lti = nx_sl*nl_lti;
-                    nu_lti = nu_sl*nl_lti;                    
+                    nu_lti = nu_sl*nl_lti;
                     
                     Alti = zeros(nx_lti);
                     Blti = zeros(nx_lti, nu_lti);
@@ -63,13 +63,13 @@ classdef HAMRLegTracking < DrakeSystem
                         Blti((i-1)*nx_sl+(1:nx_sl), (i-1)*nu_sl+(1:nu_sl)) = lti_approx.Bp(:,:,i);
                     end
                     
-%                     % LQR gains
+                    %                     % LQR gains
                     e = [opt.Qpos; opt.Qvel]*ones(1, nx_lti/2);
-                    Qlti = diag(e(:)); 
-%                     Qlti([1,2, 5, 6, 9, 10, 13, 14], :) = 0; 
-                    Rlti = opt.rho*eye(nu_lti); 
+                    Qlti = diag(e(:));
+                    %                     Qlti([1,2, 5, 6, 9, 10, 13, 14], :) = 0;
+                    Rlti = opt.rho*eye(nu_lti);
                     [P, ~, obj.K] = dare(Alti, Blti, Qlti, Rlti);
-
+                    
                     
                 case 'act_tvlqr'
             end
@@ -79,38 +79,20 @@ classdef HAMRLegTracking < DrakeSystem
         end
         
         
-        %         function y = output(obj, t, ~, x)
-        %
-        %             u0 = obj.u0.eval(t);
-        %             x_des = obj.x_des.eval(t);
-        %             x_hat = x([obj.qa; obj.nq+obj.qa]);
-        %
-        %             err = x_des - x_hat;
-        %
-        %             y = u0 + [obj.Kp, obj.Kd]*err;
-        %
-        % %             disp(
-        %
-        %             y(y > 0.3) = 0.3;
-        %             y(y < -0.3) = -0.3;
-        %
-        %         end
-        
-        
         function u = output(obj, t, ~, x)
             global lp_b
             
             dim = 3; % 3D
             uff_t = obj.u0.eval(t);      % feedforward control
             nq = obj.nq;
-            nv = obj.nv;            
+            nv = obj.nv;
             nc = 4; %obj.robot.getNumContactPairs();
-            qa = obj.qa; 
+            qa = obj.qa;
             
             % desired actuator state
             x_des_t = obj.x_des.eval(t);
             q_des_t = x_des_t(1:nq);
-            qd_des_t = x_des_t(nq+(1:nv));       
+            qd_des_t = x_des_t(nq+(1:nv));
             
             % current actuator state
             q_t = x(1:nq);
@@ -152,32 +134,32 @@ classdef HAMRLegTracking < DrakeSystem
                     K_t = obj.K;
                     K_t([1, 6, 7, 8], :) = -K_t([1, 6, 7, 8], :);
                     
-                    % control 
+                    % control
                     u = uff_t + K_t*[q_err_t(:);v_err_t(:)];
                     
-%                     fprintf('Leg Error: %f at %f sec \r', max(abs(q_err_t(:))), t)                   
+                    %                     fprintf('Leg Error: %f at %f sec \r', max(abs(q_err_t(:))), t)
                     
                 case 'actlqr'
                     
                     q_err_t = q_des_t(qa) - q_t(qa);
-                    qd_err_t = qd_des_t(qa) - qd_t(qa);  
+                    qd_err_t = qd_des_t(qa) - qd_t(qa);
                     x_err_t = [q_err_t, qd_err_t]';
-                    K_t = obj.K;                     
+                    K_t = obj.K;
                     
                     u = uff_t + K_t*x_err_t(:);
                     
-%                     q_err_t(1)^2*100
-%                     qd_err_t(1)^2*100
+                    %                     q_err_t(1)^2*100
+                    %                     qd_err_t(1)^2*100
                     
-%                     fprintf('\n Act Error: %f mm, %f mm/ms at %f sec \r', max(abs(q_err_t(:))), max(abs(qd_err_t(:))), t)
-%                     fprintf('\n Voltage: %f V, %f mm/ms at %f sec \r',  max(u)^2, t)
+                    %                     fprintf('\n Act Error: %f mm, %f mm/ms at %f sec \r', max(abs(q_err_t(:))), max(abs(qd_err_t(:))), t)
+                    %                     fprintf('\n Voltage: %f V, %f mm/ms at %f sec \r',  max(u)^2, t)
                     
             end
             
             
             % Input Limits
             u(u < obj.act.dummy_bender(1).dp.Vg) = obj.act.dummy_bender(1).dp.Vg;
-            u(u > obj.act.dummy_bender(1).dp.Vb) = obj.act.dummy_bender(1).dp.Vb; 
+            u(u > obj.act.dummy_bender(1).dp.Vb) = obj.act.dummy_bender(1).dp.Vb;
             
         end
         

@@ -8,7 +8,7 @@ if exist(save_dir, 'dir') == 0
 end
 
 % Build robot + visualizer
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
 options.floating = false;
 options.collision = false;
 hamrID = HamrRBMID(urdf, options);
@@ -26,12 +26,12 @@ actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
 nq = hamrID.getNumPositions();
 nv = hamrID.getNumVelocities();
 nu = hamrID.getNumInputs();
-nl = hamrID.nl;
+nl = hamrID.NL;
 qa = hamrID.getActuatedJoints();
 nqa = numel(qa);
 
 % build desired actuator trajectory
-gait = 'PRONK';
+gait = 'TROT';
 freq = linspace(10, 50, 5)*1e-3;        % frequency
 DC = linspace(50, 80, 4);                  % duty cycle for swing
 DL = linspace(20, 75, 5);                  % percent "push" into the ground

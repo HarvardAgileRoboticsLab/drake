@@ -16,7 +16,6 @@ options.collision = true; %false;
 hamr = HamrRBM(urdf,options);
 v = hamr.constructVisualizer();
 
-
 % state/input dimenisons
 nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();

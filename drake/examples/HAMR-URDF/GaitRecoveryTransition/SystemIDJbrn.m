@@ -2,25 +2,29 @@ clear; clc; close all;
 %
 %% Build robot
 
-name = 'HAMR_scaledV2_TYM';
+name = 'HAMR_scaledV2';
 urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', [name, '.urdf']);
 
-options.terrain = RigidBodyFlatTerrain();
-options.ignore_self_collisions = true;
-options.collision_meshes = false;
-options.use_bullet = false;
+% general rbm options
+dt = 1; 
 options.floating = true;
 options.collision = true;
-options.dt = 1;
+options.ignore_self_collisions = true;
+options.collision_meshes = false;
+options.z_inactive_guess_tol = 0.1;
+options.use_bullet = false;
+options.terrain = RigidBodyFlatTerrain();
+
+% hamr options
+options.stiffness_mult = [1, 0.5, 0.5, 0.5]';     %(swing act, lift act, swing flex, lift flex)
 
 % Build robot + visualizer
-hamr = HamrTSRBM(urdf, options);
+hamr = HamrTSRBM(HamrRBM(urdf, options), dt, options);
 nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();
 nu = hamr.getNumInputs();
-v = hamr.constructVisualizer();
-dim = 3; 
-nc = 4; 
+qa = hamr.getActuatedJoints();
+v = hamr.constructVisualizer(); 
 
 tsim = 200; 
 x0 = hamr.getInitialState(); x0(3) = x0(3); 
@@ -32,7 +36,7 @@ xtraj = hamr.simulate([0, tsim], x0);
 disp('Done')
 
 xx = xtraj.eval(xtraj.getBreaks());
-xf = xx(:,end); 
+xf = xx(:,end);
 
 %% Playback 
 xtraj_scaled = DTTrajectory(xtraj.getBreaks()*1e-3, xtraj.eval(xtraj.getBreaks()));
@@ -46,30 +50,16 @@ BFR_MDL= [19.831, -9.790, 9.610];
 BML_MDL = [0, 9.790, 4.721];
 BRR_MDL = [-19.831, -9.790, 9.610];
 
-FOOT_MDL = [0.06, 8.565, -6.322;
--0.06, 8.565, -6.322;
-0.06, -8.565, -6.322;
--0.06, -8.565, -6.322];
-
-legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
+fpopt.loc = 'Marker'; 
+fpopt.base_frame = 'Chassis';
 
 kinsol_AIR = hamr.doKinematics(q0, 0*q0);
 body_marker_positions_MDL_AIR = hamr.forwardKin(kinsol_AIR, hamr.findLinkId('Chassis'), [BFR_MDL', BML_MDL', BRR_MDL']);
-foot_marker_positions_MDL_AIR = zeros(dim, nc);
-
-fkopt.base_or_frame_id = hamr.findLinkId('Chassis');
-for i = 1:nc        
-        foot_marker_positions_MDL_AIR(:,i)  = hamr.forwardKin(kinsol_AIR, hamr.findLinkId(legs{i}), FOOT_MDL(i,:)', fkopt);
-end
+foot_marker_positions_MDL_AIR = hamr.HamrRBM.getFootPosition(q0, 0*q0, fpopt)
 
 kinsol_GND = hamr.doKinematics(xf(1:nq), xf(nq+(1:nv)));
 body_marker_positions_MDL_GND = hamr.forwardKin(kinsol_GND, hamr.findLinkId('Chassis'), [BFR_MDL', BML_MDL', BRR_MDL']);
-foot_marker_positions_MDL_GND = zeros(dim, nc);
-
-for i = 1:nc        
-        foot_marker_positions_MDL_GND(:,i)  = hamr.forwardKin(kinsol_GND, hamr.findLinkId(legs{i}), FOOT_MDL(i,:)', fkopt);
-end
-
+foot_marker_positions_MDL_GND = hamr.HamrRBM.getFootPosition(xf(1:nq), xf(nq+(1:nv)), fpopt)
 
 marker_positions_MDL_AIR = [body_marker_positions_MDL_AIR, foot_marker_positions_MDL_AIR]; 
 marker_positions_MDL_AIR0 = bsxfun(@minus, marker_positions_MDL_AIR, mean(marker_positions_MDL_AIR,2));
@@ -80,14 +70,6 @@ marker_positions_MDL_GND0 = bsxfun(@minus, marker_positions_MDL_GND, mean(marker
 delta_model = marker_positions_MDL_GND - marker_positions_MDL_AIR
 
 %% Marker Positions from Vicon (AIR)
-% 5/16/2018
-% FR_JBRN_AIR = [561.9, 358.8, 318.7]/10;
-% ML_JBRN_AIR = [380.1, 538.6, 275.9]/10;
-% RR_JBRN_AIR = [187.8, 345.0, 318.2]/10;
-% FL_AIR = [500.9, 640.0, 138.4]/10;
-% RL_AIR = [239.1, 629.1, 134.3]/10;
-% FR_AIR = [523.1, 272.6, 124.3]/10;
-% RR_AIR = [261.9, 266.1, 123.1]/10;
 
 % 5/17/2018
 FR_JBRN_AIR = [422.0, 79.9, 320.5]/10;
@@ -103,13 +85,6 @@ marker_positions_JBRN_AIR0 = bsxfun(@minus, marker_positions_JBRN_AIR, mean(mark
 
 
 %% Marker Positons from Vicon (GND)
-% FR_JBRN_GND = [466.9, 404.5, 224.4]/10;
-% ML_JBRN_GND = [283.1, 581.7, 179.3]/10;
-% RR_JBRN_GND = [92.9, 388.1, 230.3]/10;
-% FL_GND = [400.4, 683.5, 41.1]/10;
-% RL_GND = [141.0, 672.6, 43.9]/10;
-% FR_GND = [425.2, 307.0, 39.8]/10;
-% RR_GND = [164.5, 300.5, 40.4]/10;
 
 % 5/17/2018
 FR_JBRN_GND = [363.2, 206.2, 220.3]/10;
@@ -132,11 +107,13 @@ plot3(marker_positions_MDL_AIR0(1,:),    marker_positions_MDL_AIR0(2,:), ...
     marker_positions_MDL_AIR0(3,:), 'k*')
 plot3(marker_positions_MDL_GND0(1,:),    marker_positions_MDL_GND0(2,:), ...
     marker_positions_MDL_GND0(3,:), 'r*')
+legend('Model', 'Jbrn')
 axis equal; 
 subplot(1,2,2); hold on; view(3);
 plot3(marker_positions_JBRN_AIR0(1,:),    marker_positions_JBRN_AIR0(2,:), ...
     marker_positions_JBRN_AIR0(3,:), 'k*')
 plot3(marker_positions_JBRN_GND0(1,:),    marker_positions_JBRN_GND0(2,:), ...
     marker_positions_JBRN_GND0(3,:), 'r*')
+legend('Model', 'Jbrn')
 axis equal;
 

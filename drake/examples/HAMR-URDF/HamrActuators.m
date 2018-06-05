@@ -5,7 +5,7 @@ classdef HamrActuators < DrakeSystem
         names
         dummy_bender = [];
         nact;
-        orien = [-1; -1; 1; 1; -1; -1; 1; 1];
+        orien = [-1; -1; 1; 1; -1; -1; 1; 1];       % default orientation
     end
     
     methods

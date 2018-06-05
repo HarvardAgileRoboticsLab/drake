@@ -1,17 +1,11 @@
-classdef HamrRBMID < RigidBodyManipulator
+classdef HamrRBMID < HamrRBM
     
     properties (SetAccess = protected, GetAccess = public)
-        x0
-        grav = [0; 0; -9.81e-3];
         
-        nu              % number of actual inputs
-        nc              % number of contact pairs
-        nd              % number of basis vectors in polyhedral friction cone
-        nl              % number of loop constraints
-        
-        valid_loops     % valid loop constraints
-        %pf = [];        % Position of foot in local frame
-        %feet;           % name of foot link
+        NU              % number of actual inputs
+        NC              % number of contact pairs
+        ND              % number of basis vectors in polyhedral friction cone
+
         
     end
     
@@ -21,27 +15,16 @@ classdef HamrRBMID < RigidBodyManipulator
             
             typecheck(urdf,'char');
             
-            obj = obj@RigidBodyManipulator(urdf,options);
-            
-            obj.nu = obj.getNumInputs();
-            obj.x0 = zeros(2*obj.getNumPositions(), 1);
-            
-            %set gravity
-            obj = obj.setGravity(obj.grav);
-            obj = compile(obj);
-            
+            obj = obj@HamrRBM(urdf,options);            
+            obj.NU = obj.getNumInputs();            
+
             % Add contact forces to inputs
-            [phi,~,d] = obj.contactConstraints(getZeroConfiguration(obj));
-            nc = length(phi); obj.nc = nc;
-            nd = 2*length(d); obj.nd = nd;
-            
-            % loop const
-            valid_loops = [1;2;8;9;13;15];
-            obj.valid_loops = [valid_loops; 18+valid_loops; 36+valid_loops; 54+valid_loops];
-            nl = length(obj.valid_loops); obj.nl = nl;
-            
+            [phi,~,d] = obj.contactConstraints(obj.x0(1:obj.getNumPositions()));
+            NC = length(phi); obj.NC = NC;
+            ND = 2*length(d); obj.ND = ND;            
+           
             % Add contact and loop const as inputs
-            obj = obj.setNumInputs(obj.nu + nc + nc*nd + nl);
+            obj = obj.setNumInputs(obj.NU + NC + NC*ND + obj.NL);
             
         end
         
@@ -73,10 +56,10 @@ classdef HamrRBMID < RigidBodyManipulator
             % load in parameters
             nq = obj.getNumPositions();
             nv = obj.getNumVelocities();
-            nu = obj.nu;
-            nc = obj.nc;
-            nl = obj.nl;
-            nd = obj.nd;
+            nu = obj.NU;
+            nc = obj.NC;
+            nl = obj.NL;
+            nd = obj.ND;
             
             t = xin(1);
             q = xin(1+(1:nq));
@@ -102,8 +85,8 @@ classdef HamrRBMID < RigidBodyManipulator
             
             % loop constraints
             [~, K, dK] = obj.positionConstraints(q);
-            K = K(obj.valid_loops, :);
-            dK = reshape(dK(obj.valid_loops, :)', nq, nl*nq)'; %
+            K = K(obj.VALID_LOOPS, :);
+            dK = reshape(dK(obj.VALID_LOOPS, :)', nq, nl*nq)'; %
             
             % Manipulator Dynamics
             [H,C,B,dH,dC,dB] = manipulatorDynamics(obj, q, v);

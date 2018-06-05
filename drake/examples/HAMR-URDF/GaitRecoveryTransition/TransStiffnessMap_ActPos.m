@@ -7,7 +7,7 @@ ll = linspace(-0.2, 0.2, npts);
 
 %% Load Rigid Body Model
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
 
 % options
 options.ignore_self_collisions = true;

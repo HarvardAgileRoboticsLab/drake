@@ -1,15 +1,9 @@
 clear; clc; close all;
 warning('off', 'MATLAB:nargchk:deprecated');
-global lp_b
-
-lp_b = [0, 7.58, -11.350;
-    0, 7.58, -11.350;
-    0, -7.58, -11.350;
-    0, -7.58, -11.350];
 
 %% Load Rigid Body Model
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
 
 % options
 options.ignore_self_collisions = true;
@@ -20,15 +14,16 @@ options.use_bullet = false;
 % options to change
 dt = 0.2;
 options.dt = dt;
-gait = 'PRONK';
+gait = 'TROT';
 DC = 50;                % duty cycle for swing
-DL = 70; 
-LIFTAMP = 0.15;        % lift actuator motion (mm)     
+DL = 50; 
+LIFTAMP = 0.15;         % lift actuator motion (mm)     
 SWINGAMP = 0.175;       % swing actuator motion (mm)
-TYPE = 2; 
+TYPE = 1; 
 SAVE_FLAG = 0;
-ISFLOAT = false; % floating (gnd contact) or in air (not floating)
+ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 
+% general RBM options
 if ISFLOAT
     options.floating = ISFLOAT;
     options.collision = ISFLOAT;
@@ -42,12 +37,15 @@ else
     options.terrain = [];
 end
 
+% hamr options
+options.stiffness_mult = [1, 1, 1, 1]';     %(swing act, lift act, swing flex, lift flex)
+
 % Build robot + visualizer
-hamr = HamrTSRBM(urdf, options);
+hamr = HamrTSRBM(HamrRBM(urdf, options), dt, options);
 nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();
 nu = hamr.getNumInputs();
-qa = hamr.getActuatedJoints(); 
+qa = hamr.getActuatedJoints();
 
 v = hamr.constructVisualizer();
 
@@ -58,10 +56,6 @@ dp.Vg = 0;
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
     'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [], dp);
-
-% for i = 2:2:nact
-%     hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1);
-% end
 
 %% Connect system
 
@@ -95,9 +89,9 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Build (open-loop) control input
 
-Vff = 0; %100;        % feed forward voltage
-fd = 0.01;             % drive frequency (kHz)
-NCYC = 5;
+Vff = 0; %100;          % feed forward voltage
+fd = 0.01;              % drive frequency (kHz)
+NCYC = 3;
 tsim = NCYC/fd;
 
 t = 0:options.dt:tsim;
@@ -158,14 +152,9 @@ tlabel = {'FL', 'RL', 'FR', 'RR'};
 figure(1); clf;
 for j =1:nact/2
     subplot(nact/4, 2, j); hold on; 
-    plot(tcyc, qcyc(:,2*j-1)); %, tcyc, vcyc(:,j))    
+    plot(tcyc, qcyc(:,2*j-1)); 
     plot(tcyc, qcyc(:,2*j));
-%     if rem(j,2) == 0
-%         title(['L', tlabel{j/2}]); 
-%     else
-%         title(['S', tlabel{floor(j/2)+1}]); 
-%     end
-legend('Swing', 'Lift')
+    legend('Swing', 'Lift')
 end
 
 % create trajectory 
@@ -177,7 +166,6 @@ xtrajd = PPTrajectory(foh(ttd, xxd));
 
 %% Simulate Open loop
 
-% x0 = zeros(nq+nv, 1); x0(3) = 12.69; 
 hamr_OL = cascade(vtraj, hamrWact);
 xtraj_sim = simulate(hamr_OL, [0 tsim], x0);
 
@@ -219,7 +207,7 @@ vv_sol_OL = vtraj.eval(tt_sol);
 vv_sol_CL = yy_sol_CL(nq+nv+(1:nu),:);
 
 act_dof = hamr.getActuatedJoints();
-ndof = hamr.getNumDiscStates();
+ndof = 2*hamr.getNumPositions();
 title_str = {'Front Left Swing', 'Front Left Lift', ...
     'Rear Left Swing', 'Rear Left Lift', ...
     'Front Right Swing', 'Front Right Lift', ...
@@ -234,7 +222,6 @@ for i = 1:numel(act_dof)
 %     ylim([dp.Vg, dp.Vb])
 end
 
-
 figure(3); clf; hold on;
 for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str{i})
@@ -245,7 +232,6 @@ for i = 1:numel(act_dof)
 %     ylim([-SWINGAMP, SWINGAMP])
 end
 
-
 figure(4); clf; hold on;
 for i = 1:numel(act_dof)
     subplot(4,2,i); hold on; title(title_str{i})
@@ -255,57 +241,47 @@ for i = 1:numel(act_dof)
     legend('OL Act Vel', 'CL Act Vel', 'Desired Act Vel');
 end
 
+fpopt.loc = 'foot';
+fpopt.base_frame = 'World';
+pfCL = zeros([numel(tt_sol), size(hamr.HamrRBM.FOOT_POS')]);
+vfCL = zeros([numel(tt_sol), size(hamr.HamrRBM.FOOT_POS')]);
+nc = numel(hamr.HamrRBM.LEG_NAME);
 
-
-pfCL = zeros([numel(tt_sol), size(lp_b')]);
-vfCL = zeros([numel(tt_sol), size(lp_b')]);
-legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
-
-for j = 1:numel(tt_sol)
-
-    qCL = xx_sol_CL(1:ndof/2, j);
-    qdCL = xx_sol_CL(ndof/2+1: ndof, j);
-    kinsolCL = hamr.doKinematics(qCL, qdCL, struct('compute_gradient', true));
-    for i = 1:size(lp_b,1)
-        [pfCL(j,:,i), J] = hamr.forwardKin(kinsolCL, hamr.findLinkId(legs{i}), lp_b(i,:)'); %,fkopt);
-        vfCL(j,:,i) = J*qdCL; 
+for i = 1:numel(tt_sol)    
+    [pfCL(i,:,:), Ji] = hamr.HamrRBM.getFootPosition(xx_sol_CL(1:nq,i), xx_sol_CL(nq+(1:nv),i), fpopt);
+    for j = 1:numel(Ji)
+        vfCL(i, :,j) = Ji{j}*xx_sol_CL(nq+(1:nv),i);
     end
-    
 end
-% 
+
 % figure(5); clf; hold on;
-% nc = size(lp_b,1);
 % for i = 1:nc
 %     subplot(nc/2,2,i); hold on; 
-%     xlabel('Foot X'); ylabel('Foot VX'); title(legs{i})
+%     xlabel('Foot X'); ylabel('Foot VX'); title(hamr.HamrRBM.LEG_NAME{i})
 %     plot(pfCL(:,1,i) - pfCL(1,1,i) , vfCL(:,1,i))
 %     axis equal; 
 % end
-
+% 
 % figure(6); clf; hold on;
-% nc = size(lp_b,1);
 % for i = 1:nc
 %     subplot(nc/2,2,i); hold on; 
-%     xlabel('Foot Z'); ylabel('Foot VZ'); title(legs{i})
+%     xlabel('Foot Z'); ylabel('Foot VZ'); title(hamr.HamrRBM.LEG_NAME{i})
 %     plot(pfCL(:,3,i), vfCL(:,3,i))
 %     axis equal; 
 % end
 
 figure(7); clf; hold on;
-nc = size(lp_b,1);
 for i = 1:nc
-    subplot(nc,1, i); hold on; 
-    xlabel('Foot X'); ylabel('Foot Z'); title(legs{i})
+    subplot(nc/2,2, i); hold on; 
+    xlabel('Foot X'); ylabel('Foot Z'); title(hamr.HamrRBM.LEG_NAME{i})
     plot(pfCL(:,1,i) - pfCL(1,1,i), pfCL(:,3,i)- pfCL(1,3,i));
     axis equal; 
 %     xlim([-2, 2])
 %     ylim([-2, 2])
 end
 
-
-
 if options.floating
-    figure(7); clf;
+    figure(8); clf;
     title_str = {'Com-X(mm)', 'Com-Y(mm)', 'Com-Z(mm)', 'Roll(deg)', 'Pitch(deg)', 'Yaw(deg)'};
     for i = 1:6
         subplot(2,3,i); hold on; ylabel(title_str(i), 'FontSize', 18)
@@ -314,12 +290,10 @@ if options.floating
             plot(tt_sol*1e-3, rad2deg(xx_sol_OL(i,:)), 'LineWidth', 1.5); 
             plot(tt_sol*1e-3, rad2deg(xx_sol_CL(i,:)), 'LineWidth', 1.5); 
         else
-%             plot(tt_sol*1e-3, xx_sol_OL(i,:), 'LineWidth', 1.5); 
             plotyy(tt_sol*1e-3, xx_sol_CL(i,:),tt_sol*1e-3, xx_sol_CL(nq+i,:)); 
         end
     end    
 end
-
 
 tilefigs;
 
