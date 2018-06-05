@@ -2,7 +2,7 @@ clear; clc; close all;
 warning('off', 'MATLAB:nargchk:deprecated');
 addpath('../', '../urdf/')
 
-%% Parameters of sweep 
+%% Parameters of sweep
 
 freq = linspace(10e-3, 50e-3, 5);           %linspace()*1e-3;
 DC = linspace(50, 80, 4);                   % duty cycle for swing
@@ -10,9 +10,9 @@ DL = linspace(-25, 75, 5);                  % percent "push" into the ground
 
 Nf = numel(freq);
 Ndc = numel(DC);
-Ndl = numel(DL); 
+Ndl = numel(DL);
 
-NUM = 1; 
+NUM = 1;
 MU = 0.51;                                  % this needs to be manually set in @RigidBodyManipulator/ContactConstraints
 
 %% Load Rigid Body Model
@@ -32,7 +32,7 @@ LIFTAMP = 0.15;          % lift actuator motion (mm)
 SWINGAMP = 0.175;        % swing actuator motion (mm)
 x0 = zeros(76, 1); x0(3) = 12.69;
 dt = 0.4;
-TYPE = 1; 
+TYPE = 1;
 
 % general rbm options
 options.floating = true;
@@ -94,21 +94,22 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 
 %% Simulate for all freq, dc
 params.NCYC = NCYC;
-params.RAMPCYC = RAMPCYC; 
+params.RAMPCYC = RAMPCYC;
 params.LIFTAMP = LIFTAMP;
 params.SWINGAMP = SWINGAMP;
 params.GAIT = gait;
 params.NPTS = NPTS;
 params.TYPE = TYPE;
-params.STIFFNESS_MULT = options.stiffness_mult; 
-params.MU = MU; 
+params.STIFFNESS_MULT = options.stiffness_mult;
+params.MU = MU;
 
 params.X0 = x0;
 
 cl_sols = cell(Ndc, Ndl);
+fpopt.loc = 'foot';
+fpopt.base_frame = 'World';
 
-for i = 1:Nf
-
+for i = 1:Nf    
     for j = 1:Ndc
         for k = 1:Ndl
             params.FREQ = freq(i);
@@ -124,19 +125,15 @@ for i = 1:Nf
                 sol_struct.xx_sol = xx_sol;
                 sol_struct.vv_sol = vv_sol;
                 sol_struct.err_sol = err_sol;
-                                
+                
                 %% calculate leg position
-                pfCL = zeros([numel(tt_sol), size(lp_b')]);
-                vfCL = zeros([numel(tt_sol), size(lp_b')]);
-                legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
+                pfCL = zeros([numel(tt_sol), size(hamr.HamrRBM.FOOT_POS')]);
+                vfCL = zeros([numel(tt_sol), size(hamr.HamrRBM.FOOT_POS')]);
                 
                 for l = 1:numel(tt_sol)
-                    qCL = xx_sol(1:nq, l);
-                    qdCL = xx_sol(nq+1:2*nq, l);
-                    kinsolCL = hamr.doKinematics(qCL, qdCL, struct('compute_gradient', true));
-                    for m = 1:size(lp_b,1)
-                        [pfCL(l,:,m), J] = hamr.forwardKin(kinsolCL, hamr.findLinkId(legs{m}), lp_b(m,:)'); %,fkopt);
-                        vfCL(l,:,m) = J*qdCL;
+                    [pfCL(l,:,:), Ji] = hamr.HamrRBM.getFootPosition(xx_sol(1:nq,l), xx_sol(nq+(1:nv),l), fpopt);
+                    for m = 1:numel(Ji)
+                        vfCL(l, :,m) = Ji{m}*xx_sol(nq+(1:nv),l);
                     end
                 end
                 
@@ -157,8 +154,8 @@ for i = 1:Nf
                 else
                     throw(ME)
                 end
-            end            
-            cl_sols{j, k} = sol_struct;            
+            end
+            cl_sols{j, k} = sol_struct;
         end
     end
     disp('Saving...')
