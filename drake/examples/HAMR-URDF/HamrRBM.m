@@ -40,7 +40,7 @@ classdef HamrRBM < RigidBodyManipulator
                 obj.STIFFNESS_MULT = options.stiffness_mult;
                 force_objects = obj.force;
                 fobj_ind = {25:2:31, 26:2:32, [1:8, 17, 19, 21, 23], [9:16, 18, 20, 22, 24]};   %(swing act, lift act, swing flex, lift flex)
-
+                
                 for i = 1:numel(obj.STIFFNESS_MULT)
                     for j = 1:numel(fobj_ind{i})
                         force_objects{fobj_ind{i}(j)}.k = obj.STIFFNESS_MULT(i)*force_objects{fobj_ind{i}(j)}.k;
@@ -121,7 +121,7 @@ classdef HamrRBM < RigidBodyManipulator
             if strcmpi(opt.loc, 'foot')                     % foot position
                 fp = obj.FOOT_POS;
             elseif strcmpi(opt.loc, 'marker')               % marker position
-                fp = obj.MARKER_POS;        
+                fp = obj.MARKER_POS;
             end
             
             fkopt.base_or_frame_id = obj.findLinkId(opt.base_frame);
@@ -131,17 +131,17 @@ classdef HamrRBM < RigidBodyManipulator
             dJfoot = cell(size(fp,1), 1);
             
             if nargout > 2
-                kinsol = obj.doKinematics(q, v, 'compute_gradients', true);                
+                kinsol = obj.doKinematics(q, v, 'compute_gradients', true);
                 for i = 1:size(fp,1)
-                    [yfoot(i,:), Jfoot{i}, dJfoot{i}] = obj.forwardKin(kinsol, obj.LEG_ID(i), fp(i,:)', fkopt);                    
+                    [yfoot(i,:), Jfoot{i}, dJfoot{i}] = obj.forwardKin(kinsol, obj.LEG_ID(i), fp(i,:)', fkopt);
                 end
                 
             else
-                kinsol = obj.doKinematics(q, v);                
+                kinsol = obj.doKinematics(q, v);
                 for i = 1:size(fp,1)
-                    [yfoot(i,:), Jfoot{i}] = obj.forwardKin(kinsol, obj.LEG_ID(i), fp(i,:)', fkopt);                    
+                    [yfoot(i,:), Jfoot{i}] = obj.forwardKin(kinsol, obj.LEG_ID(i), fp(i,:)', fkopt);
                 end
-            end        
+            end
             yfoot = yfoot';
         end
         
@@ -157,6 +157,13 @@ classdef HamrRBM < RigidBodyManipulator
         
         function x0 = getInitialState(obj)
             x0 = obj.x0;
+        end
+        
+        function obj = setGravity(obj, grav)
+            sizecheck(grav,size(obj.gravity));
+            obj.gravity = grav;
+            obj.GRAV = grav;
+            obj.dirty = true;
         end
         
     end

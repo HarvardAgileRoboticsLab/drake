@@ -49,11 +49,11 @@ dp.Vg = 0;
  
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [-1; -1; 1; 1; -1; -1; 1; 1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [], dp);
 
-for i = 2:2:nact
-    hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1); 
-end
+% for i = 2:2:nact
+%     hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1); 
+% end
 
 %% Connect system
 

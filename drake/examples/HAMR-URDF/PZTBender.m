@@ -132,7 +132,7 @@ classdef PZTBender < DrakeSystem
             u0 = [0.5*(obj.Vb - obj.Vg); 0];
         end
         
-        function [u, du] = voltageToForce(obj, q, V)
+        function [u, du] = voltageToForce(obj, V, q)
             Vt = obj.dp.Vb - V;        % voltage on top plate
             Vb = V - obj.dp.Vg;        % voltage on bottom plate
             
@@ -145,7 +145,7 @@ classdef PZTBender < DrakeSystem
             dCb_dq = (0.75/obj.ap.lact)*((obj.orien/obj.df)*(obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             
             u = obj.orien*(Ct*Vt - Cb*Vb);            
-            du = [obj.orien*(dCt_dq*Vt - dCb_dq*Vb), -obj.orien*(Ct + Cb)];
+            du = [-obj.orien*(Ct + Cb), obj.orien*(dCt_dq*Vt - dCb_dq*Vb)];
             
             
         end
@@ -155,7 +155,7 @@ classdef PZTBender < DrakeSystem
             V = u(1);
             q = u(2);
             
-            [u, du] = obj.voltageToForce(q, V);
+            [u, du] = obj.voltageToForce(V, q);
             y = u;
             dy = [zeros(1, numel(t)), zeros(1, numel(x)), du];
         end
