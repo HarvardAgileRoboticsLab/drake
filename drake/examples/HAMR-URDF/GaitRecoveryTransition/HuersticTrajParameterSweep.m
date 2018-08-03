@@ -4,9 +4,9 @@ addpath('../', '../urdf/')
 
 %% Parameters of sweep
 
-freq = linspace(10e-3, 50e-3, 5);           %linspace()*1e-3;
+freq = linspace(10e-3, 30e-3, 3);           %linspace()*1e-3;
 DC = linspace(50, 80, 4);                   % duty cycle for swing
-DL = linspace(-25, 75, 5);                  % percent "push" into the ground
+DL = linspace(20, 80, 5);                  % percent "push" into the ground
 
 Nf = numel(freq);
 Ndc = numel(DC);
@@ -24,15 +24,15 @@ if exist(save_dir, 'dir') == 0
 end
 
 % options to change
-gait = 'TROT';
+gait = 'PRONK';
 NCYC = 25;
 RAMPCYC = 10;             % number of cycles to ramp
 NPTS = 100;              % number of pts/cycle in desired traj
 LIFTAMP = 0.15;          % lift actuator motion (mm)
 SWINGAMP = 0.175;        % swing actuator motion (mm)
 x0 = zeros(76, 1); x0(3) = 12.69;
-dt = 0.4;
-TYPE = 1;
+dt = .4;
+TYPE = 2;
 
 % general rbm options
 options.floating = true;
@@ -44,7 +44,7 @@ options.use_bullet = false;
 options.terrain = RigidBodyFlatTerrain();
 
 % hamr options
-options.stiffness_mult = [1, 1, 1, 1]';     %(swing act, lift act, swing flex, lift flex)
+options.stiffness_mult = [1, 0.1, 1, 1]';     %(swing act, lift act, swing flex, lift flex)
 
 % Build robot + visualizer
 hamr = HamrTSRBM(HamrRBM(urdf, options), dt, options);
@@ -119,12 +119,19 @@ for i = 1:Nf
             try
                 fprintf('Simulating %d Hz at %d DC Swing and %d DC Lift \r', freq(i)*1000, DC(j), DL(k))
                 tic;
-                [tt_sol, xx_sol, vv_sol, err_sol] = HuersiticTrajCLSim(hamrWact, hamr, hr_actuators, params);
+                [tt_sol, xx_sol, vv_sol, err_sol, xtrajd] = HuersiticTrajCLSim(hamrWact, hamr, hr_actuators, params);
                 fprintf('This took %f s \r', toc)
                 sol_struct.tt_sol = tt_sol;
                 sol_struct.xx_sol = xx_sol;
                 sol_struct.vv_sol = vv_sol;
                 sol_struct.err_sol = err_sol;
+                sol_struct.tt_d = xtrajd.getBreaks(); 
+                sol_struct.xx_d = xtrajd.eval(sol_struct.tt_d); 
+                
+                lift_err_sol = err_sol(2:2:end, :);
+                swing_err_sol = err_sol(1:2:end, :);
+                fprintf('RMS Lift Tracking Error: %f um \r', 1e3*rms(lift_err_sol(:)))
+                fprintf('RMS Swing Tracking Error: %f um \r', 1e3*rms(swing_err_sol(:)));
                 
                 %% calculate leg position
                 pfCL = zeros([numel(tt_sol), size(hamr.HamrRBM.FOOT_POS')]);

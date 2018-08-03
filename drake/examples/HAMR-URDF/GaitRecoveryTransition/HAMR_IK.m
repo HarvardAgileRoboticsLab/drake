@@ -1,4 +1,4 @@
-function qf = HAMR_FK(hamr, q_sact, q_lact, q0)
+function qf = HAMR_IK(hamr, legx, legz, q0)
 
 nq = hamr.getNumPositions();
 nl = numel(hamr.VALID_LOOPS);
@@ -34,27 +34,52 @@ loop_const = FunctionHandleConstraint(zeros(nl, 1), zeros(nl, 1), num_vars, ...
 loop_const = loop_const.setName('loop_constraint');
 nlp = nlp.addConstraint(loop_const, q_inds);
 
-% Set act pos
-des_act_pos = (ones(nact/2, 1)*[q_sact, q_lact])';
-nlp = nlp.addConstraint(ConstantConstraint(des_act_pos(:)'), q_inds(act_dof));
+% Set Leg Position
+leg_pos_const = FunctionHandleConstraint(zeros(nact, 1), zeros(nact, 1), num_vars, ...
+    @leg_pos_constraint);
+leg_pos_const = leg_pos_const.setName('leg_pos_constraint');
+nlp = nlp.addConstraint(leg_pos_const, q_inds);
 
 % Bounding box Constraints
 [q_min, q_max] = getJointLimits(hamr);      % joints limits
 nlp = nlp.addConstraint(BoundingBoxConstraint(1.1*q_min, 1.1*q_max), q_inds);
 
+% Leg initial positions
+fpopt.base_frame = 'World';
+fpopt.loc = 'foot';
+pf0 = hamr.getFootPosition(0*q0, 0*q0, fpopt);
+
+% pf0 = hamr.ge
+% pf0 = 0*pfLeg;
+% legs = hamr.legs;
+% kinsol0 = hamr.doKinematics(zeros(nq,1), zeros(nq,1));
+% for i = 1:size(pfLeg,1)
+%     pf0(i, :) = hamr.forwardKin(kinsol0, hamr.findLinkId(legs{i}),...
+%         pfLeg(i,:)');
+% end
 
 % solve
 qf = nlp.solve(q0);
 
+
     function [f, df] = loop_constraint(q)
-%         if is 
-        if isa(hamr, 'HamrTSRBM')
-            manip = hamr.getManipulator();
-        else
-            manip = hamr;
-        end
-        [k, dK] = manip.positionConstraints(q);
+        [k, dK] = hamr.positionConstraints(q);
         f = k(hamr.VALID_LOOPS);
         df = dK(hamr.VALID_LOOPS,:);
+    end
+
+    function [f, df] = leg_pos_constraint(q)
+        
+        f = zeros(nact, 1);
+        df = zeros(nact, nq);       
+        
+        
+        [pfk, dpfK] = hamr.getFootPosition(q, 0*q, fpopt);
+
+        for j = 1:length(hamr.LEG_NAME)
+            f((2*j-1):(2*j)) = [pfk(1,j) - pf0(1,j) - legx; ...
+                pfk(3,j) - pf0(3,j) - legz];
+            df((2*j-1):(2*j),:) = dpfK{j}([1;3], :);
+        end
     end
 end

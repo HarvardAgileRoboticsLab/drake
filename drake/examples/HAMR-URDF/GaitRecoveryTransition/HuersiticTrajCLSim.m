@@ -1,4 +1,4 @@
-function [tt_sol, xx_sol, vv_sol, err_sol] = HuersiticTrajCLSim(hamrWact, hamr, actuators, params)
+function [tt_sol, xx_sol, vv_sol, err_sol, xtrajd] = HuersiticTrajCLSim(hamrWact, hamr, actuators, params)
 
 % unpacks
 NCYC = params.NCYC;
@@ -22,6 +22,9 @@ qa = hamr.getActuatedJoints();
 tsim = NCYC/FREQ;
 t = 0:hamr.timestep:tsim;
 
+% ramp
+tramp = RAMPCYC/FREQ;
+ramp = t/tramp; ramp(t >= tramp) = 1;
 
 %% Load Feed forward inputs
 load_dir = '~/Dropbox/GaitRecoveryandTransition/FeedforwardInputs';
@@ -30,9 +33,14 @@ ff_inputs = ff_inputs.ffinputs;
 DLmat = cellfun(@(x) x.params.DL, ff_inputs);
 DCmat = cellfun(@(x) x.params.DC, ff_inputs);
 [rind, cind] = find((DLmat == DL).*(DCmat==DC));            % find right input 
-vv = repmat(ff_inputs{rind, cind}.vvopt, 1, NCYC);          % copy for NCYC
-vtraj = PPTrajectory(foh(mean(diff(ff_inputs{rind, cind}.ttopt))*(0:size(vv, 2)-1), vv));       % 
+
+vv = repmat(ff_inputs{rind, cind}.vvopt(:,1:end-1), 1, NCYC);        % copy for NCYC
+vv = [vv, ff_inputs{rind, cind}.vvopt(:,1)];
+ttin = mean(diff(ff_inputs{rind, cind}.ttopt))*(0:((size(ff_inputs{rind, cind}.vvopt, 2)-1)*NCYC)); 
+vv = bsxfun(@times, vv - actuators.dummy_bender(1).dp.Vb/2,  interp1(t, ramp, ttin, 'linear', 'extrap')) + actuators.dummy_bender(1).dp.Vb/2;        
+vtraj = PPTrajectory(foh(ttin, vv));    
 vtraj = setOutputFrame(vtraj, hamrWact.getInputFrame());
+
 %% Generate Hueristic Trajectories in body frame
 
 % generate trajectory
@@ -64,9 +72,6 @@ for j =1:nu
     end
 end
 
-% ramp
-tramp = RAMPCYC/FREQ;
-ramp = t/tramp; ramp(t >= tramp) = 1;
 
 % create trajectory
 ttd = 0:hhd:(tsim-hhd);
