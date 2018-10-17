@@ -154,7 +154,7 @@ classdef ContactImplicitTrajectoryOptimization < DirectTrajectoryOptimization
           df(1+j:1+obj.nD:end,nq+(1:nv)) = D{j};%d/dv
           df(1+j:1+obj.nD:end,1:nq) = matGradMult(dD{j},v);%d/dq
         end
-        
+       fprintf('Complimentarity: %f \r', max(abs(f)));
       end
     end
     
@@ -264,6 +264,7 @@ classdef ContactImplicitTrajectoryOptimization < DirectTrajectoryOptimization
         
         f = [fq;fv];
         df = [dfq;dfv];
+        fprintf('Dynamics: %f \r', max(abs(f)));
       end
     
     function [xtraj,utraj,ltraj,ljltraj,z,F,info] = solveTraj(obj,t_init,traj_init)
