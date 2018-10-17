@@ -68,7 +68,8 @@ classdef HAMRLegTracking < DrakeSystem
                     Qlti = diag(e(:)); 
                     
                     Rlti = opt.rho*eye(nu_lti);
-                    [~, ~, obj.K] = dare(Alti, Blti, Qlti, Rlti);                   
+                    [~, ~, obj.K] = dare(Alti, Blti, Qlti, Rlti);    
+                    obj.K
                     
                 case 'act_tvlqr'
             end

@@ -1,4 +1,5 @@
-function [p,xtraj,utraj,ctraj,btraj,straj,z,F,info,infeasible_constraint_name,traj_opt] = variationalTrajOpt()
+function   [p,xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj,kltraj,straj,...
+    z,F,info,infeasible_constraint_name, traj_opt] = variationalTrajOpt()
 
 options.terrain = RigidBodyFlatTerrain();
 options.floating = true;
@@ -30,11 +31,11 @@ nu = p.getNumInputs();
 % periodic_constraint = periodic_constraint.setName('periodicity');
 
 % ----- Initial Guess ----- %
-load spring_2_steps_better.mat
-traj_init.x = xtraj;
-traj_init.u = utraj;
-traj_init.c = ctraj;
-traj_init.s = straj;
+% load spring_2_steps_better.mat
+% traj_init.x = xtraj;
+% traj_init.u = utraj;
+% traj_init.c = ctraj;
+% traj_init.s = straj;
 
 q0 = [0; .875; 0; 0;0;0;0;0;0];
 % qm1 = [-.45; .875; -.1; .5;-.4;0;0;0;0];
@@ -44,10 +45,10 @@ x0 = [q0;zeros(nv,1)];
 x1 = [q1;zeros(nv,1)];
 % xm1 = [qm1;zeros(nv,1)];
 % xm2 = [qm2;zeros(nv,1)];
-t_init = linspace(0,traj_init.x.tspan(2),N);
+t_init = linspace(0,T0,N);
 % traj_init.x = PPTrajectory(foh([0 T0/2-eps T0/2+eps T0],[x0, xm1, xm2, x1]));
-% traj_init.x = PPTrajectory(foh([0 T0],[x0, x1]));
-% traj_init.u = PPTrajectory(zoh(t_init,.1*randn(nu,N)));
+traj_init.x = PPTrajectory(foh([0 T0],[x0, x1]));
+traj_init.u = PPTrajectory(zoh(t_init,.1*randn(nu,N)));
 T_span = [.5 T0];
 
 options.add_ccost = true;
@@ -82,7 +83,8 @@ traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-4);
 traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 
 tic
-[xtraj,utraj,ctraj,btraj,straj,z,F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
+  [xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj,kltraj,straj,...
+    z,F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
 toc
 
 v.playback(xtraj,struct('slider',true));

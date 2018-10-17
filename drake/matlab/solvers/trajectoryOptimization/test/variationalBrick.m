@@ -1,6 +1,6 @@
-function xtraj = variationalBrick(plant,N,x0)
+% function [xtraj = variationalBrick(plant,N,x0)
 
-if nargin<1
+% if nargin<1
 options.terrain = RigidBodyFlatTerrain();
 options.floating = true;
 options.use_bullet = false;
@@ -9,16 +9,16 @@ options.use_bullet = false;
 file = fullfile(getDrakePath,'matlab','systems','plants','test','FallingBrickContactPoints.urdf');
 plant = RigidBodyManipulator(file,options);
 
-lb = [-1; -1; -Inf; -Inf; -Inf; -Inf]; 
-ub = [1; 1; Inf; Inf; Inf; Inf]; 
-plant = plant.setJointLimits(lb, ub); 
-plant = compile(plant); 
+% lb = [-1; -1; -Inf; -Inf; -Inf; -Inf]; 
+% ub = [1; 1; Inf; Inf; Inf; Inf]; 
+% plant = plant.setJointLimits(lb, ub); 
+% plant = compile(plant); 
 
-end
-if nargin < 2
+% end
+% if nargin < 2
   N=21;
-end
-if nargin<3
+% end
+% if nargin<3
 q0 = [0
       0
       5.0000
@@ -34,7 +34,7 @@ v0 = [-2
     0]; 
     
 x0 = [q0;v0];
-end
+% end
 
 tf=2.0;
 dt = tf/(N-1);
@@ -76,7 +76,7 @@ traj_opt = traj_opt.setSolverOptions('snopt','constraint_err_tol',1e-5);
 
 
 tic
-xtraj = traj_opt.solveTraj(t_init,traj_init);
+[xtraj,utraj,ctraj] = traj_opt.solveTraj(t_init,traj_init);
 toc
 
 v = constructVisualizer(plant);
@@ -101,5 +101,5 @@ for i=1:12
   legend('Traj Opt', 'TimeStepping')
 end
 
-end
+% end
 

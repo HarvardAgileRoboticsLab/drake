@@ -54,7 +54,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                 options.add_ccost = false;
             end            
             if ~isfield(options, 'joint_limit_collisions')
-                options.joint_limit_collisions = true;
+                options.joint_limit_collisions = false;
             end
             
             obj = obj@DirectTrajectoryOptimization(plant,N,duration,options);
@@ -567,7 +567,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
         end
         
         function [f,df] = midpoint_contact(obj,xin)
-            mu = 0.35; %This is currently hard-coded in Drake
+            mu = 1; %This is currently hard-coded in Drake
             nC = obj.nC;
             nD = obj.nD;
             nQ = obj.plant.getNumPositions();
@@ -609,7 +609,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             g2 = mu*c - E*b; % >= 0
             
             %Normal force complementarity
-            l1 =phi'*c - s; % <= 0          % HACK!! 
+            l1 =phi'*c - s; % <= 0         
             
             %Tangential velocity complementarity
             l2 = h*(mu*c - E*b)'*psi - s; % <= 0
