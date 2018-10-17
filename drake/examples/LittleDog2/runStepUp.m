@@ -50,7 +50,10 @@ traj_init.u = PPTrajectory(zoh(t_init,0.1*randn(nu,N)));
 traj_init.s = PPTrajectory(zoh([0 T0], [1, 1])); 
 T_span = [1 T0];
 
-traj_opt = VariationalTrajectoryOptimization(p,N,T_span, struct('s_weight', 30));
+options.s_weight = 30;
+options.s_max = Inf; 
+
+traj_opt = VariationalTrajectoryOptimization(p,N,T_span, options);
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
 traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(q0),1);  
 % traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(qm),7);
@@ -98,7 +101,7 @@ traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
 traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
 
-% traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
+traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 
 tic
 [xtraj,utraj,ctraj,btraj,psitraj,etatraj,straj,z ...

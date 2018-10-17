@@ -458,7 +458,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl];     %NDD: added joint limit forces
             [f,df] = obj.midpoint_dynamics(xin);
-            %fprintf('Dynamics: %f \r',  max(abs(f)));
+            fprintf('Dynamics: %f \r',  max(abs(f)));
             
             %             df_fd = zeros(size(df));
             %             step = sqrt(eps(max(xin)));
@@ -564,7 +564,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h;q1;q2;psi;eta;c;b;s];
             [f,df] = obj.midpoint_contact(xin);
-            %fprintf('Slack: %f \r', s);
+            fprintf('Slack: %f \r', s);
             
             %             df_fd = zeros(size(df));
             %             dxin = 1e-6*eye(length(xin));
@@ -906,7 +906,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
         end
         
-        function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivs(obj,q2,v)
+        function [D1L,D2L,D1D1L,D1D2L,D2D2L,B,dBdq] = LagrangianDerivs(obj,q,v)
             
             nq = length(q);
             nv = length(v);

@@ -55,6 +55,7 @@ T_span = [.5 T0];
 
 options.add_ccost = true;
 options.s_weight = 10000;
+options.s_max = Inf; 
 
 traj_opt = VariationalTrajectoryOptimization(p,N,T_span,options);
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
@@ -81,7 +82,7 @@ traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-4);
 traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-5);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-5);
 
-% traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
+traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 
 tic
 [xtraj,utraj,ctraj,btraj,psitraj,etatraj,straj,z, ...
