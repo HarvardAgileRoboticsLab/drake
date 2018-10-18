@@ -4,7 +4,7 @@ function [xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj, kltraj, straj]  ...
 if nargin<1
     options.floating = false;
     options.use_bullet = false;
-    file = fullfile(getDrakePath,'examples', 'SimpleFourBar4DOF', 'FourBar_JointLimits.urdf');
+    file = fullfile(getDrakePath,'examples', 'SimpleFourBar', 'FourBar_JointLimits3DOF.urdf');
     plant = RigidBodyManipulator(file,options);    
 end
 if nargin < 2
@@ -19,11 +19,13 @@ if nargin<4
     tf = 2;
 end
 if nargin<5
-    traj_init.x = PPTrajectory(foh([0 tf],[x0, x0]));
+    traj_init.x = PPTrajectory(foh([0 tf],[x0,x0]));
 else
-    traj_init.x = x_init; 
+%     traj_init.x = x_init; 
 end
 
+v = constructVisualizer(plant);
+v.inspector(x0); 
 t_init = linspace(0,tf,N);
 
 
@@ -31,7 +33,9 @@ t_init = linspace(0,tf,N);
 sim_traj = plant.simulate([0,tf], x0);
 % x0 = sim_traj.eval(0);
 
+options.integration_method = VariationalTrajectoryOptimization.EULER;
 options.s_weight = 10;
+options.joint_limit_collisions = true; 
 nq = plant.getNumPositions;
 
 traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);
@@ -56,8 +60,7 @@ toc
 % traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
 % traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
 
-% v = constructVisualizer(plant);
-% v.playback(xtraj, struct('slider', true));
+v.playback(xtraj, struct('slider', true));
 
 dt = tf/N; 
 ts = sim_traj.getBreaks();
