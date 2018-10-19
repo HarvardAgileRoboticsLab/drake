@@ -424,7 +424,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h;q0;v0;q1;u;c;b;jl;kl];
             [f,df] = first_step(obj,xin);
-%             fprintf('First Step: %f \r',  max(abs(f)));
+            fprintf('First Step: %f \r',  max(abs(f)));
 %             
 %             df_fd = zeros(size(df));
 %             dxin = 1e-6*eye(length(xin));
@@ -487,8 +487,8 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             end
             
             xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl];     %NDD: added joint limit forces
-            [f,df] = obj.euler_dynamics(xin);
-%             fprintf('Dynamics: %f \r',  max(abs(f)));
+            [f,df] = dyn_const(xin);
+            fprintf('Dynamics: %f \r',  max(abs(f)));
             
             %             df_fd = zeros(size(df));
             %             step = 1e-6;
@@ -696,7 +696,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             
             xin = [h;q1;q2;psi;eta;c;b;s];
             [f,df] = cont_const(xin);
-%             fprintf('Slack: %f \r', s);
+            fprintf('Slack: %f \r', s);
             
             %             df_fd = zeros(size(df));
             %             dxin = 1e-6*eye(length(xin));
@@ -898,15 +898,15 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;q1;u;c;b;jl;kl];
             [pl,dpl] = left_trans(xin);
             
-            dpl_fd = zeros(size(dpl));
-            dxin = 1e-6*eye(length(xin));
-            for k = 1:length(xin)
-                dpl_fd(:,k) = (left_trans(xin+dxin(:,k)) - ...
-                    left_trans(xin-dxin(:,k)))/2e-6;
-            end
-            
-            disp('Left Legendre transform derivative error:');
-            disp(max(abs(dpl_fd(:)-dpl(:))));
+%             dpl_fd = zeros(size(dpl));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 dpl_fd(:,k) = (left_trans(xin+dxin(:,k)) - ...
+%                     left_trans(xin-dxin(:,k)))/2e-6;
+%             end
+%             
+%             disp('Left Legendre transform derivative error:');
+%             disp(max(abs(dpl_fd(:)-dpl(:))));
             
         end
         
@@ -1074,15 +1074,15 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;q1;u;kl];
             [pr,dpr] = right_trans(xin);
             
-            dpr_fd = zeros(size(dpr));
-            dxin = 1e-6*eye(length(xin));
-            for k = 1:length(xin)
-                dpr_fd(:,k) = (right_trans(xin+dxin(:,k)) - ...
-                    right_trans(xin-dxin(:,k)))/2e-6;
-            end
-            
-            disp('Right Legendre transform derivative error:');
-            disp(max(abs(dpr_fd(:)-dpr(:))));
+%             dpr_fd = zeros(size(dpr));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 dpr_fd(:,k) = (right_trans(xin+dxin(:,k)) - ...
+%                     right_trans(xin-dxin(:,k)))/2e-6;
+%             end
+%             
+%             disp('Right Legendre transform derivative error:');
+%             disp(max(abs(dpr_fd(:)-dpr(:))));
         end
         
         
