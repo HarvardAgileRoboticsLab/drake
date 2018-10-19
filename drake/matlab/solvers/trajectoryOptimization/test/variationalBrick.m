@@ -23,8 +23,8 @@ q0 = [0
       0
       5.0000
       0.2
-      0.2
-      0.0];
+      0.3
+      0.1];
   
 v0 = [-1
     1
@@ -50,9 +50,9 @@ dt = tf/(N-1);
 % v.playback(xtraj,struct('slider',true));
 
 t_init = linspace(0,tf,N);
-traj_init.x = PPTrajectory(foh([0 tf],[x0, x0+0.1*randn(size(x0))]));
+traj_init.x = PPTrajectory(foh([0 tf],[x0, x0]));
 
-options.s_weight = 1000;
+options.s_weight = 10;
 % options.joint_limit_collisions = true; 
 options.integration_method = VariationalTrajectoryOptimization.EULER;
 
@@ -83,7 +83,7 @@ toc
 v = constructVisualizer(plant);
 v.playback(xtraj, struct('slider', true));
 
-ts_plant = TimeSteppingRigidBodyManipulator(plant,dt/2,options);
+ts_plant = TimeSteppingRigidBodyManipulator(plant,dt,options);
 sim_traj = ts_plant.simulate([0,tf],x0);
 
 ts = sim_traj.getBreaks();

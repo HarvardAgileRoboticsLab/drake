@@ -10,7 +10,7 @@ nx = nq+nv;
 nu = plant.getNumInputs();
 
 % Nominal Data
-xi = [pi/6; 0];
+xi = [pi/3; 0];
 ui = 0;
 qi = xi(1:nq);
 vi = xi(nq+1:nx);
@@ -25,8 +25,9 @@ traj_init.u = PPTrajectory(zoh([0, T0], [ui, ui]));
 
 T_span = [T0-1 2*T0];
 
+optimoptions.s_weight = 10;
+optimoptions.joint_limit_collisions = true;  
 optimoptions.integration_method = VariationalTrajectoryOptimization.EULER; 
-optimoptions.sweight = 10;
 % optimoptions.periodic = 1;
 traj_opt = VariationalTrajectoryOptimization(plant,N,T_span,optimoptions);
 
@@ -97,18 +98,18 @@ v.playback(xtraj);
             hNm1;qNm1;qN;uNm1;klNm1];      
         [f,df] = periodic_constraint(xin);
         %         f
+%         
+%         df_fd = zeros(size(df));
+%         step = 1e-6; % sqrt(eps(max(xin)));
+%         dxin = step*eye(length(xin));
+%         for k = 1:length(xin)
+%             xin + dxin(:,k); 
+%             df_fd(:,k) = (periodic_constraint(xin+dxin(:,k)) - ...
+%                 periodic_constraint(xin-dxin(:,k)))/(2*step);
+%         end
         
-        df_fd = zeros(size(df));
-        step = 1e-6; % sqrt(eps(max(xin)));
-        dxin = step*eye(length(xin));
-        for k = 1:length(xin)
-            xin + dxin(:,k); 
-            df_fd(:,k) = (periodic_constraint(xin+dxin(:,k)) - ...
-                periodic_constraint(xin-dxin(:,k)))/(2*step);
-        end
-        
-        disp('Periodic constraint derivative error:');
-        disp(max(abs(df_fd(:)-df(:))));
+%         disp('Periodic constraint derivative error:');
+%         disp(max(abs(df_fd(:)-df(:))));
     end
 
     function [f, df] = periodic_constraint(xin)

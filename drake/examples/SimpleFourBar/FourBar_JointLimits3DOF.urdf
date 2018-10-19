@@ -166,10 +166,10 @@
  </force_element>-->
 
 
-  <!--<transmission type="SimpleTransmission" name="joint_0_trans">
+  <transmission type="SimpleTransmission" name="joint_0_trans">
     <actuator name="control_torque" />
     <joint name="joint_0" />
     <mechanicalReduction>1</mechanicalReduction>
-  </transmission>-->
+  </transmission>
 
 </robot>

@@ -36,7 +36,10 @@ traj_init.u = PPTrajectory(zoh([0, T0], [ui, ui]));
 
 T_span = [T0-1 2*T0];
 
-optimoptions.sweight = 10;
+optimoptions.s_weight = 10;
+optimoptions.joint_limit_collisions = true;  
+optimoptions.integration_method = VariationalTrajectoryOptimization.EULER; 
+
 % optimoptions.periodic = 1;
 traj_opt = VariationalTrajectoryOptimization(plant,N,T_span,optimoptions);
 
