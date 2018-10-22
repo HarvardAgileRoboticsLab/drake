@@ -53,7 +53,7 @@ traj_init.x = PPTrajectory(foh([0 T0],[x0, x1]));
 traj_init.u = PPTrajectory(zoh(t_init,.1*randn(nu,N)));
 T_span = [.5 T0];
 
-options.integration_method = VariationalTrajectoryOptimization.EULER; 
+options.integration_method = VariationalTrajectoryOptimization.EULER;
 options.add_ccost = true;
 options.s_weight = 10000;
 options.s_max = Inf; 
@@ -78,8 +78,8 @@ traj_opt = traj_opt.setSolver('snopt');
 traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',10000);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
-traj_opt = traj_opt.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-4);
-traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-4);
+traj_opt = traj_opt.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-5);
 traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-5);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-5);
 
