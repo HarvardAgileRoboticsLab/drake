@@ -425,7 +425,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;v0;q1;u;c;b;jl;kl];
             [f,df] = first_step(obj,xin);
 %             fprintf('First Step: %f \r',  max(abs(f)));
-%             
+            
 %             df_fd = zeros(size(df));
 %             dxin = 1e-6*eye(length(xin));
 %             for k = 1:length(xin)
@@ -487,7 +487,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             end
             
             xin = [h1;h2;q1;q2;q3;u1;u2;c2;b2;jl2;kl];     %NDD: added joint limit forces
-            [f,df] = obj.euler_dynamics(xin);
+            [f,df] = dyn_const(xin);
 %             fprintf('Dynamics: %f \r',  max(abs(f)));
             
             %             df_fd = zeros(size(df));
@@ -521,7 +521,7 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             u2 = xin(2+3*nQ+nU+(1:nU));
             c2 = xin(2+3*nQ+2*nU+(1:nC));
             b2 = xin(2+3*nQ+2*nU+nC+(1:nC*nD));
-            jl2 = xin(2+3*nQ+2*nU+nC+nC*nD+(1:nJL));  % NDD
+            jl2 = xin(2+3*nQ+2*nU+nC+nC*obj.nD+(1:nJL));  % NDD
             kl = xin(2+3*nQ+2*nU+nC+nC*nD+nJL+(1:nKL));
             
             %Take care of angle wrap-around
@@ -898,16 +898,16 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;q1;u;c;b;jl;kl];
             [pl,dpl] = left_trans(xin);
             
-            dpl_fd = zeros(size(dpl));
-            dxin = 1e-6*eye(length(xin));
-            for k = 1:length(xin)
-                dpl_fd(:,k) = (left_trans(xin+dxin(:,k)) - ...
-                    left_trans(xin-dxin(:,k)))/2e-6;
-            end
-            
-            disp('Left Legendre transform derivative error:');
-            disp(max(abs(dpl_fd(:)-dpl(:))));
-            
+%             dpl_fd = zeros(size(dpl));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 dpl_fd(:,k) = (left_trans(xin+dxin(:,k)) - ...
+%                     left_trans(xin-dxin(:,k)))/2e-6;
+%             end
+%             
+%             disp('Left Legendre transform derivative error:');
+%             disp(max(abs(dpl_fd(:)-dpl(:))));
+%             
         end
         
         function [pl,dpl] = euler_left_legendre_transform(obj,xin)
@@ -1074,15 +1074,15 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
             xin = [h;q0;q1;u;kl];
             [pr,dpr] = right_trans(xin);
             
-            dpr_fd = zeros(size(dpr));
-            dxin = 1e-6*eye(length(xin));
-            for k = 1:length(xin)
-                dpr_fd(:,k) = (right_trans(xin+dxin(:,k)) - ...
-                    right_trans(xin-dxin(:,k)))/2e-6;
-            end
-            
-            disp('Right Legendre transform derivative error:');
-            disp(max(abs(dpr_fd(:)-dpr(:))));
+%             dpr_fd = zeros(size(dpr));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 dpr_fd(:,k) = (right_trans(xin+dxin(:,k)) - ...
+%                     right_trans(xin-dxin(:,k)))/2e-6;
+%             end
+%             
+%             disp('Right Legendre transform derivative error:');
+%             disp(max(abs(dpr_fd(:)-dpr(:))));
         end
         
         
@@ -1484,48 +1484,57 @@ classdef VariationalTrajectoryOptimization < DirectTrajectoryOptimization
                 z0(obj.v0_inds) = xsamp(nQ+(1:nQ),1);
             end
             
-            if isfield(traj_init,'c')
-                z0(obj.c_inds) = traj_init.c.eval(t_init(1:end-1));
-            else
-                z0(obj.c_inds(:)) = .1*rand(length(obj.c_inds(:)),1);
-            end
-            
-            if isfield(traj_init,'b')
-                z0(obj.b_inds) = traj_init.b.eval(t_init(1:end-1));
-            else
-                z0(obj.b_inds(:)) = .1*rand(length(obj.b_inds(:)),1);
-            end
-            
-            if isfield(traj_init,'psi')
-                z0(obj.psi_inds) = traj_init.psi.eval(t_init(1:end-1));
-            else
-                z0(obj.psi_inds(:)) = .1*rand(length(obj.psi_inds(:)),1);
-            end
-            
-            if isfield(traj_init,'eta')
-                z0(obj.eta_inds) = traj_init.eta.eval(t_init(1:end-1));
-            else
-                z0(obj.eta_inds(:)) = .1*rand(length(obj.eta_inds(:)),1);
-            end
-            
-            if isfield(traj_init,'jl')
-                z0(obj.jl_inds) = traj_init.jl.eval(t_init(:,1:end-1));
-            else
-                z0(obj.jl_inds(:)) = .1*rand(length(obj.jl_inds(:)),1);
-            end
-            
-            if isfield(traj_init,'kl')
-                z0(obj.kl_inds) = traj_init.kl.eval(t_init(:,1:end-1));
-            else
-                z0(obj.kl_inds(:)) = .1*rand(length(obj.kl_inds(:)),1);
-            end
-            
-            if isfield(traj_init,'s')
-                z0(obj.s_inds) = traj_init.s.eval(t_init(1:end-1));
-            else
-                z0(obj.s_inds(:)) = obj.options.s0;
-            end
-            
+%             if isfield(traj_init,'c')
+%                 z0(obj.c_inds) = traj_init.c.eval(t_init(1:end-1));
+%             else
+%                 z0(obj.c_inds(:)) = .1*rand(length(obj.c_inds(:)),1);
+%             end
+%             
+%             if isfield(traj_init,'b')
+%                 z0(obj.b_inds) = traj_init.b.eval(t_init(1:end-1));
+%             else
+%                 z0(obj.b_inds(:)) = .1*rand(length(obj.b_inds(:)),1);
+%             end
+%             
+%             if isfield(traj_init,'psi')
+%                 z0(obj.psi_inds) = traj_init.psi.eval(t_init(1:end-1));
+%             else
+%                 z0(obj.psi_inds(:)) = .1*rand(length(obj.psi_inds(:)),1);
+%             end
+%             
+%             if isfield(traj_init,'eta')
+%                 z0(obj.eta_inds) = traj_init.eta.eval(t_init(1:end-1));
+%             else
+%                 z0(obj.eta_inds(:)) = .1*rand(length(obj.eta_inds(:)),1);
+%             end
+%             
+%             if isfield(traj_init,'jl')
+%                 z0(obj.jl_inds) = traj_init.jl.eval(t_init(:,1:end-1));
+%             else
+%                 z0(obj.jl_inds(:)) = .1*rand(length(obj.jl_inds(:)),1);
+%             end
+%             
+%             if isfield(traj_init,'kl')
+%                 z0(obj.kl_inds) = traj_init.kl.eval(t_init(:,1:end-1));
+%             else
+%                 z0(obj.kl_inds(:)) = .1*rand(length(obj.kl_inds(:)),1);
+%             end
+%             
+%             if isfield(traj_init,'s')
+%                 z0(obj.s_inds) = traj_init.s.eval(t_init(1:end-1));
+%             else
+%                 z0(obj.s_inds(:)) = obj.options.s0;
+%             end
+% 
+            temp = load('stepup_rand_init');
+            z0 = temp.z0;
+            z0(obj.u_inds) = z0(obj.u_inds) + 0.01*randn(size(obj.u_inds));
+            z0(obj.c_inds) = z0(obj.c_inds) + 0.01*randn(size(obj.c_inds));
+            z0(obj.b_inds) = z0(obj.b_inds) + 0.01*randn(size(obj.b_inds));
+            z0(obj.eta_inds) = z0(obj.eta_inds) + 0.01*randn(size(obj.eta_inds));
+            z0(obj.psi_inds) = z0(obj.psi_inds) + 0.01*randn(size(obj.psi_inds));
+%              obj.z0 = temp.z0;
+
         end
     end
 end

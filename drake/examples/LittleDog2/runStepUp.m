@@ -101,11 +101,11 @@ traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',1000000);
 traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
 
-traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
+% traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 
 tic
-[xtraj,utraj,ctraj,btraj,psitraj,etatraj,straj,z ...
-    ,F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
+[xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj,kltraj,straj,z, ...
+    F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
 toc
 
 v.playback(xtraj,struct('slider',true));

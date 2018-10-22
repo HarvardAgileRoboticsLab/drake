@@ -53,6 +53,7 @@ traj_init.x = PPTrajectory(foh([0 T0],[x0, x1]));
 traj_init.u = PPTrajectory(zoh(t_init,.1*randn(nu,N)));
 T_span = [.5 T0];
 
+options.integration_method = VariationalTrajectoryOptimization.EULER; 
 options.add_ccost = true;
 options.s_weight = 10000;
 options.s_max = Inf; 
@@ -82,11 +83,11 @@ traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-4);
 traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-5);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-5);
 
-traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
+% traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 
 tic
-[xtraj,utraj,ctraj,btraj,psitraj,etatraj,straj,z, ...
-    F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
+[xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj,kltraj,straj, ...
+    z,F,info,infeasible_constraint_name] = traj_opt.solveTraj(t_init,traj_init);
 toc
 
 % v.playback(xtraj,struct('slider',true));
