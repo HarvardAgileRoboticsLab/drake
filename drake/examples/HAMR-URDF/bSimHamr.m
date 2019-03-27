@@ -1,4 +1,4 @@
-0.000012clear; clc; close all;
+clear; clc; close all;
 global kl_traj jl_traj c_traj beta_traj psi_traj eta_traj
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/AgileBehaviors/';
 

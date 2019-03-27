@@ -41,7 +41,8 @@ N = 51;
 t_init = linspace(0, T, N);
 xx0 = traj_init.x.eval(t_init(1));
 xxf = traj_init.x.eval(t_init(N)); 
-% xxf(1) = 10; 
+
+
 t_init = linspace(0, T, N);
 
 % traj_init.x = traj_init.x.eval(t_init);

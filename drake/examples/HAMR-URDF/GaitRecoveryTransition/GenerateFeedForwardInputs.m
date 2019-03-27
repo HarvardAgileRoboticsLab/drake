@@ -38,7 +38,7 @@ DL = linspace(20, 75, 5);                  % percent "push" into the ground
 LIFTAMP = 0.15;                                 % lift actuator motion (mm)
 SWINGAMP = 0.175;                               % swing actuator motion (mm)
 NSAMP = 100;                                    % number of samples
-TYPE = 2; 
+TYPE = 1; 
 
 Nf = numel(freq);
 Ndc = numel(DC);

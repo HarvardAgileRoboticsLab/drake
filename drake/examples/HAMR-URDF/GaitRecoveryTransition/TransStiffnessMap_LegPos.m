@@ -79,7 +79,7 @@ for i = 1:4
     xlabel('Leg X (mm)')
     colorbar;
 end
-tilefigs;
+%tilefigs;
 
 end
 
@@ -177,7 +177,7 @@ Jqd_qi = -(Kqd\Kqi);
 
 % Force to Voltage Mapping 
 F = hr_actuators.output(0, [], [hr_actuators.dummy_bender(1).dp.Vb/2*ones(nqi,1)+Kp*qi(indep_dof); qi(indep_dof)]);
-%dFdV = dFdx(:, 1+(1:nqi));
+%dFdV = dFdx(:, 1+(1:nqi));1
 %F
 
 % mapping from independent generalized coordinates to xyz

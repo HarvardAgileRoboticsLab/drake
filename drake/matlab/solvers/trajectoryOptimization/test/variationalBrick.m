@@ -22,9 +22,9 @@ plant = RigidBodyManipulator(file,options);
 q0 = [0
       0
       5.0000
+      0.3
       0.1
-      0.1
-      0.0];
+      0.2];
   
 v0 = [-2
     2
@@ -52,7 +52,8 @@ dt = tf/(N-1);
 t_init = linspace(0,tf,N);
 traj_init.x = PPTrajectory(foh([0 tf],[x0, x0]));
 % 
-% options.s_weight = 10;
+options.s_weight = 10;
+options.s_max = 100; 
 nq = plant.getNumPositions;
 % 
 traj_opt = VariationalTrajectoryOptimization(plant,N,tf,options);

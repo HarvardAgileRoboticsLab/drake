@@ -3,6 +3,7 @@ classdef HAMRSimpleRBM < RigidBodyManipulator
     properties (SetAccess = protected, GetAccess = public)
         q0
         grav = [0; 0; -9.81e-3];
+        foot_pos = [0 0 -14.988382167532292];
     end
     
     methods

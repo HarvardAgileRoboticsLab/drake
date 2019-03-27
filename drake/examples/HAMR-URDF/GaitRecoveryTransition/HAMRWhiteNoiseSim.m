@@ -30,7 +30,7 @@ options.collision = false;
 options.dt = dt; %0.1; 
 
 % Build robot + visualizer
-hamr = HamrTSRBM(urdf, options);
+hamr = HamrTSRBM(HamrRBM(urdf, options), options.dt, options);
 nq = hamr.getNumPositions(); 
 nv = hamr.getNumVelocities(); 
 nu = hamr.getNumInputs(); 
@@ -86,7 +86,7 @@ hamrWact = mimoFeedback(hr_actuators, hamr, connection1, connection2, ...
 %% Build and Plot Input
 
 tramp = 500; 
-Vscale = (dp.Vb - dp.Vg)/10;
+Vscale = (dp.Vb - dp.Vg)/2;
 V = Vscale*idinput([N, hamr.getNumInputs()], 'rgs', band)'; 
 V(t < 500) = (t(t<500)/tramp).*V(t<500);
 V = V + (dp.Vb - dp.Vg)/2 + dp.Vg;
