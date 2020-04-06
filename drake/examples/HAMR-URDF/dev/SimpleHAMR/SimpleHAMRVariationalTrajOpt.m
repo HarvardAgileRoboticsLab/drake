@@ -1,6 +1,5 @@
-function [hamr,xtraj,utraj,ctraj,btraj,...
-    psitraj,etatraj,jltraj, kltraj, straj, ...
-    z,F,info,infeasible_constraint_name] = SimpleHAMRVariationalTrajOpt(save_dir)
+function [hamr,x,u,c,b, psi,eta,jl, kl, s, z,F,info, ...
+    infeasible_constraint_name] = SimpleHAMRVariationalTrajOpt(load_path, params)
 
 % file
 urdf = fullfile(getDrakePath, 'examples', 'HAMR-URDF', 'urdf', 'HAMRSimple_scaled.urdf');
@@ -19,175 +18,169 @@ v = hamr.constructVisualizer();
 % state/input dimenisons
 nq = hamr.getNumPositions();
 nv = hamr.getNumVelocities();
-nx = nq+nv;
 nu = hamr.getNumInputs();
+nc = hamr.getNumContactPairs();
 
 % --- Set Input limits ---
-Vlim = 100;                     % set max torque
-V2Tau = 0.0013; 
-umin = -Vlim*V2Tau*ones(nu,1);
-umax = Vlim*V2Tau*ones(nu, 1);
+ulim = 0.26;                 % set max force
+umin = -ulim*ones(nu,1);
+umax = ulim*ones(nu, 1);
 
 % --- Initialize TrajOpt---
-optimoptions.s_weight = 200;
-optimoptions.joint_limit_collisions = false; 
-optimoptions.add_ccost = true; 
+optimoptions.s_weight = params.s_weight;
+optimoptions.add_ccost = true;
+optimoptions.s_max = Inf; 
 
-% ---- Initial Guess ----
-% fname = 'TrajOpt_MovingBody_SimpleSprings8';
-% traj0 = load([save_dir, fname]);
-% t_init = traj0.xtraj.getBreaks(); 
-% N = 1*(numel(t_init)-1)+1; 
-% if N < numel(t_init)
-%     T = t_init(N); 
-% else 
-%     T = t_init(end);
-% end
-% 
-% t_init = linspace(0, T, N); 
-% x0 = traj0.xtraj.eval(t_init(1)); 
-% x1 = traj0.xtraj.eval(t_init(N)); 
-% q1 = x1(1:nq); q1(1) = q1(1); 
-% traj_init.x = traj0.xtraj;
-% traj_init.u = traj0.utraj;
-% traj_init.c = traj0.ctraj;
-% traj_init.b = traj0.btraj;
-% traj_init.eta = traj0.etatraj;
-% traj_init.psi = traj0.psitraj;
-% traj_init.s = traj0.straj;
+% parameters
+T = 200;  % ms
+r_des = params.r_des;         % mm
+tht_des = params.tht_des;     % rad
+xi = hamr.getInitialState();
+xf = xi;
+xf([1, 2, 6]) = [r_des*cos(tht_des); r_des*sin(tht_des); tht_des];
+N = params.N;
 
-% -- Initialize Traj Opt ---% 
+if isempty(load_path)
+    t_init = linspace(0, T, N);
+    traj_init.x = PPTrajectory(foh([0 T],[xi, xf]));
+    traj_init.u = PPTrajectory(zoh(t_init,0.0625*randn(nu,N)));
+    traj_init.c = PPTrajectory(zoh(t_init,0.001*randn(nc,N)));
+    traj_init.b = PPTrajectory(zoh(t_init,0.001*randn(4*nc,N)));
+    traj_init.psi = PPTrajectory(zoh(t_init,0.001*randn(nc,N)));
+    traj_init.eta = PPTrajectory(zoh(t_init,0.001*randn(4*nc,N)));
+else
+    traj_init = rmfield(load(load_path), {'jl', 'kl'});
+    [t_init, traj_init] = re_interp(traj_init, N);
+    traj_init.s = 0*traj_init.s + 1;
+    
+end
 
-T = 200;
-N = 42;
-x0 = hamr.getInitialState();
-x1 = x0; x1(1) = x1(1)+30; q1 = x1(1:nq);
-
-T_span = [T T];
+T_span = [0.5*T 1.5*T];
 traj_opt = VariationalTrajectoryOptimization(hamr,N,T_span,optimoptions);
- 
-t_init = linspace(0,T,N);
-traj_init.x = PPTrajectory(foh([0 T],[x0, x1]));
-traj_init.u = PPTrajectory(zoh(t_init, 0.001*randn(nu,N)));
-traj_init.c = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
-traj_init.b = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
-traj_init.psi = PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC,N)));
-traj_init.eta =  PPTrajectory(zoh(t_init,0.001*randn(traj_opt.nC*traj_opt.nD,N)));
 
-
-% -- State Costs ---%
-state_cost = Point(getStateFrame(hamr),ones(nx,1));
-
-state_cost.base_x = 0;
-state_cost.base_y = 0;
-state_cost.base_z = 1;                       
-
-% allow +/- pi/4 rpy
-state_cost.base_pitch = (8/pi)^2;           
-state_cost.base_roll = (8/pi)^2;            
-state_cost.base_yaw = (8/pi)^2;            
-
-% joint limits to +/- pi/9
-state_cost.FL_lift = 0; %(9/pi)^2;
-state_cost.FL_swing = 0; %(9/pi)^2;
-state_cost.RL_lift = 0; %(9/pi)^2;
-state_cost.RL_swing = 0; %(9/pi)^2;
-state_cost.FR_lift = 0; %(9/pi)^2;
-state_cost.FR_swing = 0; %(9/pi)^2;
-state_cost.RR_lift = 0; %(9/pi)^2;
-state_cost.RR_swing = 0; %(9/pi)^2;
-
-state_cost = double(state_cost);
-% state_cost(nq+(1:nv)) = 0; 
-Q = diag(state_cost); 
-
-% --- Cost Functions ---%
+% -- Costs ---%
 traj_opt = traj_opt.addRunningCost(@running_cost_fun);
-traj_opt = traj_opt.addRunningCost(@lift_cost_fun);
-% traj_opt = traj_opt.addFinalCost(@final_cost_fun); 
-
-% -- State Constraints ---%
-[qmin, qmax] = hamr.getJointLimits(); 
-traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(qmin, qmax),1:N);
-
-zlb = x0(3) - 1;
-zub = x0(3) + 1;
-traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(zlb, zub),1:N, 3);
-traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(x0(1:nq)),1);
-traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(q1(1:2)-2,q1(1:2)+2), N, 1:2);
-traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(x0(nq+(1:nv))),1);
-
-% Input Constraint 
-traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(umin, umax),1:N-1);
+% traj_opt = traj_opt.addRunningCost(@foot_height_fun);
+traj_opt = traj_opt.addFinalCost(@final_cost_fun);
 traj_opt = traj_opt.addTrajectoryDisplayFunction(@displayTraj);
 
+% Add Initial State Constraints
+traj_opt = traj_opt.addPositionConstraint(ConstantConstraint(xi(1:nq)),1);
+traj_opt = traj_opt.addVelocityConstraint(ConstantConstraint(xi(nq+(1:nv))),1);
 
-% Solver options
+% final state constraints
+lbf = xf(1:6) - [Inf; 5; 2; pi/6; pi/6; pi/6];
+ubf = xf(1:6) + [Inf; 5; 2; pi/6; pi/6; pi/6];
+traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(lbf, ubf),N,1:6);
+
+% z-bounding box
+traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(xi(3) - 2, xi(3) + 2),2:N,3);
+traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(xi(5) - pi/6, xi(5) + pi/6),2:N,5);
+
+
+% Add joint limit constraints
+jlmin = hamr.joint_limit_min; jlmax = hamr.joint_limit_max;
+traj_opt = traj_opt.addPositionConstraint(BoundingBoxConstraint(jlmin,jlmax),1:N);
+
+% Input constraints
+traj_opt = traj_opt.addInputConstraint(BoundingBoxConstraint(umin, umax),1:N-1);
+
+% ----- Solver options -----
 traj_opt = traj_opt.setSolver('snopt');
 traj_opt = traj_opt.setSolverOptions('snopt','MajorIterationsLimit',10000);
 traj_opt = traj_opt.setSolverOptions('snopt','MinorIterationsLimit',200000);
 traj_opt = traj_opt.setSolverOptions('snopt','IterationsLimit',10000000);
 traj_opt = traj_opt.setSolverOptions('snopt','SuperbasicsLimit',1000);
-traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-6);
-traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-6);
-traj_opt = traj_opt.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-6);
-traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-6);
-traj_opt = traj_opt.setSolverOptions('snopt','constraint_err_tol',1e-6);
+
+traj_opt = traj_opt.setSolverOptions('snopt','MajorOptimalityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','MinorOptimalityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','MajorFeasibilityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','MinorFeasibilityTolerance',1e-5);
+traj_opt = traj_opt.setSolverOptions('snopt','constraint_err_tol',1e-5);
+
 
 disp('Solving...')
 tic
-[xtraj,utraj,ctraj,btraj,psitraj,etatraj,jltraj,kltraj,straj ...
-    ,z,F,info,infeasible_constraint_name] = solveTraj(traj_opt,t_init,traj_init);
+[x,u,c,b,psi,eta,jl,kl,s,z,F,info,infeasible_constraint_name] ...
+    = solveTraj(traj_opt,t_init,traj_init);
 toc
 
-    function [f,df] = running_cost_fun(h,x,u)
-        ugain = 10*Vlim*V2Tau; 
-        R = (1/ugain)^2*eye(nu);
+    function [f,df] = running_cost_fun(h,xk,uk)
+        xin = [h; xk; uk];
+        [f, df] = running_cost(xin);
+        fprintf('Running Cost: %d \r', f)
         
-        xd = [x1(1); x0(2:end)];
-        g = (1/2)*(x-xd)'*Q*(x-xd) + (1/2)*u'*R*u;
-        f = h*g;
-        df = [g, h*(x-xd)'*Q, h*u'*R];
-    end
-
-    function [f, df] = lift_cost_fun(h, x, u)
-        xin = [h; x; u]; 
-        [f, df] = lift_cost(xin);        
-%         
 %         df_fd = zeros(size(df));
-%         step = 1e-6;
-%         dxin = step*eye(length(xin));
+%         dxin = 1e-6*eye(length(xin));
 %         for k = 1:length(xin)
-%             df_fd(:,k) = (lift_cost(xin+dxin(:,k)) - lift_cost(xin-dxin(:,k)))/(2*step);
+%             df_fd(:,k) = (running_cost(xin+dxin(:,k)) ...
+%                 - running_cost(xin-dxin(:,k)))/2e-6;
 %         end
 %         
-%         disp('Lift Cost Derivative Error:');
-%         disp(max(abs(df_fd(:)-df(:))));        
-    end            
-   
-    function [f, df] = lift_cost(xin) 
-        h = xin(1); 
-        q = xin(1+(1:nq));
-        qd = xin(1+(nq+(1:nv))); 
-        
-        kinsol = hamr.doKinematics(q, qd, struct('compute_gradients', true)); 
-        [phi,~,~,~,~,~,~,~,n] = hamr.contactConstraints(kinsol);        
- 
-        a = -0.2; 
-        lc = a*ones(1,numel(phi)); 
-%         lc = [-1, -1, -1, -1]; 
-%         lc([8, 10]) = -10; 
-%         lc([12, 14]) = 10; 
-
-        f = lc*phi; 
-        df = [0, lc*n, zeros(1,nv), zeros(1, nu)]; 
-
+%         disp('Running cost derivative error:');
+%         disp(max(abs(df_fd(:)-df(:))));
+%         
     end
-%     function [f,df] = final_cost_fun(tf,x).
-%         a = 20;
-%         f = a*x(5)^2;
-%         df = zeros(1, nx+1);
-%         df(6) = 2*a*x(5);
+
+
+    function [f, df] = running_cost(xin)
+        
+        h = xin(1);
+        xk = xin(1+(1:nq+nv));
+        uk = xin(1+nq+nv+(1:nu));
+        
+        Qdiag = zeros(nq + nv, 1);
+        Qdiag(1:6) = [0.0; 1.0; 1.0; 10.0; 10.0; 10.0];
+        Q = diag(Qdiag);
+        
+        R = 0.1*(1/ulim)^2*eye(nu);
+        g = (1/2)*(uk'*R*uk + (xk - xf)'*Q*(xk - xf));
+        f = h*g;
+        df = [g, h*(xk - xf)'*Q, h*uk'*R];
+        
+    end
+
+
+    function [f,df] = final_cost_fun(tN,xN)
+        
+        xin = [tN; xN];
+        [f, df] = final_cost(xin);
+        fprintf('Final Cost: %d \r', f) 
+        
+%         df_fd = zeros(size(df));
+%         dxin = 1e-6*eye(length(xin));
+%         for k = 1:length(xin)
+%             df_fd(:,k) = (final_cost(xin+dxin(:,k)) ...
+%                 - final_cost(xin-dxin(:,k)))/2e-6;
+%         end
+%         
+%         disp('Final cost derivative error:');
+%         disp(max(abs(df_fd(:)-df(:))));
+        
+    end
+
+    function [f, df] = final_cost(xin)        
+        tN = xin(1);
+        xN = xin(1+(1:nq+nv));
+        
+        Qfdiag = zeros(nq + nv, 1);
+        Qfdiag(1:6) = [10.0; 10.0; 0.1; 10.0; 10.0; 10.0];                 
+        Qfdiag([7,8,12]) = 10; 
+        Qf = diag(Qfdiag);
+        f = (1/2)*(xN-xf)'*Qf*(xN-xf);
+        df = [0, (xN-xf)'*Qf];        
+    end
+
+%     function [f,df] = foot_height_fun(h,x,u)
+%         q = x(1:nq);
+%         [phi,~,~,~,~,~,~,~,n] = hamr.contactConstraints(q,false,struct('terrain_only',true));
+%         phi0 = [.5;.5;.5;.5];
+%         K = 10;
+%         I = find(phi < phi0);
+%         f = K*(phi(I) - phi0(I))'*(phi(I) - phi0(I));
+%         % phi: 2x1
+%         % n: 2xnq
+%         df = [0 2*K*(phi(I)-phi0(I))'*n(I,:) zeros(1,nv+nu)];
 %     end
 
     function displayTraj(h,x,u)
@@ -200,4 +193,26 @@ toc
         end
         
     end
+
+    function [t_init, traj_init] = re_interp(traj_init, N)
+        tt = traj_init.x.getBreaks();
+        N0 = numel(tt);
+        if N0 == N
+            t_init = tt;
+        else
+            t_init = linspace(tt(1), tt(end), N);
+            names = fieldnames(traj_init);
+            for i = 1:numel(names)
+                disp(i)
+                if ~strcmpi(names{i}, 'params')
+                    vals = interp1(tt', traj_init.(names{i}).eval(tt)',t_init')';
+                    traj_init.(names{i}) = PPTrajectory(foh(t_init, vals));
+                end
+            end
+        end
+        
+    end
+
+
+
 end

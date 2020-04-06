@@ -1,4 +1,11 @@
 clear; clc; close all;
+global lp_b
+
+lp_b = [0, 7.58, -11.350;
+    0, 7.58, -11.350;
+    0, -7.58, -11.350;
+    0, -7.58, -11.350];
+
 %% Load Transmission Trajectories
 
 save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/SimWarmStart/';
@@ -39,10 +46,14 @@ v = hamr.constructVisualizer();
 %% Build Actuators
 dp.Vb = 225;
 dp.Vg = 0;
-% 
+ 
 nact = 8;
 hr_actuators = HamrActuators(nact, {'FLsact', 'FLlact', 'RLsact', 'RLlact', ...
-    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [-1; -1; 1; 1; -1; -1; 1; 1], dp);
+    'FRsact', 'FRlact', 'RRsact', 'RRlact'}, [], dp);
+
+% for i = 2:2:nact
+%     hr_actuators.dummy_bender(i) = hr_actuators.dummy_bender(i).setCFThickness(0.1); 
+% end
 
 %% Connect system
 
@@ -95,7 +106,6 @@ vtraj = PPTrajectory(zoh(ttdN, vvdN));
 vtraj = vtraj.setOutputFrame(hamrWact.getInputFrame);
 
 x0 = xxd(:,1); 
-% x0 = hamr.getInitialState(); 
 
 %% Simulate Open loop
 
@@ -103,18 +113,20 @@ hamr_OL = cascade(vtraj, hamrWact);
 xtraj_sim = simulate(hamr_OL, [0 ncyc*ttd(end)], x0);
 
 %% Simulate Closed Loop
-kp = 50; %100; %0.05; %0.5; 
-kd = 40; %20; %0.15; %0.05; %0.3; 
+% kp = 50; %100; %0.05; %0.5; 
+% kd = 40; %20; %0.15; %0.05; %0.3; 
+rho = 0.005; 
+
+tracking_opt.ctype = 'actlqr';
+tracking_opt.rho = rho; 
+% tracking_opt.kp = kp;
+% tracking_opt.kd = kd;
 
 % qa = hamr.getActuatedJoints();
 % xtrajA = PPTrajectory(foh(0:hhd:(ncyc*ttd(end) - hhd), ...
 %     repmat(xxTransA(:,1:end-1), 1, ncyc)));
 xtrajd = PPTrajectory(foh(ttdN, xxdN)); 
-PDTracking = HAMRPDTracking(hamrWact, hamr, hr_actuators, vtraj, xtrajd, kp, kd); 
-
-% mimo inputs
-% input_select(1).system = 2; 
-% input_select(1).input = PDTracking.getInputFrame(); 
+LegTracking = HAMRLegTracking(hamrWact, hamr, hr_actuators, vtraj, xtrajd, tracking_opt); 
 
 % mimo outputs
 output_select(1).system = 1;
@@ -122,10 +134,10 @@ output_select(1).output = hamrWact.getOutputFrame.getFrameByName('HamrPosition')
 output_select(2).system = 1;
 output_select(2).output = hamrWact.getOutputFrame.getFrameByName('HamrVelocity');
 output_select(3).system = 2;
-output_select(3).output = PDTracking.getOutputFrame();
+output_select(3).output = LegTracking.getOutputFrame();
 
 % hamrWact_CL = mimoFeedback(hamrWact, PDTracking); 
-hamr_CL = mimoFeedback(hamrWact, PDTracking, [], [], [], output_select); 
+hamr_CL = mimoFeedback(hamrWact, LegTracking, [], [], [], output_select); 
 xtraj_sim_CL = simulate(hamr_CL, [0, ncyc*ttd(end)], x0);
 
 
@@ -195,15 +207,9 @@ if options.floating
     end    
 end
 
-
-pfFull = [0, 7.58, -11.350;
-    0, 7.58, -11.350;
-    0, -7.58, -11.350;
-    0, -7.58, -11.350];
-
-pfCL = zeros([numel(tt_sol), size(pfFull')]);
-pfOL = zeros([numel(tt_sol), size(pfFull')]);
-pfDesW = zeros([numel(tt_sol), size(pfFull')]);
+pfCL = zeros([numel(tt_sol), size(lp_b')]);
+pfOL = zeros([numel(tt_sol), size(lp_b')]);
+pfDesW = zeros([numel(tt_sol), size(lp_b')]);
 
 legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
 fkopt.base_or_frame_id = hamr.findLinkId('Chassis');
@@ -213,28 +219,28 @@ for j = 1:numel(tt_sol)
     qCL = xx_sol_CL(1:ndof/2, j);
     qdCL = xx_sol_CL(ndof/2+1: ndof, j);
     kinsolCL = hamr.doKinematics(qCL, qdCL);
-    for i = 1:size(pfFull,1)
-        pfCL(j,:,i) = hamr.forwardKin(kinsolCL, hamr.findLinkId(legs{i}), pfFull(i,:)'); %,fkopt);
+    for i = 1:size(lp_b,1)
+        pfCL(j,:,i) = hamr.forwardKin(kinsolCL, hamr.findLinkId(legs{i}), lp_b(i,:)'); %,fkopt);
     end
     
     qOL = xx_sol_OL(1:ndof/2, j);
     qdOL = xx_sol_OL(ndof/2+1: ndof, j);
     kinsolOL = hamr.doKinematics(qOL, qdOL);
-    for i = 1:size(pfFull,1)
-        pfOL(j,:,i) = hamr.forwardKin(kinsolOL, hamr.findLinkId(legs{i}), pfFull(i,:)'); %,fkopt);
+    for i = 1:size(lp_b,1)
+        pfOL(j,:,i) = hamr.forwardKin(kinsolOL, hamr.findLinkId(legs{i}), lp_b(i,:)'); %,fkopt);
     end
 
     xi = xtrajd.eval(tt_sol(j));
     qi = xi(1:ndof/2);
     qdi =  xi(ndof/2+1:ndof);
     kinsol0 = hamr.doKinematics(qi, qdi);
-    for i = 1:size(pfFull,1)
-        pfDesW(j,:,i) = hamr.forwardKin(kinsol0, hamr.findLinkId(legs{i}), pfFull(i,:)'); %,fkopt);
+    for i = 1:size(lp_b,1)
+        pfDesW(j,:,i) = hamr.forwardKin(kinsol0, hamr.findLinkId(legs{i}), lp_b(i,:)'); %,fkopt);
     end
 end
 
 figure(4); clf; hold on;
-nc = size(pfFull,1);
+nc = size(lp_b,1);
 for i = 1:nc
 
     subplot(nc,3,3*(i-1)+1); hold on; ylabel('Foot X'); title(legs{i})

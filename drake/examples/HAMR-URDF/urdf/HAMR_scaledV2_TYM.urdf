@@ -1816,7 +1816,7 @@
   </force_element>
 
   <force_element name="FL_klact">
-     <prismatic_spring stiffness="1.6946" rest_length="0">
+     <prismatic_spring stiffness="1.1556" rest_length="0">
       <joint name="FLqlact" />
     </prismatic_spring>
   </force_element>
@@ -1828,7 +1828,7 @@
   </force_element>
 
   <force_element name="RL_klact">
-     <prismatic_spring stiffness="1.6946" rest_length="0">
+     <prismatic_spring stiffness="1.1556" rest_length="0">
       <joint name="RLqlact" />
     </prismatic_spring>
   </force_element>
@@ -1840,7 +1840,7 @@
   </force_element>
 
   <force_element name="FR_klact">
-     <prismatic_spring stiffness="1.6946" rest_length="0">
+     <prismatic_spring stiffness="1.1556" rest_length="0">
       <joint name="FRqlact" />
     </prismatic_spring>
   </force_element>
@@ -1852,7 +1852,7 @@
   </force_element>
 
   <force_element name="RR_klact">
-    <prismatic_spring stiffness="1.6946" rest_length="0">
+    <prismatic_spring stiffness="1.1556" rest_length="0">
       <joint name="RRqlact" />
     </prismatic_spring>
   </force_element>

@@ -20,10 +20,10 @@ options.z_inactive_guess_tol = 0.1;
 options.use_bullet = false;
 
 % options to change
-options.dt = 1;
+options.dt = 0.1;
 gait = 'TROT';
 SAVE_FLAG = 0;
-ISFLOAT = true; % floating (gnd contact) or in air (not floating)
+ISFLOAT = false; % floating (gnd contact) or in air (not floating)
 
 if ISFLOAT
     options.floating = ISFLOAT;
@@ -38,11 +38,17 @@ else
     options.terrain = [];
 end
 
-% Build robot + visualizer
-hamr = HamrTSRBM(urdf, options);
-hamr = compile(hamr);
-v = hamr.constructVisualizer();
+% hamr options
+options.stiffness_mult = [1, 1, 1, 1]';     %(swing act, lift act, swing flex, lift flex)
 
+% Build robot + visualizer
+hamr = HamrTSRBM(HamrRBM(urdf, options), options.dt, options);
+nq = hamr.getNumPositions();
+nv = hamr.getNumVelocities();
+nu = hamr.getNumInputs();
+qa = hamr.getActuatedJoints();
+
+v = hamr.constructVisualizer();
 %% Build (open-loop) control input
 
 fd = 0.002;         % drive frequency (Hz)

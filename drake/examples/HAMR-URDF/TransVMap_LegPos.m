@@ -1,3 +1,18 @@
+function [] = TransVMap_LegPos()
+
+npts = 21;
+xlim = [-3, 3];
+zlim = [-1.5, 3];
+
+% yleg: 3rd dim (x, y, z) and 4th dim (FL, RL, FR, RR);
+% H: 3rd dim (FL, RL, FR, RR);
+[xx, zz, qact, H] = gen_trans_data(npts, xlim, zlim);
+
+% save('ActuatorToLegVelocity', 'xx', 'zz', 'H')
+
+end
+
+
 function [xx, zz, qact, H] = gen_trans_data(npts, xlim, zlim)
 %% Build Full Model
 
@@ -12,9 +27,9 @@ options.collision = false;
 options.dt = 1; %0.1;
 
 % Build robot
-hamr = HamrTSRBM(urdf, options);
+hamr = HamrTSRBM(HamrRBM(urdf, options), options.dt, options);
 nq = hamr.getNumPositions();
-nv = hamr.getNumVelocities(); 
+nv = hamr.getNumVelocities();
 nc = 4; %hamr.getNumContactPairs();
 
 all_dof = (1:nq)';
@@ -26,10 +41,14 @@ dim = 3;
 
 %% Leg Positions
 
-fp_body = [0.06, 8.565, -6.322;
-    -0.06, 8.565, -6.322;
-    0.06, -8.565, -6.322;
-    -0.06, -8.565, -6.322];
+% fp_body = [0.06, 8.565, -6.322;
+%     -0.06, 8.565, -6.322;
+%     0.06, -8.565, -6.322;
+%     -0.06, -8.565, -6.322];
+fp_body = [0, 7.58, -11.350;
+    0, 7.58, -11.350;
+    0, -7.58, -11.350;
+    0, -7.58, -11.350];
 
 legs = {'FLL4', 'RLL4', 'FRL4', 'RRL4'};
 
@@ -59,22 +78,22 @@ kinsol0 = hamr.doKinematics(zeros(nq,1), zeros(nv,1));
 for k = 1:nc
     yleg0(k,:) = hamr.forwardKin(kinsol0, ...
         hamr.findLinkId(legs{k}), fp_body(k,:)')';
-end    
+end
 
 for is = 1:npts %:npts
     for il = 1:npts
         
         %solve for depedent qs
         q_is_il = HAMR_IK(hamr, xx(is, il), zz(is, il), q0, fp_body);
-%         v.inspector([q_is_il; 0*q_is_il]);
+        %         v.inspector([q_is_il; 0*q_is_il]);
         
         % constraint gradients needed
         [~, dK] = hamr.positionConstraints(q_is_il);
-        dg_dqi = dK(hamr.valid_loops, indep_dof);
-        dg_dqd = dK(hamr.valid_loops, dep_dof);
+        dg_dqi = dK(hamr.HamrRBM.VALID_LOOPS, indep_dof);
+        dg_dqd = dK(hamr.HamrRBM.VALID_LOOPS, dep_dof);
         
         
-        qact(is, il, :) = q_is_il(indep_dof);        
+        qact(is, il, :) = q_is_il(indep_dof);
         kinsol = hamr.doKinematics(q_is_il, 0*q_is_il);
         
         % find leg position and map from (vs, vl) to vleg (x, y, z);
@@ -136,7 +155,7 @@ end
 function qf = HAMR_IK(hamr, legx, legz, q0, pfLeg)
 
 nq = hamr.getNumPositions();
-nl = numel(hamr.valid_loops);
+nl = numel(hamr.HamrRBM.VALID_LOOPS);
 act_dof = hamr.getActuatedJoints();
 nact = numel(act_dof);
 
@@ -181,7 +200,7 @@ nlp = nlp.addConstraint(BoundingBoxConstraint(1.1*q_min, 1.1*q_max), q_inds);
 
 % Leg initial positions
 pf0 = 0*pfLeg;
-legs = hamr.legs;
+legs = hamr.HamrRBM.LEG_NAME;
 kinsol0 = hamr.doKinematics(zeros(nq,1), zeros(nq,1));
 for i = 1:size(pfLeg,1)
     pf0(i, :) = hamr.forwardKin(kinsol0, hamr.findLinkId(legs{i}),...
@@ -195,8 +214,8 @@ qf = nlp.solve(q0);
     function [f, df] = loop_constraint(q)
         manip = hamr.getManipulator();
         [k, dK] = manip.positionConstraints(q);
-        f = k(hamr.valid_loops);
-        df = dK(hamr.valid_loops,:);
+        f = k(hamr.HamrRBM.VALID_LOOPS);
+        df = dK(hamr.HamrRBM.VALID_LOOPS,:);
     end
 
     function [f, df] = leg_pos_constraint(q)
@@ -210,9 +229,8 @@ qf = nlp.solve(q0);
                 pfLeg(j,:)');
             f((2*j-1):(2*j)) = [pfk(1) - pf0(j,1) - legx; ...
                 pfk(3) - pf0(j,3) - legz];
-            df((2*j-1):(2*j),:) = dpfK([1;3], :);            
+            df((2*j-1):(2*j),:) = dpfK([1;3], :);
         end
-%         max(abs(f))
+        %         max(abs(f))
     end
 end
-

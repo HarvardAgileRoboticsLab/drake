@@ -290,7 +290,7 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
     end
 
     function [obj,z,Mvn,wvn,dz,dMvn,dwvn] = solveLCP(obj,t,x,u)
-        global u_traj kl_traj c_traj beta_traj eta_traj psi_traj
+        %global u_traj kl_traj c_traj beta_traj eta_traj psi_traj
       if (nargout<5 && obj.gurobi_present && obj.manip.only_loops && obj.manip.mex_model_ptr~=0 && ~obj.position_control)
         [obj,z,Mvn,wvn] = solveMexLCP(obj,t,x,u);
         return;
@@ -734,32 +734,32 @@ classdef TimeSteppingRigidBodyManipulator < DrakeSystem
         % for debugging NEEL
         %z = [h*cL; h*cP; h*cN; h*beta{1}; ...; h*beta{mC}; lambda]
 %         jl_traj = [jl_traj, z(1:nL)/h]; 
-        u_traj = [u_traj, u]; 
-        kl_traj = [kl_traj, z(nL+(1:nP))/h]; 
+%         u_traj = [u_traj, u]; 
+%         kl_traj = [kl_traj, z(nL+(1:nP))/h]; 
         
         if nC > 0         
         
             % Pass normal force
 %             ci = zeros(nContactPairs, 1);
 %             ci(possible_contact_indices) = z(nL+nP+(1:nC))/h;
-            c_traj = [c_traj, z(nL+nP+(1:nC))/h];
+%             c_traj = [c_traj, z(nL+nP+(1:nC))/h];
             
             % friction multiplier
 %             betai = zeros(nContactPairs*mC, 1);
 %             beta_inds = reshape((1:mC*nContactPairs)', nContactPairs, mC)';
 %             betai(reshape(beta_inds(possible_contact_indices, :)', [], 1)) = z(nL+nP+nC+(1:nC*mC))/h;
             betai = reshape(z(nL+nP+nC+(1:nC*mC)), nC, mC)';
-            beta_traj = [beta_traj, betai(:)/h];
+%             beta_traj = [beta_traj, betai(:)/h];
             
             % tangential velocity
 %             psii = zeros(nContactPairs, 1);
 %             psii(possible_contact_indices) = z(nL+nP+nC+nC*mC+(1:nC))/h;
-            psi_traj = [psi_traj, z(nL+nP+nC+nC*mC+(1:nC))/h];
+%             psi_traj = [psi_traj, z(nL+nP+nC+nC*mC+(1:nC))/h];
 
             % other multiplier            
             Dperm = D(reshape(reshape((1:nC*mC), nC, mC)', nC*mC, 1), :);
             etai = kron(eye(nContactPairs),ones(1,mC))'*z(nL+nP+nC+nC*mC+(1:nC)) + Dperm*v;
-            eta_traj = [eta_traj, etai/h];
+%             eta_traj = [eta_traj, etai/h];
         end
             
         % end debugging

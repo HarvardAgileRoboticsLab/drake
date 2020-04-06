@@ -101,6 +101,8 @@ classdef PZTBender < DrakeSystem
                 + 3*(-2 + 2*obj.lr*(obj.ap.wr-1)+obj.ap.wr)^2*log((2-obj.ap.wr)/obj.ap.wr);
             obj.GF = GF_num/GF_den;
             
+            disp(obj.GF)
+            
             % free deflection
             df_den = (1/3)*obj.ap.Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + 3*obj.tcf*obj.ap.tpzt + ...
                 2*obj.ap.tpzt^2) + obj.ap.Ecf*obj.tcf^3/12;
@@ -132,7 +134,7 @@ classdef PZTBender < DrakeSystem
             u0 = [0.5*(obj.Vb - obj.Vg); 0];
         end
         
-        function [u, du] = voltageToForce(obj, q, V)
+        function [u, du] = voltageToForce(obj, V, q)
             Vt = obj.dp.Vb - V;        % voltage on top plate
             Vb = V - obj.dp.Vg;        % voltage on bottom plate
             
@@ -144,9 +146,11 @@ classdef PZTBender < DrakeSystem
             dCt_dq = (0.75/obj.ap.lact)*((-obj.orien/obj.df)*(obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             dCb_dq = (0.75/obj.ap.lact)*((obj.orien/obj.df)*(obj.ap.f31_eff_f - obj.ap.f31_eff_b))*obj.ap.wn*(obj.ap.tpzt+obj.tcf)*obj.GF;
             
-            u = obj.orien*(Ct*Vt - Cb*Vb);            
-            du = [obj.orien*(dCt_dq*Vt - dCb_dq*Vb), -obj.orien*(Ct + Cb)];
+            u = obj.orien*(Ct*Vt - Cb*Vb);  
             
+            %disp(Ct)
+            %disp(Cb)
+            du = [-obj.orien*(Ct + Cb), obj.orien*(dCt_dq*Vt - dCb_dq*Vb)];            
             
         end
         
@@ -155,7 +159,7 @@ classdef PZTBender < DrakeSystem
             V = u(1);
             q = u(2);
             
-            [u, du] = obj.voltageToForce(q, V);
+            [u, du] = obj.voltageToForce(V, q);
             y = u;
             dy = [zeros(1, numel(t)), zeros(1, numel(x)), du];
         end

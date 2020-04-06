@@ -5,34 +5,13 @@ classdef HamrActuators < DrakeSystem
         names
         dummy_bender = [];
         nact;
+        orien = [-1; -1; 1; 1; -1; -1; 1; 1];       % default orientation
     end
     
     methods
         
         function obj = HamrActuators(nact, names, orien, dp)
             % TODO: add option to change actuator shape by passing gp
-            
-            if numel(names) ~= nact
-                error('Need a name for each acutator mofo')
-            end
-            
-            if nargin < 3
-                orien = ones(nact, 1);
-            else
-                if numel(orien) ~= nact
-                    disp('Orien is wrong length, setting to ones')
-                    orien = ones(nact,1);
-                end
-            end
-            
-            if nargin < 4
-                dp.Vb = 225;
-                dp.Vg = 0;
-            end
-            
-            %             if numel(actuated_dof) ~=nact
-            %                 error('Over (or under) constrained system')
-            %             end
             
             input_frame = MultiCoordinateFrame({CoordinateFrame('DriveVoltage', nact, {}, names), ...
                 CoordinateFrame('ActuatorDeflection', nact)} ...
@@ -51,6 +30,27 @@ classdef HamrActuators < DrakeSystem
             obj = obj.setInputFrame(input_frame);
             obj = obj.setOutputFrame(output_frame);
             
+            
+            if numel(names) ~= nact
+                error('Need a name for each acutator mofo')
+            end
+            
+            if nargin < 3
+                orien = ones(nact, 1);
+            else
+                if isempty(orien)
+                    %                     disp('Orien is wrong length, setting to ones')
+                    disp('Using default actuator orientation')
+                    orien = obj.orien;
+                end
+            end
+            
+            if nargin < 4
+                dp.Vb = 225;
+                dp.Vg = 0;
+            end           
+               
+            
             obj.names = names;
             for i = 1:nact
                 obj.dummy_bender = [obj.dummy_bender, PZTBender(names{i}, dp,orien(i))];
@@ -61,15 +61,37 @@ classdef HamrActuators < DrakeSystem
             
         end
         
+        function [y, dy] = output(obj, t, x, u)            
+           
+            xin = [t; x; u];
+            [y,dy] = output_fun(obj,xin);
+%             
+%             dy_fd = zeros(size(dy));
+%             dxin = 1e-6*eye(length(xin));
+%             for k = 1:length(xin)
+%                 dy_fd(:,k) = (output_fun(obj,xin+dxin(:,k)) - ...
+%                     output_fun(obj,xin-dxin(:,k)))/2e-6;
+%             end
+%             
+%             disp('Output derivative error:');
+%             disp(max(abs(dy_fd(:)-dy(:))));
+        end            
+        
         % here's where the real stuff happens
-        function y = output(obj, t, x, u)
+        function [y, dy] = output_fun(obj, xin)
+            
+            t = xin(1);
+            x = [];
+            u = xin(1+(1:2*obj.nact)); 
             
             y = zeros(obj.nact, 1);
+            dy = zeros(obj.nact, 1+2*obj.nact);
             for i = 1:obj.nact
-                y(i) = obj.dummy_bender(i).output(t, x, [u(i);...
+                [y(i), dyi] = obj.dummy_bender(i).output(t, x, [u(i);...
                     u(i+obj.nact)]);
+                dy(i, 1+[i, i + obj.nact]) = dyi(2:end);
             end
-%             fprintf('Time: %f \n', t);
+            %             fprintf('Time: %f \n', t);
             
         end
         
