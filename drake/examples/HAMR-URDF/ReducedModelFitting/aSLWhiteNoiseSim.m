@@ -9,7 +9,7 @@ kl_traj = [];
 % Sample Rate and Time
 dt = 0.25;
 Fs = 1/dt;
-T = 2000;
+T = 1000;
 t = 0:dt:T;
 N = numel(t);
 
@@ -67,9 +67,9 @@ input_select(1).input = act_in.getFrameByName('DriveVoltage');
 
 % mimo outputs
 output_select(1).system = 2;
-output_select(1).output = sl_out.getFrameByName('RearLeftSingleLegPosition');
+output_select(1).output = sl_out.getFrameByName('FrontLeftSingleLegPosition');
 output_select(2).system = 2;
-output_select(2).output = sl_out.getFrameByName('RearLeftSingleLegVelocity');
+output_select(2).output = sl_out.getFrameByName('FrontLeftSingleLegVelocity');
 output_select(3).system = 1;
 output_select(3).output = sl_actuators.getOutputFrame();
 

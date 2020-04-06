@@ -4,7 +4,7 @@ save_dir = '~/Dropbox/CurrentWork/FrictionTrajOpt/MatFiles/AgileBehaviors/';
 
 %% Load Rigid Body
 
-urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2_TYM.urdf');
+urdf = fullfile(getDrakePath,'examples', 'HAMR-URDF', 'urdf', 'HAMR_scaledV2.urdf');
 
 kl_traj = [];
 jl_traj = [];
@@ -45,11 +45,10 @@ v = hamr.constructVisualizer();
 
 %% Build (open-loop) control input
 
-fd = 0.01;         % drive frequency (Hz)
-tsim = 500;
+fd = 0.002;         % drive frequency (Hz)
+tsim = 10/fd;
 FmaxS = 0.25;
-FmaxL = 0.35;
-
+FmaxL = 0.25;
 
 t = 0:options.dt:tsim;
 
