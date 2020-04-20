@@ -101,7 +101,7 @@ classdef PZTBender < DrakeSystem
                 + 3*(-2 + 2*obj.lr*(obj.ap.wr-1)+obj.ap.wr)^2*log((2-obj.ap.wr)/obj.ap.wr);
             obj.GF = GF_num/GF_den;
             
-            disp(obj.GF)
+%             disp(obj.GF)
             
             % free deflection
             df_den = (1/3)*obj.ap.Eave*obj.ap.tpzt*(1.5*obj.tcf^2 + 3*obj.tcf*obj.ap.tpzt + ...

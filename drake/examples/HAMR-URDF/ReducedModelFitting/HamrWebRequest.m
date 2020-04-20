@@ -1,10 +1,12 @@
 classdef HamrWebRequest < DrakeSystem
     
-    
     properties (SetAccess=private)
+        
+        r;
         
         url;
         media_type;
+        opt_2x;
         
         nq;
         nv;
@@ -16,7 +18,7 @@ classdef HamrWebRequest < DrakeSystem
     
     
     methods
-        function obj = HamrWebRequest(rwact,r)
+        function obj = HamrWebRequest(rwact,r, opt_2x)
             
             obj = obj@DrakeSystem(0,0,rwact.getNumOutputs, ...
                 rwact.getNumInputs,true,true);
@@ -34,24 +36,45 @@ classdef HamrWebRequest < DrakeSystem
             obj.url = 'http://35.245.168.29:8000';
             obj.media_type = weboptions('MediaType', 'applications/json');
             
+            obj.opt_2x = opt_2x;
+            
+            obj.r = r; 
+            
         end
         
         
         function y = output(obj, t, ~, x)
-            disp(t)
+            persistent ytm1
+
+            
+            if obj.opt_2x 
+                flag = mod(t, 2*obj.r.timestep); 
+            else
+                flag = 0;
+            end
             
             xhip = x(obj.ihip);
             
             temp = struct( ...
-                'q_pos', x(1:6), ...
+                'q_pos', [-x(1); x(2:6)], ...
                 'q_hip', xhip(obj.perm), ...
-                'qdot_pos', x(obj.nq + (1:6)), ...
+                'qdot_pos', [-x(obj.nq + 1); x(obj.nq + (2:6))], ...
                 'qdot_hip', xhip(obj.nu + obj.perm) ...
                 );
+
+            if flag == 0  
+                disp(t)                       
+                y_josh = webwrite(obj.url, temp, obj.media_type);
+                y = y_josh([1, 5, 2, 6, 3, 7, 4, 8]);              
+                ytm1 = y; 
+%                 obj = obj; 
+%                 disp(y)
             
-            %             disp('Web request...')
-            y_josh = webwrite(obj.url, temp, obj.media_type);
-            y = y_josh([1, 5, 2, 6, 3, 7, 4, 8]);         
+            else
+                y = ytm1;
+%                 disp(y)
+            end
+            
             
         end
         

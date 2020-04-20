@@ -12,7 +12,7 @@ options.use_bullet = false;
 
 % options to change
 options.dt = 0.25;
-gait = 'PRONK';
+gait = 'TROT';
 ISFLOAT = true; % floating (gnd contact) or in air (not floating)
 options.floating = ISFLOAT;
 options.collision = ISFLOAT;
@@ -21,7 +21,7 @@ options.terrain = RigidBodyFlatTerrain();
 
 
 % Build robot + visualizer
-hamr = HamrTSRBM(urdf, options);
+hamr = HamrTSRBM(HamrRBM(urdf, options), options.dt, options);
 hamr = compile(hamr);
 v = hamr.constructVisualizer();
 
@@ -119,19 +119,30 @@ legend('Swing Drive', 'Lift Drive')
 
 %% Simulate Open loop
 
-hamrWact_OL = cascade(Vtraj, hamrWact);
+relative_speed = zeros(10,1);
 
-disp('Simulating...');
-tic; [ytraj, xtraj] = simulate(hamrWact_OL, [0 T], x0); tlcp = toc;
-fprintf('Sim time was %f, \n', tlcp)
+for i = 1:10
+    hamrWact_OL = cascade(Vtraj, hamrWact);
 
-% extract
-xx = xtraj.eval(tt);
-yy = ytraj.eval(tt);
+    disp('Simulating...');
+    tic; [ytraj, xtraj] = simulate(hamrWact_OL, [0 T], x0); tlcp = toc;
+    fprintf('Sim time was %f, \n', tlcp)
+    relative_speed(i) = (tlcp/T)*1000;
 
-% full transmission state
-qq_full = xx(1:nq, :);
-vv_full = xx(nq+(1:nv), :);
+    % extract
+    xx = xtraj.eval(tt);
+    yy = ytraj.eval(tt);
+
+    % full transmission state
+    qq_full = xx(1:nq, :);
+    vv_full = xx(nq+(1:nv), :);
+end
+%%
+
+figure(100); hold on; 
+plot(relative_speed, '*')
+plot(1:10, mean(relative_speed)*ones(10,1), 'k')
+
 
 %% Transmission kin
 
